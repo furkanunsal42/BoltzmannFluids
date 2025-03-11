@@ -3,9 +3,14 @@
 
 void LBM2D::compile_shaders()
 {
+	if (is_programs_compiled)
+		return;
+
 	auto definitions = _generate_shader_macros();
 
-	lbm2d_advect = std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory /= ), definitions)
+	lbm2d_stream = std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "stream.comp"), definitions);
+
+	is_programs_compiled = true;
 }
 
 void LBM2D::generate_lattice(glm::ivec2 resolution, glm::vec2 volume_dimentions_meters)
@@ -20,9 +25,9 @@ void LBM2D::iterate_time(double time_milliseconds)
 {
 	total_time_elapsed_ms += time_milliseconds;
 
-	_advect(time_milliseconds);
-	_collide(time_milliseconds);
-	_apply_boundry_conditions(time_milliseconds);
+	_stream(time_milliseconds);
+	//_collide(time_milliseconds);
+	//_apply_boundry_conditions(time_milliseconds);
 }
 
 double LBM2D::get_total_time_elapsed_ms()
@@ -36,7 +41,7 @@ void LBM2D::set_floating_point_accuracy(FloatingPointAccuracy floating_point_acc
 		return;
 	
 	this->floating_point_accuracy = floating_point_accuracy;
-	is_programs_compiled = true;
+	is_programs_compiled = false;
 }
 
 FloatingPointAccuracy LBM2D::get_floating_point_accuracy()
@@ -117,4 +122,18 @@ std::vector<std::pair<std::string, std::string>> LBM2D::_generate_shader_macros(
 	};
 
 	return definitions;
+}
+
+void LBM2D::_stream(double time_milliseconds)
+{
+	compile_shaders();
+
+	ComputeProgram& kernel = *lbm2d_stream;
+
+	//kernel.update_uniform_as_storage_buffer("lattice_buffer_source", *lattice, 0);
+	kernel.update_uniform_as_storage_buffer("lattice_buffer_target", *lattice, 0);
+	kernel.update_uniform("lattice_resolution", resolution);
+	kernel.update_uniform("velocity_count", get_velocity_count());
+	
+	kernel.dispatch_thread(resolution.x * resolution.y * get_velocity_count(), 1, 1);
 }

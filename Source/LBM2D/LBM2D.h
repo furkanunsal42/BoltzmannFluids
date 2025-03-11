@@ -37,7 +37,7 @@ private:
 	
 	std::vector<std::pair<std::string, std::string>> _generate_shader_macros();
 	
-	void _advect(double time_milliseconds);
+	void _stream(double time_milliseconds);
 	void _collide(double time_milliseconds);
 	void _apply_boundry_conditions(double time_milliseconds);
 	void _generate_lattice_buffer();
@@ -52,7 +52,7 @@ private:
 	std::shared_ptr<Buffer> lattice;
 
 	bool is_programs_compiled = false;
-	std::shared_ptr<ComputeProgram> lbm2d_advect;
+	std::shared_ptr<ComputeProgram> lbm2d_stream;
 
 	std::unique_ptr<GraphicsOperation> operation = std::make_unique<GraphicsOperation>();
 };

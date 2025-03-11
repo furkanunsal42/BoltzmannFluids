@@ -1,3 +1,4 @@
 *.vcxproj
 *.user
 *.filters
+*.dll
