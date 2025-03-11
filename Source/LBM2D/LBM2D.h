@@ -35,7 +35,7 @@ public:
 
 private:
 	
-	std::vector<std::pair<std::string, std::string>> _generate_macro_definitions();
+	std::vector<std::pair<std::string, std::string>> _generate_shader_macros();
 	
 	void _advect(double time_milliseconds);
 	void _collide(double time_milliseconds);

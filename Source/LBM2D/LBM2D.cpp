@@ -5,7 +5,7 @@ void LBM2D::compile_shaders()
 {
 	auto definitions = _generate_shader_macros();
 
-	lbm2d_advect = std::make_shared<ComputeProgram>(Shader(), definitions)
+	lbm2d_advect = std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory /= ), definitions)
 }
 
 void LBM2D::generate_lattice(glm::ivec2 resolution, glm::vec2 volume_dimentions_meters)
