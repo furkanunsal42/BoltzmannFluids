@@ -49,3 +49,94 @@ std::string get_VelocitySet_to_macro(VelocitySet velocity_set)
 
     std::cout << "[LBM Error] get_VelocitySet_to_macro() is called but given velocity_set is not supported" << std::endl;
 }
+
+std::vector<glm::vec4> get_velosity_vectors(VelocitySet velocity_set)
+{
+    switch (velocity_set) {
+    case D2Q9:
+        return{
+            glm::vec4( 0,  0,  0,  4.0 / 9),
+            glm::vec4( 1,  0,  0,  1.0 / 9),
+            glm::vec4( 0,  1,  0,  1.0 / 9),
+            glm::vec4(-1,  0,  0,  1.0 / 9),
+            glm::vec4( 0, -1,  0,  1.0 / 9),
+            glm::vec4( 1,  1,  0,  1.0 / 36),
+            glm::vec4(-1,  1,  0,  1.0 / 36),
+            glm::vec4(-1, -1,  0,  1.0 / 36),
+            glm::vec4( 1, -1,  0,  1.0 / 36)
+        };
+    case D3Q15:
+        return{
+            glm::vec4( 0,  0,  0,  2.0 / 9),
+            glm::vec4( 1,  0,  0,  1.0 / 9),
+            glm::vec4(-1,  0,  0,  1.0 / 9),
+            glm::vec4( 0,  1,  0,  1.0 / 9),
+            glm::vec4( 0, -1,  0,  1.0 / 9),
+            glm::vec4( 0,  0,  1,  1.0 / 9),
+            glm::vec4( 0,  0, -1,  1.0 / 9),
+            glm::vec4( 1,  1,  1,  1.0 / 72),
+            glm::vec4(-1, -1, -1,  1.0 / 72),
+            glm::vec4( 1,  1, -1,  1.0 / 72),
+            glm::vec4(-1, -1,  1,  1.0 / 72),
+            glm::vec4( 1, -1,  1,  1.0 / 72),
+            glm::vec4(-1,  1, -1,  1.0 / 72),
+            glm::vec4(-1,  1,  1,  1.0 / 72),
+            glm::vec4( 1, -1, -1,  1.0 / 72)
+        };
+    case D3Q19:
+        return{
+            glm::vec4( 0,  0,  0,  1.0 / 3),
+            glm::vec4( 1,  0,  0,  1.0 / 18),
+            glm::vec4(-1,  0,  0,  1.0 / 18),
+            glm::vec4( 0,  1,  0,  1.0 / 18),
+            glm::vec4( 0, -1,  0,  1.0 / 18),
+            glm::vec4( 0,  0,  1,  1.0 / 18),
+            glm::vec4( 0,  0, -1,  1.0 / 18),
+            glm::vec4( 1,  1,  0,  1.0 / 36),
+            glm::vec4(-1, -1,  0,  1.0 / 36),
+            glm::vec4( 1,  0,  1,  1.0 / 36),
+            glm::vec4(-1,  0, -1,  1.0 / 36),
+            glm::vec4( 0,  1,  1,  1.0 / 36),
+            glm::vec4( 0, -1, -1,  1.0 / 36),
+            glm::vec4( 1, -1,  0,  1.0 / 36),
+            glm::vec4(-1,  1,  0,  1.0 / 36),
+            glm::vec4( 1,  0, -1,  1.0 / 36),
+            glm::vec4(-1,  0,  1,  1.0 / 36),
+            glm::vec4( 0,  1,  1,  1.0 / 36),
+            glm::vec4( 0, -1, -1,  1.0 / 36)
+        };
+    case D3Q27:
+        return{
+            glm::vec4( 0,  0,  0,  8.0 / 27),
+            glm::vec4( 1,  0,  0,  2.0 / 27),
+            glm::vec4(-1,  0,  0,  2.0 / 27),
+            glm::vec4( 0,  1,  0,  2.0 / 27),
+            glm::vec4( 0, -1,  0,  2.0 / 27),
+            glm::vec4( 0,  0,  1,  2.0 / 27),
+            glm::vec4( 0,  0, -1,  2.0 / 27),
+            glm::vec4( 1,  1,  0,  1.0 / 54),
+            glm::vec4(-1, -1,  0,  1.0 / 54),
+            glm::vec4( 1,  0,  1,  1.0 / 54),
+            glm::vec4(-1,  0, -1,  1.0 / 54),
+            glm::vec4( 0,  1,  1,  1.0 / 54),
+            glm::vec4( 0, -1, -1,  1.0 / 54),
+            glm::vec4( 1, -1,  0,  1.0 / 54),
+            glm::vec4(-1,  1,  0,  1.0 / 54),
+            glm::vec4( 1,  0, -1,  1.0 / 54),
+            glm::vec4(-1,  0,  1,  1.0 / 54),
+            glm::vec4( 0,  1, -1,  1.0 / 54),
+            glm::vec4( 0, -1,  1,  1.0 / 54),
+            glm::vec4( 1,  1,  1,  1.0 / 216),
+            glm::vec4(-1, -1, -1,  1.0 / 216),
+            glm::vec4( 1,  1, -1,  1.0 / 216),
+            glm::vec4(-1, -1,  1,  1.0 / 216),
+            glm::vec4( 1, -1,  1,  1.0 / 216),
+            glm::vec4(-1,  1, -1,  1.0 / 216),
+            glm::vec4(-1,  1,  1,  1.0 / 216),
+            glm::vec4( 1, -1, -1,  1.0 / 216)
+        };
+    }
+
+    std::cout << "[LBM Error] get_velosity_vectors() is called but given velocity_set is not supported" << std::endl;
+
+}

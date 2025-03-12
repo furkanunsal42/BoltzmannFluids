@@ -2,12 +2,45 @@
 
 #version 460 core
 
+#define D2Q9 0
+#define D3Q15 1
+#define D3Q19 2
+#define D3Q27 3
+
+#define fp16 0
+#define fp32 1
+
 #define floating_point_accuracy fp32
 #define velocity_set D2Q9
+
+#if velocity_set == D2Q9
+	#define volume_dimentionality 2
+	#define velocity_count 9
+#elif velocity_set == D3Q15
+	#define volume_dimentionality 3
+	#define velocity_count 15
+#elif velocity_set == D3Q19
+	#define volume_dimentionality 3
+	#define velocity_count 19
+#elif velocity_set == D3Q27
+	#define volume_dimentionality 3
+	#define velocity_count 27
+#else
+	#error "velocity set is not supported"
+#endif
+
+#if floating_point_accuracy == fp32
+#else
+	#error "other floating point systems than fp32 aren't supported"
+#endif
 
 #define id gl_GlobalInvocationID
 
 layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+layout(std140, binding = 0) uniform velocity_set_buffer {
+	vec4[velocity_count] lattice_set;
+};
 
 layout(std430, binding = 0) buffer lattice_buffer_source {
 	float[] lattice_source;
@@ -18,17 +51,41 @@ layout(std430, binding = 1) buffer lattice_buffer_target {
 };
 
 uniform ivec2 lattice_resolution;
-uniform int velocity_count;
+
+int get_inverse_lattice_direction_index(int lattice_velocity_index){
+	if (lattice_velocity_index == 0 || lattice_velocity_index >= velocity_count)
+		return 0;
+
+	#if volume_dimentionality == 2
+		bool is_in_first_half = lattice_velocity_index-1 < velocity_count / 2;
+		return is_in_first_half ? lattice_velocity_index + (velocity_count / 2) : lattice_velocity_index - (velocity_count / 2);
+	#else
+		bool is_odd = lattice_velocity_index % 2 == 1;
+		return is_odd ? lattice_velocity_index + 1 : lattice_velocity_index - 1;
+	#endif
+}
 
 void main(){
 	
 	if (id.x >= lattice_resolution.x * lattice_resolution.y * velocity_count)
 		return;
 
+	//lattice_target[id.x] = float(velocity_id) / velocity_count;
+	
 	int pixel_id = int(id.x) / velocity_count;
 	int velocity_id = int(id.x) % velocity_count;
 	ivec2 pixel_coord = ivec2(pixel_id.x % lattice_resolution.x, pixel_id.x / lattice_resolution.x);
 
-	lattice_target[id.x] = float(velocity_id) / velocity_count;
-	//lattice_target[id.x] = lattice_source[id.x];
+	// for test purposes
+	if (pixel_coord.x == 0 && velocity_id == 1)
+		lattice_source[id.x] = 0.1;
+
+	ivec2 source_pixel_coord = pixel_coord - ivec2(lattice_set[velocity_id].xy);
+	int source_pixel_id = source_pixel_coord.y * lattice_resolution.x + source_pixel_coord.x;
+	int inv_velocity_id = get_inverse_lattice_direction_index(velocity_id);
+	
+	if (any(greaterThanEqual(source_pixel_coord, lattice_resolution) || lessThan(source_pixel_coord, ivec2(0, 0))))
+		return;
+
+	lattice_target[id.x] = lattice_source[source_pixel_id * velocity_count + inv_velocity_id];
 }

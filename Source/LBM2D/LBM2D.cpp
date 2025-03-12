@@ -28,6 +28,8 @@ void LBM2D::iterate_time(double time_milliseconds)
 	_stream(time_milliseconds);
 	//_collide(time_milliseconds);
 	//_apply_boundry_conditions(time_milliseconds);
+
+	_swap_lattice_buffers();
 }
 
 double LBM2D::get_total_time_elapsed_ms()
@@ -81,7 +83,7 @@ void LBM2D::copy_to_texture_velocity_index(Texture2D& target_texture, int32_t ve
 
 	operation->compute(
 		target_texture,
-		*lattice, "float",
+		*lattice0, "float",
 		"source[(id.y * texture_resolution.x + id.x) * velocity_count_per_voxel + velocity_index]"
 	);
 }
@@ -96,7 +98,23 @@ void LBM2D::_generate_lattice_buffer()
 	size_t voxel_count = resolution.x * resolution.y;
 	size_t total_buffer_size_in_bytes = voxel_count * get_velocity_count() * get_FLoatingPointAccuracy_size_in_bytes(floating_point_accuracy);
 
-	lattice = std::make_shared<Buffer>(total_buffer_size_in_bytes);
+	lattice0 = std::make_shared<Buffer>(total_buffer_size_in_bytes);
+	lattice1 = std::make_shared<Buffer>(total_buffer_size_in_bytes);
+}
+
+std::shared_ptr<Buffer> LBM2D::_get_lattice_source()
+{
+	return is_lattice_0_is_source ? lattice0 : lattice1;
+}
+
+std::shared_ptr<Buffer> LBM2D::_get_lattice_target()
+{
+	return is_lattice_0_is_source ? lattice1 : lattice0;
+}
+
+void LBM2D::_swap_lattice_buffers()
+{
+	is_lattice_0_is_source = !is_lattice_0_is_source;
 }
 
 glm::ivec2 LBM2D::get_resolution()
@@ -130,10 +148,12 @@ void LBM2D::_stream(double time_milliseconds)
 
 	ComputeProgram& kernel = *lbm2d_stream;
 
-	//kernel.update_uniform_as_storage_buffer("lattice_buffer_source", *lattice, 0);
-	kernel.update_uniform_as_storage_buffer("lattice_buffer_target", *lattice, 0);
+	Buffer& lattice_source = *_get_lattice_source();
+	Buffer& lattice_target = *_get_lattice_target();
+
+	kernel.update_uniform_as_storage_buffer("lattice_buffer_source", lattice_source, 0);
+	kernel.update_uniform_as_storage_buffer("lattice_buffer_target", lattice_target, 0);
 	kernel.update_uniform("lattice_resolution", resolution);
-	kernel.update_uniform("velocity_count", get_velocity_count());
 	
 	kernel.dispatch_thread(resolution.x * resolution.y * get_velocity_count(), 1, 1);
 }

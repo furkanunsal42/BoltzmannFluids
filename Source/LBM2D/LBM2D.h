@@ -49,7 +49,12 @@ private:
 	glm::ivec2 resolution;
 	glm::vec2 volume_dimentions_meters;
 
-	std::shared_ptr<Buffer> lattice;
+	bool is_lattice_0_is_source = true;
+	std::shared_ptr<Buffer> lattice0;
+	std::shared_ptr<Buffer> lattice1;
+	std::shared_ptr<Buffer> _get_lattice_source();
+	std::shared_ptr<Buffer> _get_lattice_target();
+	void _swap_lattice_buffers();
 
 	bool is_programs_compiled = false;
 	std::shared_ptr<ComputeProgram> lbm2d_stream;
