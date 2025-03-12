@@ -100,6 +100,14 @@ void LBM2D::_generate_lattice_buffer()
 
 	lattice0 = std::make_shared<Buffer>(total_buffer_size_in_bytes);
 	lattice1 = std::make_shared<Buffer>(total_buffer_size_in_bytes);
+	
+	lattice_velocity_set_buffer = std::make_unique<UniformBuffer>();
+	lattice_velocity_set_buffer->push_variable_array(get_velocity_count()); // a vec4 for every velocity direction
+	
+	auto lattice_velocities_vector = get_velosity_vectors(velocity_set);
+	
+	lattice_velocity_set_buffer->set_data(0, 0, lattice_velocities_vector.size() * sizeof(glm::vec4), lattice_velocities_vector.data());
+	lattice_velocity_set_buffer->upload_data();
 }
 
 std::shared_ptr<Buffer> LBM2D::_get_lattice_source()
@@ -153,6 +161,7 @@ void LBM2D::_stream(double time_milliseconds)
 
 	kernel.update_uniform_as_storage_buffer("lattice_buffer_source", lattice_source, 0);
 	kernel.update_uniform_as_storage_buffer("lattice_buffer_target", lattice_target, 0);
+	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 	kernel.update_uniform("lattice_resolution", resolution);
 	
 	kernel.dispatch_thread(resolution.x * resolution.y * get_velocity_count(), 1, 1);

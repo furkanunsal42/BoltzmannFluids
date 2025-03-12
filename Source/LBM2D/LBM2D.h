@@ -59,5 +59,6 @@ private:
 	bool is_programs_compiled = false;
 	std::shared_ptr<ComputeProgram> lbm2d_stream;
 
+	std::unique_ptr<UniformBuffer> lattice_velocity_set_buffer = nullptr;
 	std::unique_ptr<GraphicsOperation> operation = std::make_unique<GraphicsOperation>();
 };
