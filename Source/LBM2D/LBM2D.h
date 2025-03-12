@@ -37,9 +37,9 @@ private:
 	
 	std::vector<std::pair<std::string, std::string>> _generate_shader_macros();
 	
-	void _stream(double time_milliseconds);
-	void _collide(double time_milliseconds);
-	void _apply_boundry_conditions(double time_milliseconds);
+	void _stream();
+	void _collide();
+	void _apply_boundry_conditions();
 	void _generate_lattice_buffer();
 
 	double total_time_elapsed_ms = 0;

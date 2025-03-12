@@ -25,7 +25,7 @@ void LBM2D::iterate_time(double time_milliseconds)
 {
 	total_time_elapsed_ms += time_milliseconds;
 
-	_stream(time_milliseconds);
+	_stream();
 	//_collide(time_milliseconds);
 	//_apply_boundry_conditions(time_milliseconds);
 
@@ -150,7 +150,7 @@ std::vector<std::pair<std::string, std::string>> LBM2D::_generate_shader_macros(
 	return definitions;
 }
 
-void LBM2D::_stream(double time_milliseconds)
+void LBM2D::_stream()
 {
 	compile_shaders();
 
