@@ -10,13 +10,13 @@
 
 class LBM2D {
 public:
-	
+
 	void compile_shaders();
 	
 	void generate_lattice(glm::ivec2 resolution, glm::vec2 volume_dimentions_meters);
-
-	void iterate_time(double time_milliseconds);
-	double get_total_time_elapsed_ms();
+	
+	void iterate_time(std::chrono::duration<double, std::milli> time);
+	std::chrono::duration<double, std::milli> get_total_time_elapsed();
 
 	void set_floating_point_accuracy(FloatingPointAccuracy floating_point_accuracy);
 	FloatingPointAccuracy get_floating_point_accuracy();
@@ -42,7 +42,7 @@ private:
 	void _apply_boundry_conditions();
 	void _generate_lattice_buffer();
 
-	double total_time_elapsed_ms = 0;
+	std::chrono::duration<double, std::milli> total_time_elapsed;
 	VelocitySet velocity_set = D2Q9;
 	FloatingPointAccuracy floating_point_accuracy = fp16;
 
@@ -58,6 +58,7 @@ private:
 
 	bool is_programs_compiled = false;
 	std::shared_ptr<ComputeProgram> lbm2d_stream;
+	std::shared_ptr<ComputeProgram> lbm2d_collide;
 
 	std::unique_ptr<UniformBuffer> lattice_velocity_set_buffer = nullptr;
 	std::unique_ptr<GraphicsOperation> operation = std::make_unique<GraphicsOperation>();

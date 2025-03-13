@@ -9,6 +9,7 @@ void LBM2D::compile_shaders()
 	auto definitions = _generate_shader_macros();
 
 	lbm2d_stream = std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "stream.comp"), definitions);
+	lbm2d_collide = std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "collide.comp"), definitions);
 
 	is_programs_compiled = true;
 }
@@ -21,20 +22,20 @@ void LBM2D::generate_lattice(glm::ivec2 resolution, glm::vec2 volume_dimentions_
 	_generate_lattice_buffer();
 }
 
-void LBM2D::iterate_time(double time_milliseconds)
+void LBM2D::iterate_time(std::chrono::duration<double, std::milli> deltatime)
 {
-	total_time_elapsed_ms += time_milliseconds;
+	total_time_elapsed += deltatime;
 
 	_stream();
-	//_collide(time_milliseconds);
+	_collide();
 	//_apply_boundry_conditions(time_milliseconds);
 
 	_swap_lattice_buffers();
 }
 
-double LBM2D::get_total_time_elapsed_ms()
+std::chrono::duration<double, std::milli> LBM2D::get_total_time_elapsed()
 {
-	return total_time_elapsed_ms;
+	return total_time_elapsed;
 }
 
 void LBM2D::set_floating_point_accuracy(FloatingPointAccuracy floating_point_accuracy)
@@ -67,6 +68,11 @@ VelocitySet LBM2D::get_velocity_set()
 
 void LBM2D::copy_to_texture_velocity_index(Texture2D& target_texture, int32_t velocity_index)
 {
+	if (_get_lattice_source() == nullptr) {
+		std::cout << "[LBM Error] LBM2D::copy_to_texture_velocity_index() is called but lattice wasn't generated" << std::endl;
+		ASSERT(false);
+	}
+	
 	if (velocity_index < 0 || velocity_index >= get_velocity_count()) {
 		std::cout << "[LBM Error] LBM2D::copy_to_texture_velocity_index() is called but given index is out of bounds" << std::endl;
 		ASSERT(false);
@@ -77,20 +83,15 @@ void LBM2D::copy_to_texture_velocity_index(Texture2D& target_texture, int32_t ve
 	//	ASSERT(false);
 	//}
 
-	operation->set_constant("texture_resolution", target_texture.get_size());
-	operation->set_constant("velocity_count_per_voxel", get_velocity_count());
-	operation->set_constant("velocity_index", velocity_index);
+	operation->push_constant("texture_resolution", target_texture.get_size());
+	operation->push_constant("velocity_count_per_voxel", get_velocity_count());
+	operation->push_constant("velocity_index", velocity_index);
 
 	operation->compute(
 		target_texture,
-		*lattice0, "float",
+		*_get_lattice_source(), "float",
 		"source[(id.y * texture_resolution.x + id.x) * velocity_count_per_voxel + velocity_index]"
 	);
-}
-
-void LBM2D::copy_to_texture_velocity_total(Texture2D& target_texture)
-{
-	
 }
 
 void LBM2D::_generate_lattice_buffer()
@@ -101,6 +102,9 @@ void LBM2D::_generate_lattice_buffer()
 	lattice0 = std::make_shared<Buffer>(total_buffer_size_in_bytes);
 	lattice1 = std::make_shared<Buffer>(total_buffer_size_in_bytes);
 	
+	lattice0->clear(.5f);
+	lattice1->clear(.5f);
+
 	lattice_velocity_set_buffer = std::make_unique<UniformBuffer>();
 	lattice_velocity_set_buffer->push_variable_array(get_velocity_count()); // a vec4 for every velocity direction
 	
@@ -123,6 +127,32 @@ std::shared_ptr<Buffer> LBM2D::_get_lattice_target()
 void LBM2D::_swap_lattice_buffers()
 {
 	is_lattice_0_is_source = !is_lattice_0_is_source;
+}
+
+void LBM2D::copy_to_texture_density(Texture2D& target_texture)
+{
+	if (_get_lattice_source() == nullptr) {
+		std::cout << "[LBM Error] LBM2D::copy_to_texture_density() is called but lattice wasn't generated" << std::endl;
+		ASSERT(false);
+	}
+
+	operation->push_constant("texture_resolution", target_texture.get_size());
+	operation->push_constant("velocity_count_per_voxel", get_velocity_count());
+
+	operation->set_precomputation_statement(
+		"float compute_density(uvec2 pixel_id) {"
+		"	float density = 0;"
+		"	for (int velocity_index = 0; velocity_index < velocity_count_per_voxel; velocity_index++)"
+		"		density += source[(pixel_id.y * texture_resolution.x + pixel_id.x) * velocity_count_per_voxel + velocity_index];"
+		"	return density;"
+		"}"
+	);
+
+	operation->compute(
+		target_texture,
+		*_get_lattice_source(), "float",
+		"compute_density(id.xy)"
+	);
 }
 
 glm::ivec2 LBM2D::get_resolution()
@@ -165,4 +195,23 @@ void LBM2D::_stream()
 	kernel.update_uniform("lattice_resolution", resolution);
 	
 	kernel.dispatch_thread(resolution.x * resolution.y * get_velocity_count(), 1, 1);
+}
+
+void LBM2D::_collide()
+{
+	compile_shaders();
+
+	ComputeProgram& kernel = *lbm2d_collide;
+
+	Buffer& lattice_source = *_get_lattice_source();
+	Buffer& lattice_target = *_get_lattice_target();
+
+	kernel.update_uniform_as_storage_buffer("lattice_buffer_source", lattice_target, 0);
+	kernel.update_uniform_as_storage_buffer("lattice_buffer_target", lattice_target, 0);
+	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
+	kernel.update_uniform("lattice_resolution", resolution);
+	kernel.update_uniform("lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3)));
+	kernel.update_uniform("relaxation_time", 0.01f);
+
+	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
 }
