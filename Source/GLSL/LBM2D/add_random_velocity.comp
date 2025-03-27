@@ -1,0 +1,100 @@
+#<compute shader>
+
+#version 460 core
+
+#define D2Q9 0
+#define D3Q15 1
+#define D3Q19 2
+#define D3Q27 3
+
+#define fp16 0
+#define fp32 1
+
+#define floating_point_accuracy fp32
+#define velocity_set D2Q9
+
+#if velocity_set == D2Q9
+	#define volume_dimentionality 2
+	#define velocity_count 9
+#elif velocity_set == D3Q15
+	#define volume_dimentionality 3
+	#define velocity_count 15
+#elif velocity_set == D3Q19
+	#define volume_dimentionality 3
+	#define velocity_count 19
+#elif velocity_set == D3Q27
+	#define volume_dimentionality 3
+	#define velocity_count 27
+#else
+	#error "velocity set is not supported"
+#endif
+
+#if floating_point_accuracy == fp32
+#else
+	#error "other floating point systems than fp32 aren't supported"
+#endif
+
+#define id gl_GlobalInvocationID
+
+layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+layout(std430, binding = 0) buffer lattice_buffer {
+	float[] lattice;
+};
+
+uniform ivec2 lattice_resolution;
+
+uniform ivec2 lattice_region_begin;
+uniform ivec2 lattice_region_end;
+
+uniform int velocity_id;
+uniform float amplitude;
+
+// A single iteration of Bob Jenkins' One-At-A-Time hashing algorithm.
+uint hash( uint x ) {
+    x += ( x << 10u );
+    x ^= ( x >>  6u );
+    x += ( x <<  3u );
+    x ^= ( x >> 11u );
+    x += ( x << 15u );
+    return x;
+}
+
+// Compound versions of the hashing algorithm I whipped together.
+uint hash( uvec2 v ) { return hash( v.x ^ hash(v.y)                         ); }
+uint hash( uvec3 v ) { return hash( v.x ^ hash(v.y) ^ hash(v.z)             ); }
+uint hash( uvec4 v ) { return hash( v.x ^ hash(v.y) ^ hash(v.z) ^ hash(v.w) ); }
+
+// Construct a float with half-open range [0:1] using low 23 bits.
+// All zeroes yields 0.0, all ones yields the next smallest representable value below 1.0.
+float floatConstruct( uint m ) {
+    const uint ieeeMantissa = 0x007FFFFFu; // binary32 mantissa bitmask
+    const uint ieeeOne      = 0x3F800000u; // 1.0 in IEEE binary32
+
+    m &= ieeeMantissa;                     // Keep only mantissa bits (fractional part)
+    m |= ieeeOne;                          // Add fractional part to 1.0
+
+    float  f = uintBitsToFloat( m );       // Range [1:2]
+    return f - 1.0;                        // Range [0:1]
+}
+
+// Pseudo-random value in half-open range [-1:1].
+float random( float x ) { return 2*floatConstruct(hash(floatBitsToUint(x))-1); }
+float random( vec2  v ) { return 2*floatConstruct(hash(floatBitsToUint(v))-1); }
+float random( vec3  v ) { return 2*floatConstruct(hash(floatBitsToUint(v))-1); }
+float random( vec4  v ) { return 2*floatConstruct(hash(floatBitsToUint(v))-1); }
+
+void main(){
+	ivec2 begin = min(min(lattice_region_begin, lattice_region_end), lattice_resolution);
+	ivec2 end = max(max(lattice_region_begin, lattice_region_end), ivec2(0));
+	
+	int begin_id = begin.y * lattice_resolution.x + begin.x;
+	int end_id = end.y * lattice_resolution.x + end.x;
+	int pixel_id = int(id.x);
+	ivec2 pixel_coord = ivec2(pixel_id.x % lattice_resolution.x, pixel_id.x / lattice_resolution.x);
+	
+	if (any(greaterThanEqual(pixel_coord, end)) || any(lessThan(pixel_coord, begin)))
+		return;
+	
+	lattice[pixel_id * velocity_count + velocity_id] += random(float(id.x) / lattice_resolution.x / lattice_resolution.y) * amplitude;
+}

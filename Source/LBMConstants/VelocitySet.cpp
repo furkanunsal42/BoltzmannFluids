@@ -57,12 +57,12 @@ std::vector<glm::vec4> get_velosity_vectors(VelocitySet velocity_set)
         return{
             glm::vec4( 0,  0,  0,  4.0 / 9),
             glm::vec4( 1,  0,  0,  1.0 / 9),
-            glm::vec4( 0,  1,  0,  1.0 / 9),
             glm::vec4(-1,  0,  0,  1.0 / 9),
+            glm::vec4( 0,  1,  0,  1.0 / 9),
             glm::vec4( 0, -1,  0,  1.0 / 9),
             glm::vec4( 1,  1,  0,  1.0 / 36),
-            glm::vec4(-1,  1,  0,  1.0 / 36),
             glm::vec4(-1, -1,  0,  1.0 / 36),
+            glm::vec4(-1,  1,  0,  1.0 / 36),
             glm::vec4( 1, -1,  0,  1.0 / 36)
         };
     case D3Q15:

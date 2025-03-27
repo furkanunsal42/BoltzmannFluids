@@ -1,7 +1,6 @@
 #<compute shader>
 
 #version 460 core
-#extension NV_shader_atomic_float : require
 
 #define D2Q9 0
 #define D3Q15 1
@@ -43,12 +42,12 @@ layout(std140, binding = 0) uniform velocity_set_buffer {
 	vec4[velocity_count] lattice_velocity_set;
 };
 
-layout(std430, binding = 1) buffer lattice_buffer_source {
-	float[] lattice_source;
+layout(std430, binding = 1) buffer lattice_buffer {
+	float[] lattice;
 };
 
-layout(std430, binding = 2) buffer lattice_buffer_target {
-	float[] lattice_target;
+layout(std430, binding = 2) buffer boundries_buffer {
+	int[] boundries;
 };
 
 uniform ivec2 lattice_resolution;
@@ -61,29 +60,33 @@ int get_inverse_lattice_direction_index(int lattice_velocity_index){
 	return is_odd ? lattice_velocity_index + 1 : lattice_velocity_index - 1;
 }
 
-ivec2 positive_modulo(ivec2 i, ivec2 n){
-	return ivec2(mod((mod(i, n) + n), n));
+bool get_boundry(ivec2 pixel_coord) {
+	int boundry = 0;
+	int pixel_id = pixel_coord.y * lattice_resolution.x + pixel_coord.x;
+	int byte_id = pixel_id / 32;
+	int bit_id = pixel_id % 32;
+	return (boundries[byte_id] & 1 << bit_id) != 0;
 }
 
 void main(){
-	if (id.x >= lattice_resolution.x * lattice_resolution.y * velocity_count)
+	
+	if (id.x >= lattice_resolution.x * lattice_resolution.y)
 		return;
-
-	int pixel_id = int(id.x) / velocity_count;
-	int velocity_id = int(id.x) % velocity_count;
+	
+	int pixel_id = int(id.x);
 	ivec2 pixel_coord = ivec2(pixel_id.x % lattice_resolution.x, pixel_id.x / lattice_resolution.x);
 	
-	ivec2 source_pixel_coord = pixel_coord - ivec2(lattice_velocity_set[velocity_id].xy);
-	source_pixel_coord = positive_modulo(source_pixel_coord, lattice_resolution);
+	if (!get_boundry(pixel_coord))
+		return;
 
-	int source_pixel_id = source_pixel_coord.y * lattice_resolution.x + source_pixel_coord.x;
+	for (int velocity_id = 1; velocity_id < velocity_count; velocity_id+=2){
 	
-	// for debug
-	//int inv_velocity_id = get_inverse_lattice_direction_index(velocity_id);
-	//if (pixel_coord == ivec2(95, 0) && velocity_id == 1){
-	//	lattice_target[id.x] = 32;
-	//	return;
-	//}
-
-	lattice_target[id.x] = lattice_source[source_pixel_id * velocity_count + velocity_id];
+		int inv_velocity_id = get_inverse_lattice_direction_index(velocity_id);
+		
+		float value_a = lattice[pixel_id * velocity_count + velocity_id];
+		float value_b = lattice[pixel_id * velocity_count + inv_velocity_id];
+	
+		lattice[pixel_id * velocity_count + velocity_id] = value_b;
+		lattice[pixel_id * velocity_count + inv_velocity_id] = value_a;
+	}
 }
