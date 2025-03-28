@@ -47,7 +47,7 @@ uniform ivec2 lattice_resolution;
 uniform ivec2 lattice_region_begin;
 uniform ivec2 lattice_region_end;
 
-uniform int velocity_id;
+uniform int population_id;
 uniform float amplitude;
 
 // A single iteration of Bob Jenkins' One-At-A-Time hashing algorithm.
@@ -96,5 +96,5 @@ void main(){
 	if (any(greaterThanEqual(pixel_coord, end)) || any(lessThan(pixel_coord, begin)))
 		return;
 	
-	lattice[pixel_id * velocity_count + velocity_id] += random(float(id.x) / lattice_resolution.x / lattice_resolution.y) * amplitude;
+	lattice[pixel_id * velocity_count + population_id] += random(float(id.x) / lattice_resolution.x / lattice_resolution.y) * amplitude;
 }

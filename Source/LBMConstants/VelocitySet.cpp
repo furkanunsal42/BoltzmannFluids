@@ -18,7 +18,7 @@ int32_t get_VelocitySet_dimention(VelocitySet velocity_set)
     std::cout << "[LBM Error] get_VelocitySet_dimention() is called but given velocity_set is not supported" << std::endl;
 }
 
-int32_t get_VelocitySet_velocity_count(VelocitySet velocity_set)
+int32_t get_VelocitySet_vector_count(VelocitySet velocity_set)
 {
     switch (velocity_set) {
     case D2Q9:
@@ -31,7 +31,7 @@ int32_t get_VelocitySet_velocity_count(VelocitySet velocity_set)
         return 27;
     }
 
-    std::cout << "[LBM Error] get_VelocitySet_velocity_count() is called but given velocity_set is not supported" << std::endl;
+    std::cout << "[LBM Error] get_VelocitySet_vector_count() is called but given velocity_set is not supported" << std::endl;
 }
 
 std::string get_VelocitySet_to_macro(VelocitySet velocity_set)

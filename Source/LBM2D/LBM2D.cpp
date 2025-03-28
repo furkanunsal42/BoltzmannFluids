@@ -8,12 +8,12 @@ void LBM2D::compile_shaders()
 
 	auto definitions = _generate_shader_macros();
 
-	lbm2d_stream				= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "stream.comp"), definitions);
-	lbm2d_collide				= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "collide.comp"), definitions);
-	lbm2d_boundry_condition		= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "boundry_condition.comp"), definitions);
-	lbm2d_set_velocity			= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "set_velocity.comp"), definitions);
-	lbm2d_copy_curl				= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "copy_curl.comp"), definitions);
-	lbm2d_add_random_velocity	= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "add_random_velocity.comp"), definitions);
+	lbm2d_stream					= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "stream.comp"), definitions);
+	lbm2d_collide					= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "collide.comp"), definitions);
+	lbm2d_boundry_condition			= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "boundry_condition.comp"), definitions);
+	lbm2d_set_population			= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "set_population.comp"), definitions);
+	lbm2d_copy_velocity_magnitude	= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "copy_velocity_magnitude.comp"), definitions);
+	lbm2d_add_random_population		= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "add_random_population.comp"), definitions);
 	is_programs_compiled = true;
 }
 
@@ -25,13 +25,21 @@ void LBM2D::generate_lattice(glm::ivec2 resolution, glm::vec2 volume_dimentions_
 	_generate_lattice_buffer();
 }
 
-void LBM2D::iterate_time()
+void LBM2D::iterate_time(std::chrono::duration<double, std::milli> deltatime)
 {
-	total_time_elapsed += std::chrono::duration<double, std::milli>(0);
+	deltatime_overflow += deltatime;
+	
+	for (int32_t i = 0; i < 2; i++) {
+		if (deltatime_overflow >= step_deltatime) {
+		
+			_stream();
+			_apply_boundry_conditions();
+			_collide();
 
-	_stream();
-	_apply_boundry_conditions();
-	_collide();
+			deltatime_overflow -= step_deltatime;
+			total_time_elapsed += step_deltatime;
+		}
+	}
 }
 
 std::chrono::duration<double, std::milli> LBM2D::get_total_time_elapsed()
@@ -67,31 +75,41 @@ VelocitySet LBM2D::get_velocity_set()
 	return velocity_set;
 }
 
-void LBM2D::copy_to_texture_velocity_index(Texture2D& target_texture, int32_t velocity_index)
+void LBM2D::set_relaxation_time(float relaxation_time)
+{
+	this->relaxation_time = relaxation_time;
+}
+
+float LBM2D::get_relaxation_time()
+{
+	return relaxation_time;
+}
+
+void LBM2D::copy_to_texture_population(Texture2D& target_texture, int32_t population_index)
 {
 	if (_get_lattice_source() == nullptr) {
-		std::cout << "[LBM Error] LBM2D::copy_to_texture_velocity_index() is called but lattice wasn't generated" << std::endl;
+		std::cout << "[LBM Error] LBM2D::copy_to_texture_population() is called but lattice wasn't generated" << std::endl;
 		ASSERT(false);
 	}
 	
-	if (velocity_index < 0 || velocity_index >= get_velocity_count()) {
-		std::cout << "[LBM Error] LBM2D::copy_to_texture_velocity_index() is called but given index is out of bounds" << std::endl;
+	if (population_index < 0 || population_index >= get_velocity_set_vector_count()) {
+		std::cout << "[LBM Error] LBM2D::copy_to_texture_population() is called but given index is out of bounds" << std::endl;
 		ASSERT(false);
 	}
 
 	//if (Texture2D::ColorTextureFormat_channels(target_texture.get_internal_format_color()) != 1) {
-	//	std::cout << "[LBM Error] LBM2D::copy_to_texture_velocity_index() is called but given texture is not 1 channeled" << std::endl;
+	//	std::cout << "[LBM Error] LBM2D::copy_to_texture_population() is called but given texture is not 1 channeled" << std::endl;
 	//	ASSERT(false);
 	//}
 
 	operation->push_constant("texture_resolution", target_texture.get_size());
-	operation->push_constant("velocity_count_per_voxel", get_velocity_count());
-	operation->push_constant("velocity_index", velocity_index);
+	operation->push_constant("velocity_vector_count", get_velocity_set_vector_count());
+	operation->push_constant("population_index", population_index);
 
 	operation->compute(
 		target_texture,
 		*_get_lattice_source(), "float",
-		"source[(id.y * texture_resolution.x + id.x) * velocity_count_per_voxel + velocity_index]"
+		"source[(id.y * texture_resolution.x + id.x) * velocity_vector_count + population_index]"
 	);
 }
 
@@ -103,13 +121,13 @@ void LBM2D::copy_to_texture_density(Texture2D& target_texture)
 	}
 
 	operation->push_constant("lattice_resolution", resolution);
-	operation->push_constant("velocity_count", get_velocity_count());
+	operation->push_constant("velocity_vector_count", get_velocity_set_vector_count());
 
 	operation->push_precomputation_statement(
 		"float compute_density(uvec2 pixel_id) {"
 		"	float density = 0;"
-		"	for (int velocity_index = 0; velocity_index < velocity_count; velocity_index++)"
-		"		density += source[(pixel_id.y * lattice_resolution.x + pixel_id.x) * velocity_count + velocity_index];"
+		"	for (int velocity_index = 0; velocity_index < velocity_vector_count; velocity_index++)"
+		"		density += source[(pixel_id.y * lattice_resolution.x + pixel_id.x) * velocity_vector_count + velocity_index];"
 		"	return density / 32;"
 		"}"
 	);
@@ -122,25 +140,25 @@ void LBM2D::copy_to_texture_density(Texture2D& target_texture)
 	);
 }
 
-void LBM2D::copy_to_texture_curl(Texture2D& target_texture) {
+void LBM2D::copy_to_texture_velocity_magnetude(Texture2D& target_texture) {
 	if (_get_lattice_source() == nullptr) {
-		std::cout << "[LBM Error] LBM2D::copy_to_texture_curl() is called but lattice wasn't generated" << std::endl;
+		std::cout << "[LBM Error] LBM2D::copy_to_texture_velocity_magnetude() is called but lattice wasn't generated" << std::endl;
 		ASSERT(false);
 	}
 
 	if (boundries == nullptr) {
-		std::cout << "[LBM Error] LBM2D::copy_to_texture_curl() is called but boundries wasn't generated" << std::endl;
+		std::cout << "[LBM Error] LBM2D::copy_to_texture_velocity_magnetude() is called but boundries wasn't generated" << std::endl;
 		ASSERT(false);
 	}
 
 	if (target_texture.get_internal_format_color() != Texture2D::ColorTextureFormat::R32F) {
-		std::cout << "[LBM Error] LBM2D::copy_to_texture_curl() is called but target_texture's format wasn't compatible" << std::endl;
+		std::cout << "[LBM Error] LBM2D::copy_to_texture_velocity_magnetude() is called but target_texture's format wasn't compatible" << std::endl;
 		ASSERT(false);
 	}
 
 	compile_shaders();
 
-	ComputeProgram& kernel = *lbm2d_copy_curl;
+	ComputeProgram& kernel = *lbm2d_copy_velocity_magnitude;
 
 	Buffer& lattice = *_get_lattice_source();
 
@@ -294,7 +312,11 @@ bool LBM2D::get_boundry(glm::ivec2 voxel_coordinate) {
 void LBM2D::_generate_lattice_buffer()
 {
 	size_t voxel_count = resolution.x * resolution.y;
-	size_t total_buffer_size_in_bytes = voxel_count * get_velocity_count() * get_FLoatingPointAccuracy_size_in_bytes(floating_point_accuracy);
+	size_t total_buffer_size_in_bytes = 
+		voxel_count * 
+		get_velocity_set_vector_count() * 
+		get_FloatingPointAccuracy_size_in_bytes(floating_point_accuracy);
+
 	size_t boundry_buffer_size = (size_t)std::ceil(voxel_count / 8.0);
 
 	lattice0 = std::make_shared<Buffer>(total_buffer_size_in_bytes);
@@ -306,7 +328,7 @@ void LBM2D::_generate_lattice_buffer()
 	boundries->clear(0);
 
 	lattice_velocity_set_buffer = std::make_unique<UniformBuffer>();
-	lattice_velocity_set_buffer->push_variable_array(get_velocity_count()); // a vec4 for every velocity direction
+	lattice_velocity_set_buffer->push_variable_array(get_velocity_set_vector_count()); // a vec4 for every velocity direction
 	
 	auto lattice_velocities_vector = get_velosity_vectors(velocity_set);
 	
@@ -334,9 +356,9 @@ glm::ivec2 LBM2D::get_resolution()
 	return resolution;
 }
 
-int32_t LBM2D::get_velocity_count()
+int32_t LBM2D::get_velocity_set_vector_count()
 {
-	return get_VelocitySet_velocity_count(velocity_set);
+	return get_VelocitySet_vector_count(velocity_set);
 }
 
 glm::vec2 LBM2D::get_volume_dimentions_meters()
@@ -344,11 +366,11 @@ glm::vec2 LBM2D::get_volume_dimentions_meters()
 	return volume_dimentions_meters;
 }
 
-void LBM2D::set_velocity(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_coordinate_end, int32_t velocity_index, float value)
+void LBM2D::set_population(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_coordinate_end, int32_t population_index, float value)
 {
 	compile_shaders();
 
-	ComputeProgram& kernel = *lbm2d_set_velocity;
+	ComputeProgram& kernel = *lbm2d_set_population;
 
 	Buffer& lattice = *_get_lattice_source();
 
@@ -356,33 +378,33 @@ void LBM2D::set_velocity(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_coo
 	kernel.update_uniform("lattice_resolution", resolution);
 	kernel.update_uniform("lattice_region_begin", voxel_coordinate_begin);
 	kernel.update_uniform("lattice_region_end", voxel_coordinate_end);
-	kernel.update_uniform("velocity_id", velocity_index);
+	kernel.update_uniform("population_id", population_index);
 	kernel.update_uniform("value", value);
 
 	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
 }
 
-void LBM2D::set_velocity(glm::ivec2 voxel_coordinate, int32_t velocity_index, float value)
+void LBM2D::set_population(glm::ivec2 voxel_coordinate, int32_t population_index, float value)
 {
-	set_velocity(voxel_coordinate, voxel_coordinate + glm::ivec2(1), velocity_index, value);
+	set_population(voxel_coordinate, voxel_coordinate + glm::ivec2(1), population_index, value);
 }
 
-void LBM2D::set_velocity(int32_t velocity_index, float value)
+void LBM2D::set_population(int32_t population_index, float value)
 {
-	set_velocity(glm::ivec2(0), resolution, velocity_index, value);
+	set_population(glm::ivec2(0), resolution, population_index, value);
 }
 
-void LBM2D::set_velocity(float value)
+void LBM2D::set_population(float value)
 {
-	for (int index = 0; index < get_velocity_count(); index++)
-		set_velocity(glm::ivec2(0), resolution, index, value);
+	for (int index = 0; index < get_velocity_set_vector_count(); index++)
+		set_population(glm::ivec2(0), resolution, index, value);
 }
 
-void LBM2D::add_random_velocity(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_coordinate_end, int32_t velocity_index, float amplitude)
+void LBM2D::add_random_population(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_coordinate_end, int32_t population_index, float amplitude)
 {
 	compile_shaders();
 
-	ComputeProgram& kernel = *lbm2d_add_random_velocity;
+	ComputeProgram& kernel = *lbm2d_add_random_population;
 
 	Buffer& lattice = *_get_lattice_source();
 
@@ -390,31 +412,31 @@ void LBM2D::add_random_velocity(glm::ivec2 voxel_coordinate_begin, glm::ivec2 vo
 	kernel.update_uniform("lattice_resolution", resolution);
 	kernel.update_uniform("lattice_region_begin", voxel_coordinate_begin);
 	kernel.update_uniform("lattice_region_end", voxel_coordinate_end);
-	kernel.update_uniform("velocity_id", velocity_index);
+	kernel.update_uniform("population_id", population_index);
 	kernel.update_uniform("amplitude", amplitude);
 
 	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
 }
 
-void LBM2D::add_random_velocity(glm::ivec2 voxel_coordinate, int32_t velocity_index, float value) {
-	add_random_velocity(voxel_coordinate, voxel_coordinate + glm::ivec2(1), velocity_index, value);
+void LBM2D::add_random_population(glm::ivec2 voxel_coordinate, int32_t population_index, float value) {
+	add_random_population(voxel_coordinate, voxel_coordinate + glm::ivec2(1), population_index, value);
 }
 
-void LBM2D::add_random_velocity(int32_t velocity_index, float amplitude) {
-	add_random_velocity(glm::ivec2(0), resolution, velocity_index, amplitude);
+void LBM2D::add_random_population(int32_t population_index, float amplitude) {
+	add_random_population(glm::ivec2(0), resolution, population_index, amplitude);
 
 }
 
-void LBM2D::add_random_velocity(float amplitude) {
-	for (int index = 0; index < get_velocity_count(); index++)
-		add_random_velocity(glm::ivec2(0), resolution, index, amplitude);
+void LBM2D::add_random_population(float amplitude) {
+	for (int index = 0; index < get_velocity_set_vector_count(); index++)
+		add_random_population(glm::ivec2(0), resolution, index, amplitude);
 }
 
 
 std::vector<std::pair<std::string, std::string>> LBM2D::_generate_shader_macros()
 {
 	std::vector<std::pair<std::string, std::string>> definitions{
-		{"floating_point_accuracy", get_FLoatingPointAccuracy_to_macro(floating_point_accuracy)},
+		{"floating_point_accuracy", get_FloatingPointAccuracy_to_macro(floating_point_accuracy)},
 		{"velocity_set", get_VelocitySet_to_macro(velocity_set)},
 	};
 
@@ -435,7 +457,7 @@ void LBM2D::_stream()
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 	kernel.update_uniform("lattice_resolution", resolution);
 	
-	kernel.dispatch_thread(resolution.x * resolution.y * get_velocity_count(), 1, 1);
+	kernel.dispatch_thread(resolution.x * resolution.y * get_velocity_set_vector_count(), 1, 1);
 
 	_swap_lattice_buffers();
 }
@@ -454,8 +476,8 @@ void LBM2D::_collide()
 	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 	kernel.update_uniform("lattice_resolution", resolution);
-	kernel.update_uniform("lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3)));
-	kernel.update_uniform("relaxation_time", 0.52f);
+	//kernel.update_uniform("lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3)));
+	kernel.update_uniform("relaxation_time", relaxation_time);
 
 	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
 

@@ -79,14 +79,14 @@ void main(){
 	if (!get_boundry(pixel_coord))
 		return;
 
-	for (int velocity_id = 1; velocity_id < velocity_count; velocity_id+=2){
+	for (int population_id = 1; population_id < velocity_count; population_id+=2){
 	
-		int inv_velocity_id = get_inverse_lattice_direction_index(velocity_id);
+		int inv_population_id = get_inverse_lattice_direction_index(population_id);
 		
-		float value_a = lattice[pixel_id * velocity_count + velocity_id];
-		float value_b = lattice[pixel_id * velocity_count + inv_velocity_id];
+		float value_a = lattice[pixel_id * velocity_count + population_id];
+		float value_b = lattice[pixel_id * velocity_count + inv_population_id];
 	
-		lattice[pixel_id * velocity_count + velocity_id] = value_b;
-		lattice[pixel_id * velocity_count + inv_velocity_id] = value_a;
+		lattice[pixel_id * velocity_count + population_id] = value_b;
+		lattice[pixel_id * velocity_count + inv_population_id] = value_a;
 	}
 }

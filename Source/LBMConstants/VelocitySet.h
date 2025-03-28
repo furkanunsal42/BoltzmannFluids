@@ -14,7 +14,7 @@ enum VelocitySet {
 };
 
 int32_t get_VelocitySet_dimention(VelocitySet velocity_set);
-int32_t get_VelocitySet_velocity_count(VelocitySet velocity_set);
+int32_t get_VelocitySet_vector_count(VelocitySet velocity_set);
 std::string get_VelocitySet_to_macro(VelocitySet velocity_set);
 
 std::vector<glm::vec4> get_velosity_vectors(VelocitySet velocity_set);

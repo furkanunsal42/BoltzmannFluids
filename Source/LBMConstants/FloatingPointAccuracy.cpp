@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-int32_t get_FLoatingPointAccuracy_size_in_bytes(FloatingPointAccuracy floating_accuracy)
+int32_t get_FloatingPointAccuracy_size_in_bytes(FloatingPointAccuracy floating_accuracy)
 {
 	switch (floating_accuracy) {
 	case FloatingPointAccuracy::fp16:
@@ -11,10 +11,10 @@ int32_t get_FLoatingPointAccuracy_size_in_bytes(FloatingPointAccuracy floating_a
 		return 4;
 	}
 
-	std::cout << "[LBM Error] get_FLoatingPointAccuracy_size_in_bytes() but given floating_accuracy is not supported" << std::endl;
+	std::cout << "[LBM Error] get_FloatingPointAccuracy_size_in_bytes() but given floating_accuracy is not supported" << std::endl;
 }
 
-std::string get_FLoatingPointAccuracy_to_macro(FloatingPointAccuracy floating_accuracy)
+std::string get_FloatingPointAccuracy_to_macro(FloatingPointAccuracy floating_accuracy)
 {
 	switch (floating_accuracy) {
 	case FloatingPointAccuracy::fp16:
@@ -23,6 +23,6 @@ std::string get_FLoatingPointAccuracy_to_macro(FloatingPointAccuracy floating_ac
 		return "fp32";
 	}
 
-	std::cout << "[LBM Error] get_FLoatingPointAccuracy_to_macro() but given floating_accuracy is not supported" << std::endl;
+	std::cout << "[LBM Error] get_FloatingPointAccuracy_to_macro() but given floating_accuracy is not supported" << std::endl;
 
 }
