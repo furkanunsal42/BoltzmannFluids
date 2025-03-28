@@ -78,11 +78,11 @@ float floatConstruct( uint m ) {
     return f - 1.0;                        // Range [0:1]
 }
 
-// Pseudo-random value in half-open range [-1:1].
-float random( float x ) { return 2*floatConstruct(hash(floatBitsToUint(x))-1); }
-float random( vec2  v ) { return 2*floatConstruct(hash(floatBitsToUint(v))-1); }
-float random( vec3  v ) { return 2*floatConstruct(hash(floatBitsToUint(v))-1); }
-float random( vec4  v ) { return 2*floatConstruct(hash(floatBitsToUint(v))-1); }
+// Pseudo-random value in half-open range [0:1].
+float random( float x ) { return floatConstruct(hash(floatBitsToUint(x))); }
+float random( vec2  v ) { return floatConstruct(hash(floatBitsToUint(v))); }
+float random( vec3  v ) { return floatConstruct(hash(floatBitsToUint(v))); }
+float random( vec4  v ) { return floatConstruct(hash(floatBitsToUint(v))); }
 
 void main(){
 	ivec2 begin = min(min(lattice_region_begin, lattice_region_end), lattice_resolution);

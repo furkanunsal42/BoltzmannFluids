@@ -101,6 +101,7 @@ private:
 	std::shared_ptr<ComputeProgram> lbm2d_set_population = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_add_random_population = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_copy_velocity_magnitude = nullptr;
+	std::shared_ptr<ComputeProgram> lbm2d_copy_velocity_total = nullptr;
 	std::unique_ptr<UniformBuffer> lattice_velocity_set_buffer = nullptr;
 	std::unique_ptr<GraphicsOperation> operation = std::make_unique<GraphicsOperation>();
 };

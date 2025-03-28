@@ -13,6 +13,7 @@ void LBM2D::compile_shaders()
 	lbm2d_boundry_condition			= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "boundry_condition.comp"), definitions);
 	lbm2d_set_population			= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "set_population.comp"), definitions);
 	lbm2d_copy_velocity_magnitude	= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "copy_velocity_magnitude.comp"), definitions);
+	lbm2d_copy_velocity_total		= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "copy_velocity_total.comp"), definitions);
 	lbm2d_add_random_population		= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "add_random_population.comp"), definitions);
 	is_programs_compiled = true;
 }
@@ -29,7 +30,7 @@ void LBM2D::iterate_time(std::chrono::duration<double, std::milli> deltatime)
 {
 	deltatime_overflow += deltatime;
 	
-	for (int32_t i = 0; i < 2; i++) {
+	for (int32_t i = 0; i < 3; i++) {
 		if (deltatime_overflow >= step_deltatime) {
 		
 			_stream();
@@ -138,6 +139,39 @@ void LBM2D::copy_to_texture_density(Texture2D& target_texture)
 		"compute_density(id.xy)",
 		glm::ivec3(0, 0, 0), glm::ivec3(resolution.x, resolution.y, 1)
 	);
+}
+
+void LBM2D::copy_to_texture_velocity_vector(Texture2D& target_texture)
+{
+	if (_get_lattice_source() == nullptr) {
+		std::cout << "[LBM Error] LBM2D::copy_to_texture_velocity_vector() is called but lattice wasn't generated" << std::endl;
+		ASSERT(false);
+	}
+
+	if (boundries == nullptr) {
+		std::cout << "[LBM Error] LBM2D::copy_to_texture_velocity_vector() is called but boundries wasn't generated" << std::endl;
+		ASSERT(false);
+	}
+
+	if (target_texture.get_internal_format_color() != Texture2D::ColorTextureFormat::RGBA32F) {
+		std::cout << "[LBM Error] LBM2D::copy_to_texture_velocity_vector() is called but target_texture's format wasn't compatible" << std::endl;
+		ASSERT(false);
+	}
+
+	compile_shaders();
+
+	ComputeProgram& kernel = *lbm2d_copy_velocity_total;
+
+	Buffer& lattice = *_get_lattice_source();
+
+	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
+	kernel.update_uniform_as_storage_buffer("lattice_buffer", lattice, 0);
+	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+	kernel.update_uniform_as_image("target_texture", target_texture, 0);
+	kernel.update_uniform("lattice_resolution", resolution);
+	kernel.update_uniform("texture_resolution", target_texture.get_size());
+
+	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
 }
 
 void LBM2D::copy_to_texture_velocity_magnetude(Texture2D& target_texture) {
