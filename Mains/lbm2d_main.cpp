@@ -5,7 +5,7 @@ using namespace std::chrono_literals;
 
 int main() {
 
-	glm::ivec2 simulation_resolution(512, 512);
+	glm::ivec2 simulation_resolution(1024);
 
 	WindowDescription desc;
 	desc.w_scale_framebuffer_size = false;
@@ -38,7 +38,7 @@ int main() {
 
 	while (!window.should_close()) {
 		double deltatime = window.handle_events(true);
-		lbm2d_solver.iterate_time(std::chrono::duration<double, std::milli>(deltatime*4));
+		lbm2d_solver.iterate_time(std::chrono::duration<double, std::milli>(deltatime*10));
 		
 		if (window.get_key(Window::Key::NUM_1) == Window::PressAction::PRESS)
 			display_mode = 1;

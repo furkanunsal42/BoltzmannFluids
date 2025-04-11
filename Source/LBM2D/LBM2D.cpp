@@ -110,8 +110,9 @@ void LBM2D::initialize_fields(std::function<void(glm::ivec2, FluidProperties&)> 
 	// compute equilibrium and non-equilibrium populations according to chapter 5.
 
 	// TEMP
-	set_population(0.7);
-	add_random_population(1, 0.7f);
+	lbm2d_solver.set_population(0.7);
+	lbm2d_solver.add_random_population(1, 0.7f);
+
 }
 
 void LBM2D::copy_to_texture_population(Texture2D& target_texture, int32_t population_index)

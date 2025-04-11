@@ -36,7 +36,7 @@ public:
 		glm::vec3 force = glm::vec3(0);
 		float density = 1;
 		float temperature = 20;
-		float ink = 0;
+		float scalar_quantity = 0;
 		bool is_boundry = false;
 	};
 	void initialize_fields(
