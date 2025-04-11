@@ -18,10 +18,9 @@ void LBM2D::compile_shaders()
 	is_programs_compiled = true;
 }
 
-void LBM2D::generate_lattice(glm::ivec2 resolution, glm::vec2 volume_dimentions_meters)
+void LBM2D::generate_lattice(glm::ivec2 resolution)
 {
 	this->resolution = resolution;
-	this->volume_dimentions_meters = volume_dimentions_meters;
 
 	_generate_lattice_buffer();
 }
@@ -84,6 +83,35 @@ void LBM2D::set_relaxation_time(float relaxation_time)
 float LBM2D::get_relaxation_time()
 {
 	return relaxation_time;
+}
+
+void LBM2D::initialize_fields(std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda, glm::ivec2 resolution, float relaxation_time, VelocitySet velocity_set, FloatingPointAccuracy fp_accuracy)
+{
+	set_relaxation_time(relaxation_time);
+	set_velocity_set(velocity_set);
+	set_floating_point_accuracy(fp_accuracy);
+	generate_lattice(resolution);
+
+	std::vector<glm::ivec3> velocity_field;
+
+	size_t voxel_count = resolution.x * resolution.y;
+	velocity_field.reserve(voxel_count);
+
+	for (int32_t x = 0; x < resolution.x; x++) {
+		for (int32_t y = 0; y < resolution.y; y++) {
+			FluidProperties properties;
+			initialization_lambda(glm::ivec2(x, y), properties);
+			
+			velocity_field.push_back(properties.velocity);
+			set_boundry(glm::ivec2(x, y), properties.is_boundry);
+		}
+	}
+
+	// compute equilibrium and non-equilibrium populations according to chapter 5.
+
+	// TEMP
+	set_population(0.7);
+	add_random_population(1, 0.7f);
 }
 
 void LBM2D::copy_to_texture_population(Texture2D& target_texture, int32_t population_index)
@@ -393,11 +421,6 @@ glm::ivec2 LBM2D::get_resolution()
 int32_t LBM2D::get_velocity_set_vector_count()
 {
 	return get_VelocitySet_vector_count(velocity_set);
-}
-
-glm::vec2 LBM2D::get_volume_dimentions_meters()
-{
-	return volume_dimentions_meters;
 }
 
 void LBM2D::set_population(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_coordinate_end, int32_t population_index, float value)

@@ -8,27 +8,24 @@ int main() {
 	glm::ivec2 simulation_resolution(512, 512);
 
 	WindowDescription desc;
+	desc.w_scale_framebuffer_size = false;
+	desc.w_scale_window_size = false;
 	desc.f_swap_interval = 0;
 	desc.w_resolution = simulation_resolution;
 	Window window(desc);
 
 	LBM2D lbm2d_solver;
 
-	lbm2d_solver.set_velocity_set(VelocitySet::D2Q9);
-	lbm2d_solver.set_floating_point_accuracy(FloatingPointAccuracy::fp32);
-
-	lbm2d_solver.generate_lattice(glm::ivec2(simulation_resolution.x, simulation_resolution.y), glm::vec2(1));
-	lbm2d_solver.set_relaxation_time(0.53f);
-
-	for (int x = 0; x < simulation_resolution.x; x++) {
-		for (int y = 0; y < simulation_resolution.y; y++) {
-			if (glm::distance(glm::vec2(x, y), glm::vec2(simulation_resolution) / glm::vec2(4, 2)) < 32)
-				lbm2d_solver.set_boundry(glm::ivec2(x, y), true);
-		}
-	}
-
-	lbm2d_solver.set_population(0.7);
-	lbm2d_solver.add_random_population(1, 0.7f);
+	lbm2d_solver.initialize_fields(
+		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
+			properties.is_boundry = glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution) / glm::vec2(4, 2)) < 32;
+			properties.velocity = glm::vec3(1, 0, 0);
+		},
+		glm::ivec2(simulation_resolution),
+		0.53f,
+		VelocitySet::D2Q9,
+		FloatingPointAccuracy::fp32
+	);
 
 	Texture2D texture_1c(simulation_resolution.x, simulation_resolution.y, Texture2D::ColorTextureFormat::R32F, 1, 0, 0);
 	Texture2D texture_4c(simulation_resolution.x, simulation_resolution.y, Texture2D::ColorTextureFormat::RGBA32F, 1, 0, 0);
@@ -51,6 +48,8 @@ int main() {
 			display_mode = 3;
 		if (window.get_key(Window::Key::NUM_4) == Window::PressAction::PRESS)
 			display_mode = 4;
+		if (window.get_key(Window::Key::ESCAPE) == Window::PressAction::PRESS)
+			window.set_should_close(true);
 
 		if (display_mode == 1) {
 			Texture2D& texture_target = texture_1c;

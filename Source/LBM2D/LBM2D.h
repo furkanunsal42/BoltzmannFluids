@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <stdint.h>
+#include <functional>
 
 #include "LBMConstants/VelocitySet.h"
 #include "LBMConstants/FloatingPointAccuracy.h"
@@ -21,19 +22,47 @@
 
 class LBM2D {
 public:
-
-	void compile_shaders();
 	
-	void generate_lattice(glm::ivec2 resolution, glm::vec2 volume_dimentions_meters);
-	
+	// simulation controls
 	void iterate_time(std::chrono::duration<double, std::milli> deltatime);
 	std::chrono::duration<double, std::milli> get_total_time_elapsed();
 
-	void set_floating_point_accuracy(FloatingPointAccuracy floating_point_accuracy);
-	FloatingPointAccuracy get_floating_point_accuracy();
+	glm::ivec2 get_resolution();
+	int32_t get_velocity_set_vector_count();
+
+	// high level field initialization api
+	struct FluidProperties {
+		glm::vec3 velocity = glm::vec3(0);
+		glm::vec3 force = glm::vec3(0);
+		float density = 1;
+		float temperature = 20;
+		float ink = 0;
+		bool is_boundry = false;
+	};
+	void initialize_fields(
+		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
+		glm::ivec2 resolution,
+		float relaxation_time,
+		VelocitySet velocity_set = VelocitySet::D2Q9, 
+		FloatingPointAccuracy fp_accuracy = FloatingPointAccuracy::fp32
+	);
+	
+	// visualization
+	void copy_to_texture_population(Texture2D& target_texture, int32_t population_index);
+	void copy_to_texture_velocity_vector(Texture2D& target_texture);
+	void copy_to_texture_velocity_magnetude(Texture2D& target_texture);
+	void copy_to_texture_density(Texture2D& target_texture);
+	void copy_to_texture_boundries(Texture2D& target_texture);
+
+	// low level field initialization api
+	void compile_shaders(); 
+	void generate_lattice(glm::ivec2 resolution);
 
 	void set_velocity_set(VelocitySet velocity_set);
 	VelocitySet get_velocity_set();
+
+	void set_floating_point_accuracy(FloatingPointAccuracy floating_point_accuracy);
+	FloatingPointAccuracy get_floating_point_accuracy();
 
 	void set_relaxation_time(float relaxation_time);
 	float get_relaxation_time();
@@ -57,16 +86,6 @@ public:
 	void add_random_population(int32_t population_index, float amplitude);
 	void add_random_population(float amplitude);
 
-	void copy_to_texture_population(Texture2D& target_texture, int32_t population_index);
-	void copy_to_texture_velocity_vector(Texture2D& target_texture);
-	void copy_to_texture_velocity_magnetude(Texture2D& target_texture);
-	void copy_to_texture_density(Texture2D& target_texture);
-	void copy_to_texture_boundries(Texture2D& target_texture);
-
-	glm::ivec2 get_resolution();
-	int32_t get_velocity_set_vector_count();
-	glm::vec2 get_volume_dimentions_meters();
-
 private:
 	
 	std::vector<std::pair<std::string, std::string>> _generate_shader_macros();
@@ -83,7 +102,6 @@ private:
 	FloatingPointAccuracy floating_point_accuracy = fp16;
 
 	glm::ivec2 resolution = glm::ivec2(0);
-	glm::vec2 volume_dimentions_meters = glm::vec2(0);
 	float relaxation_time = 0.53f;
 
 	bool is_lattice_0_is_source = true;
