@@ -99,7 +99,7 @@ private:
 	std::chrono::duration<double, std::milli> step_deltatime = std::chrono::duration<double, std::milli>(1);
 	std::chrono::duration<double, std::milli> deltatime_overflow = std::chrono::duration<double, std::milli>(0);
 	VelocitySet velocity_set = D2Q9;
-	FloatingPointAccuracy floating_point_accuracy = fp16;
+	FloatingPointAccuracy floating_point_accuracy = fp32;
 
 	glm::ivec2 resolution = glm::ivec2(0);
 	float relaxation_time = 0.53f;
@@ -116,6 +116,8 @@ private:
 	std::shared_ptr<ComputeProgram> lbm2d_stream = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_collide = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_boundry_condition = nullptr;
+	std::shared_ptr<ComputeProgram> lbm2d_collide_with_precomputed_velocity = nullptr;
+	std::shared_ptr<ComputeProgram> lbm2d_set_equilibrium_populations = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_set_population = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_add_random_population = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_copy_boundries = nullptr;

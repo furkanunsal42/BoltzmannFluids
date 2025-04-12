@@ -8,16 +8,18 @@ void LBM2D::compile_shaders()
 
 	auto definitions = _generate_shader_macros();
 
-	lbm2d_stream					= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "stream.comp"), definitions);
-	lbm2d_collide					= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "collide.comp"), definitions);
-	lbm2d_boundry_condition			= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "boundry_condition.comp"), definitions);
-	lbm2d_set_population			= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "set_population.comp"), definitions);
-	lbm2d_copy_boundries			= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "copy_boundries.comp"), definitions);
-	lbm2d_copy_density 				= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "copy_density.comp"), definitions);
-	lbm2d_copy_population			= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "copy_population.comp"), definitions);
-	lbm2d_copy_velocity_magnitude	= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "copy_velocity_magnitude.comp"), definitions);
-	lbm2d_copy_velocity_total		= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "copy_velocity_total.comp"), definitions);
-	lbm2d_add_random_population		= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "add_random_population.comp"), definitions);
+	lbm2d_stream							= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "stream.comp"), definitions);
+	lbm2d_collide							= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "collide.comp"), definitions);
+	lbm2d_boundry_condition					= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "boundry_condition.comp"), definitions);
+	lbm2d_collide_with_precomputed_velocity	= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "collide_with_precomputed_velocity.comp"), definitions);
+	lbm2d_set_equilibrium_populations		= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "set_equilibrium_populations.comp"), definitions);
+	lbm2d_set_population					= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "set_population.comp"), definitions);
+	lbm2d_copy_boundries					= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "copy_boundries.comp"), definitions);
+	lbm2d_copy_density 						= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "copy_density.comp"), definitions);
+	lbm2d_copy_population					= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "copy_population.comp"), definitions);
+	lbm2d_copy_velocity_magnitude			= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "copy_velocity_magnitude.comp"), definitions);
+	lbm2d_copy_velocity_total				= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "copy_velocity_total.comp"), definitions);
+	lbm2d_add_random_population				= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "add_random_population.comp"), definitions);
 	is_programs_compiled = true;
 }
 
@@ -95,22 +97,30 @@ void LBM2D::initialize_fields(std::function<void(glm::ivec2, FluidProperties&)> 
 	set_floating_point_accuracy(fp_accuracy);
 	generate_lattice(resolution);
 
-	std::vector<glm::ivec3> velocity_field;
+	Buffer velocity_buffer(resolution.x * resolution.y * sizeof(glm::vec3));
+	velocity_buffer.map(Buffer::MapInfo(Buffer::MapInfo::Upload, Buffer::MapInfo::Temporary));
+	glm::vec3* velocity_buffer_data = (glm::vec3*)velocity_buffer.get_mapped_pointer();
 
 	size_t voxel_count = resolution.x * resolution.y;
-	velocity_field.reserve(voxel_count);
 
 	for (int32_t x = 0; x < resolution.x; x++) {
 		for (int32_t y = 0; y < resolution.y; y++) {
 			FluidProperties properties;
 			initialization_lambda(glm::ivec2(x, y), properties);
 			
-			velocity_field.push_back(properties.velocity);
+			velocity_buffer_data[y*resolution.x + x] = properties.velocity;
 			set_boundry(glm::ivec2(x, y), properties.is_boundry);
 		}
 	}
 
 	// compute equilibrium and non-equilibrium populations according to chapter 5.
+	velocity_buffer.unmap();
+	velocity_buffer_data = nullptr;
+
+	ComputeProgram& set_equilibrium_kernel = *lbm2d_set_equilibrium_populations;
+	ComputeProgram& modified_collide_kernel = *lbm2d_collide_with_precomputed_velocity;
+
+
 
 	// TEMP
 	set_population(0.7);
