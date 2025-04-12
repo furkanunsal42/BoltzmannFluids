@@ -12,6 +12,9 @@ void LBM2D::compile_shaders()
 	lbm2d_collide					= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "collide.comp"), definitions);
 	lbm2d_boundry_condition			= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "boundry_condition.comp"), definitions);
 	lbm2d_set_population			= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "set_population.comp"), definitions);
+	lbm2d_copy_boundries			= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "copy_boundries.comp"), definitions);
+	lbm2d_copy_density 				= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "copy_density.comp"), definitions);
+	lbm2d_copy_population			= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "copy_population.comp"), definitions);
 	lbm2d_copy_velocity_magnitude	= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "copy_velocity_magnitude.comp"), definitions);
 	lbm2d_copy_velocity_total		= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "copy_velocity_total.comp"), definitions);
 	lbm2d_add_random_population		= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "add_random_population.comp"), definitions);
@@ -110,9 +113,8 @@ void LBM2D::initialize_fields(std::function<void(glm::ivec2, FluidProperties&)> 
 	// compute equilibrium and non-equilibrium populations according to chapter 5.
 
 	// TEMP
-	lbm2d_solver.set_population(0.7);
-	lbm2d_solver.add_random_population(1, 0.7f);
-
+	set_population(0.7);
+	add_random_population(1, 0.7f);
 }
 
 void LBM2D::copy_to_texture_population(Texture2D& target_texture, int32_t population_index)
@@ -121,26 +123,38 @@ void LBM2D::copy_to_texture_population(Texture2D& target_texture, int32_t popula
 		std::cout << "[LBM Error] LBM2D::copy_to_texture_population() is called but lattice wasn't generated" << std::endl;
 		ASSERT(false);
 	}
-	
-	if (population_index < 0 || population_index >= get_velocity_set_vector_count()) {
-		std::cout << "[LBM Error] LBM2D::copy_to_texture_population() is called but given index is out of bounds" << std::endl;
+
+	if (boundries == nullptr) {
+		std::cout << "[LBM Error] LBM2D::copy_to_texture_population() is called but boundries wasn't generated" << std::endl;
 		ASSERT(false);
 	}
 
-	//if (Texture2D::ColorTextureFormat_channels(target_texture.get_internal_format_color()) != 1) {
-	//	std::cout << "[LBM Error] LBM2D::copy_to_texture_population() is called but given texture is not 1 channeled" << std::endl;
-	//	ASSERT(false);
-	//}
+	if (target_texture.get_internal_format_color() != Texture2D::ColorTextureFormat::R32F) {
+		std::cout << "[LBM Error] LBM2D::copy_to_texture_population() is called but target_texture's format wasn't compatible" << std::endl;
+		ASSERT(false);
+	}
 
-	operation->push_constant("texture_resolution", target_texture.get_size());
-	operation->push_constant("velocity_vector_count", get_velocity_set_vector_count());
-	operation->push_constant("population_index", population_index);
+	if (population_index < 0 || population_index >= get_velocity_set_vector_count()) {
+		std::cout << "[LBM Error] LBM2D::copy_to_texture_population() is called but population_index is out of bounds" << std::endl;
+		ASSERT(false);
+	}
 
-	operation->compute(
-		target_texture,
-		*_get_lattice_source(), "float",
-		"source[(id.y * texture_resolution.x + id.x) * velocity_vector_count + population_index]"
-	);
+
+	compile_shaders();
+
+	ComputeProgram& kernel = *lbm2d_copy_population;
+
+	Buffer& lattice = *_get_lattice_source();
+
+	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
+	kernel.update_uniform_as_storage_buffer("lattice_buffer", lattice, 0);
+	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+	kernel.update_uniform_as_image("target_texture", target_texture, 0);
+	kernel.update_uniform("lattice_resolution", resolution);
+	kernel.update_uniform("texture_resolution", target_texture.get_size());
+	kernel.update_uniform("population_index", population_index);
+
+	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
 }
 
 void LBM2D::copy_to_texture_density(Texture2D& target_texture)
@@ -150,24 +164,30 @@ void LBM2D::copy_to_texture_density(Texture2D& target_texture)
 		ASSERT(false);
 	}
 
-	operation->push_constant("lattice_resolution", resolution);
-	operation->push_constant("velocity_vector_count", get_velocity_set_vector_count());
+	if (boundries == nullptr) {
+		std::cout << "[LBM Error] LBM2D::copy_to_texture_density() is called but boundries wasn't generated" << std::endl;
+		ASSERT(false);
+	}
 
-	operation->push_precomputation_statement(
-		"float compute_density(uvec2 pixel_id) {"
-		"	float density = 0;"
-		"	for (int velocity_index = 0; velocity_index < velocity_vector_count; velocity_index++)"
-		"		density += source[(pixel_id.y * lattice_resolution.x + pixel_id.x) * velocity_vector_count + velocity_index];"
-		"	return density / 32;"
-		"}"
-	);
+	if (target_texture.get_internal_format_color() != Texture2D::ColorTextureFormat::R32F) {
+		std::cout << "[LBM Error] LBM2D::copy_to_texture_density() is called but target_texture's format wasn't compatible" << std::endl;
+		ASSERT(false);
+	}
 
-	operation->compute(
-		target_texture,
-		*_get_lattice_source(), "float",
-		"compute_density(id.xy)",
-		glm::ivec3(0, 0, 0), glm::ivec3(resolution.x, resolution.y, 1)
-	);
+	compile_shaders();
+
+	ComputeProgram& kernel = *lbm2d_copy_density;
+
+	Buffer& lattice = *_get_lattice_source();
+
+	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
+	kernel.update_uniform_as_storage_buffer("lattice_buffer", lattice, 0);
+	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+	kernel.update_uniform_as_image("target_texture", target_texture, 0);
+	kernel.update_uniform("lattice_resolution", resolution);
+	kernel.update_uniform("texture_resolution", target_texture.get_size());
+
+	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
 }
 
 void LBM2D::copy_to_texture_velocity_vector(Texture2D& target_texture)
@@ -237,31 +257,35 @@ void LBM2D::copy_to_texture_velocity_magnetude(Texture2D& target_texture) {
 
 void LBM2D::copy_to_texture_boundries(Texture2D& target_texture)
 {
+	if (_get_lattice_source() == nullptr) {
+		std::cout << "[LBM Error] LBM2D::copy_to_texture_boundries() is called but lattice wasn't generated" << std::endl;
+		ASSERT(false);
+	}
+
 	if (boundries == nullptr) {
 		std::cout << "[LBM Error] LBM2D::copy_to_texture_boundries() is called but boundries wasn't generated" << std::endl;
 		ASSERT(false);
 	}
 
-	if (is_boundries_mapped())
-		unmap_boundries();
+	if (target_texture.get_internal_format_color() != Texture2D::ColorTextureFormat::R32F) {
+		std::cout << "[LBM Error] LBM2D::copy_to_texture_boundries() is called but target_texture's format wasn't compatible" << std::endl;
+		ASSERT(false);
+	}
 
-	operation->push_constant("texture_resolution", target_texture.get_size());
+	compile_shaders();
 
-	operation->push_precomputation_statement(
-		"bool get_boundry(ivec2 pixel_coord) {"
-		"	int boundry = 0;"
-		"	int pixel_id = pixel_coord.y * texture_resolution.x + pixel_coord.x;"
-		"	int byte_id = pixel_id / 32;"
-		"	int bit_id = pixel_id % 32;"
-		"	return (source[byte_id] & 1 << bit_id) != 0;"
-		"}"
-	);
+	ComputeProgram& kernel = *lbm2d_copy_boundries;
 
-	operation->compute(
-		target_texture,
-		*boundries, "int",
-		"int(get_boundry(ivec2(id.xy)))"
-	);
+	Buffer& lattice = *_get_lattice_source();
+
+	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
+	kernel.update_uniform_as_storage_buffer("lattice_buffer", lattice, 0);
+	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+	kernel.update_uniform_as_image("target_texture", target_texture, 0);
+	kernel.update_uniform("lattice_resolution", resolution);
+	kernel.update_uniform("texture_resolution", target_texture.get_size());
+
+	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
 }
 
 void LBM2D::map_boundries()

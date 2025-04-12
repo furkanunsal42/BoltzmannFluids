@@ -1,0 +1,119 @@
+#<compute shader>
+
+#version 460 core
+
+#define D2Q9 0
+#define D3Q15 1
+#define D3Q19 2
+#define D3Q27 3
+
+#define fp16 0
+#define fp32 1
+
+#define floating_point_accuracy fp32
+#define velocity_set D2Q9
+
+#if velocity_set == D2Q9
+	#define volume_dimentionality 2
+	#define velocity_count 9
+#elif velocity_set == D3Q15
+	#define volume_dimentionality 3
+	#define velocity_count 15
+#elif velocity_set == D3Q19
+	#define volume_dimentionality 3
+	#define velocity_count 19
+#elif velocity_set == D3Q27
+	#define volume_dimentionality 3
+	#define velocity_count 27
+#else	
+	#error "velocity set is not supported"
+#endif
+
+#if floating_point_accuracy == fp32
+#else
+	#error "other floating point systems than fp32 aren't supported"
+#endif
+
+#define id gl_GlobalInvocationID
+
+layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+layout(r32f, binding = 0) uniform image2D target_texture;
+
+layout(std140, binding = 0) uniform velocity_set_buffer {
+	vec4[velocity_count] lattice_velocity_set;
+};
+
+layout(std430, binding = 1) buffer lattice_buffer {
+	float[] lattice;
+};
+
+layout(std430, binding = 3) buffer boundries_buffer {
+	int[] boundries;
+};
+
+uniform ivec2 lattice_resolution;
+uniform ivec2 texture_resolution;
+
+float get_lattice_population(ivec2 pixel_coord, int population_index){
+	return lattice[(pixel_coord.y * lattice_resolution.x + pixel_coord.x) * velocity_count + population_index];
+}
+
+void set_lattice_population(ivec2 pixel_coord, int population_index, float value){
+	lattice[(pixel_coord.y * lattice_resolution.x + pixel_coord.x) * velocity_count + population_index] = value;
+}
+
+vec3 get_velocity_set_vector(int velocity_index){
+	return lattice_velocity_set[velocity_index].xyz;
+}
+
+float get_lattice_population_weight(int velocity_index){
+	return lattice_velocity_set[velocity_index].w;
+}
+
+bool get_boundry(ivec2 pixel_coord) {
+	int boundry = 0;
+	int pixel_id = pixel_coord.y * lattice_resolution.x + pixel_coord.x;
+	int byte_id = pixel_id / 32;
+	int bit_id = pixel_id % 32;
+	return (boundries[byte_id] & 1 << bit_id) != 0;
+}
+
+float compute_density(ivec2 pixel_coord){
+	if(get_boundry(pixel_coord))
+		return 0;
+	float density = 0;
+	for (int i = 0; i < velocity_count; i++)
+		density += get_lattice_population(pixel_coord, i);
+	return density;
+}
+
+vec2 compute_velocity(ivec2 pixel_coord, float density){
+	if(get_boundry(pixel_coord))
+		return vec2(0);
+	vec2 velocity = vec2(0);
+	for (int i = 0; i < velocity_count; i++){
+		velocity += get_lattice_population(pixel_coord, i) * get_velocity_set_vector(i).xy;
+	}
+	return velocity / density;
+}
+
+void main(){
+	
+	if (id.x >= lattice_resolution.x * lattice_resolution.y)
+		return;
+	
+	int pixel_id = int(id.x);
+	ivec2 pixel_coord = ivec2(pixel_id % lattice_resolution.x, pixel_id / lattice_resolution.x);
+
+	if (any(greaterThanEqual(pixel_coord, texture_resolution)) || any(lessThan(pixel_coord, ivec2(0))))
+		return;
+
+	int boundry = int(get_boundry(pixel_coord));
+	vec4 write_value;
+	write_value.x = float(boundry != 0);
+	write_value.yz = vec2(0);
+	write_value.a = 1;
+
+	imageStore(target_texture, pixel_coord, write_value);
+}
