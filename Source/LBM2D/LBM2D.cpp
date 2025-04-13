@@ -98,8 +98,13 @@ void LBM2D::initialize_fields(std::function<void(glm::ivec2, FluidProperties&)> 
 	generate_lattice(resolution);
 
 	Buffer velocity_buffer(resolution.x * resolution.y * sizeof(glm::vec3));
+	Buffer density_buffer(resolution.x * resolution.y * sizeof(float));
+	
 	velocity_buffer.map(Buffer::MapInfo(Buffer::MapInfo::Upload, Buffer::MapInfo::Temporary));
-	glm::vec3* velocity_buffer_data = (glm::vec3*)velocity_buffer.get_mapped_pointer();
+	density_buffer.map(Buffer::MapInfo(Buffer::MapInfo::Upload, Buffer::MapInfo::Temporary));
+	
+	glm::vec3* velocity_buffer_data	= (glm::vec3*)velocity_buffer.get_mapped_pointer();
+	float* density_buffer_data		= (float*)density_buffer.get_mapped_pointer();
 
 	size_t voxel_count = resolution.x * resolution.y;
 
@@ -109,22 +114,32 @@ void LBM2D::initialize_fields(std::function<void(glm::ivec2, FluidProperties&)> 
 			initialization_lambda(glm::ivec2(x, y), properties);
 			
 			velocity_buffer_data[y*resolution.x + x] = properties.velocity;
+			density_buffer_data[y*resolution.x + x] = properties.density;
 			set_boundry(glm::ivec2(x, y), properties.is_boundry);
 		}
 	}
 
 	// compute equilibrium and non-equilibrium populations according to chapter 5.
 	velocity_buffer.unmap();
+	density_buffer.unmap();
+	
 	velocity_buffer_data = nullptr;
+	density_buffer_data = nullptr;
 
-	ComputeProgram& set_equilibrium_kernel = *lbm2d_set_equilibrium_populations;
-	ComputeProgram& modified_collide_kernel = *lbm2d_collide_with_precomputed_velocity;
+	//density_buffer.clear(1.0f);
 
+	//set_population(0.7);
+	_set_populations_to_equilibrium(density_buffer, velocity_buffer);
 
+	int32_t relaxation_iteration_count = 0;
+	for (int32_t i = 0; i < relaxation_iteration_count; i++) {
+		_collide_with_precomputed_velocities(velocity_buffer);
+		// _apply_boundry_conditions(); the book doesn't specitfy whether or not to enforce boundry conditions in initialization algorithm
+		_stream();
+	}
 
 	// TEMP
-	set_population(0.7);
-	add_random_population(1, 0.7f);
+	//add_random_population(1, 0.7f);
 }
 
 void LBM2D::copy_to_texture_population(Texture2D& target_texture, int32_t population_index)
@@ -590,6 +605,31 @@ void LBM2D::_apply_boundry_conditions() {
 	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 	kernel.update_uniform("lattice_resolution", resolution);
+
+	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
+}
+
+void LBM2D::_collide_with_precomputed_velocities(Buffer& velocity_field)
+{
+	ComputeProgram& kernel = *lbm2d_collide_with_precomputed_velocity;
+
+}
+
+void LBM2D::_set_populations_to_equilibrium(Buffer& density_field, Buffer& velocity_field)
+{
+	compile_shaders();
+
+	ComputeProgram& kernel = *lbm2d_set_equilibrium_populations;
+
+	Buffer& lattice = *_get_lattice_source();
+
+	kernel.update_uniform_as_storage_buffer("lattice_buffer", lattice, 0);
+	kernel.update_uniform_as_storage_buffer("density_buffer", density_field, 0);
+	kernel.update_uniform_as_storage_buffer("velocity_buffer", velocity_field, 0);
+	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
+	kernel.update_uniform("lattice_resolution", resolution);
+	//kernel.update_uniform("lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3)));
+	//kernel.update_uniform("relaxation_time", relaxation_time);
 
 	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
 }

@@ -14,12 +14,41 @@ int main() {
 	desc.w_resolution = simulation_resolution;
 	Window window(desc);
 
+	uint32_t display_mode = 3;
+
+	window.newsletters->on_key_events.subscribe([&](const Window::KeyPressResult& key_press) {
+		if (key_press.action == Window::PressAction::PRESS) {
+			switch (key_press.key) {
+			case Window::Key::NUM_1:
+				display_mode = 1;
+				break;
+			case Window::Key::NUM_2:
+				display_mode = 2;
+				break;
+			case Window::Key::NUM_3:
+				display_mode = 3;
+				break;
+			case Window::Key::NUM_4:
+				display_mode = 4;
+				break;
+			case Window::Key::ESCAPE:
+				exit(0);
+				break;
+			}
+		}
+		});
+
+	window.newsletters->on_should_close_events.subscribe([&]() {
+		exit(0);
+		});
+
 	LBM2D lbm2d_solver;
 
 	lbm2d_solver.initialize_fields(
 		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
 			properties.is_boundry = glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution) / glm::vec2(4, 2)) < 32;
-			properties.velocity = glm::vec3(1, 0, 0);
+			properties.velocity = glm::vec3(1, 1, 0) / 16.0f;
+			properties.density = 1.0f;
 		},
 		glm::ivec2(simulation_resolution),
 		0.53f,
@@ -34,23 +63,10 @@ int main() {
 	fb.attach_color(0, texture_1c, 0);
 	fb.activate_draw_buffer(0);
 
-	uint32_t display_mode = 3;
-
-	while (!window.should_close()) {
+	while (true) {
 		double deltatime = window.handle_events(true);
 		lbm2d_solver.iterate_time(std::chrono::duration<double, std::milli>(deltatime*10));
 		
-		if (window.get_key(Window::Key::NUM_1) == Window::PressAction::PRESS)
-			display_mode = 1;
-		if (window.get_key(Window::Key::NUM_2) == Window::PressAction::PRESS)
-			display_mode = 2;
-		if (window.get_key(Window::Key::NUM_3) == Window::PressAction::PRESS)
-			display_mode = 3;
-		if (window.get_key(Window::Key::NUM_4) == Window::PressAction::PRESS)
-			display_mode = 4;
-		if (window.get_key(Window::Key::ESCAPE) == Window::PressAction::PRESS)
-			window.set_should_close(true);
-
 		if (display_mode == 1) {
 			Texture2D& texture_target = texture_1c;
 			lbm2d_solver.copy_to_texture_density(texture_target);

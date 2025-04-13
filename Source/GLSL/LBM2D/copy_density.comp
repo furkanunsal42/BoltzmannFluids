@@ -112,7 +112,7 @@ void main(){
 	float density = compute_density(pixel_coord);
 	vec4 write_value;
 
-	write_value.x = int(density != 0) * abs(density) / 32;
+	write_value.x = int(density != 0) * abs(density);
 	write_value.xyz += int(density == 0) * 1;
 	write_value.a = 1;
 

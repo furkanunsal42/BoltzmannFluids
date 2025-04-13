@@ -111,7 +111,7 @@ void main(){
 
 	float density = compute_density(pixel_coord);
 	vec3 velocity = compute_velocity(pixel_coord, density);
-	float write_value = int(density != 0) * length(velocity.xy);
+	float write_value = int(density != 0) * length(velocity.xy) * 8;
 	
-	imageStore(target_texture, pixel_coord, vec4(write_value * 8));
+	imageStore(target_texture, pixel_coord, vec4(write_value));
 }

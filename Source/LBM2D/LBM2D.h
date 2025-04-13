@@ -95,6 +95,10 @@ private:
 	void _apply_boundry_conditions();
 	void _generate_lattice_buffer();
 
+	// initialization functions
+	void _collide_with_precomputed_velocities(Buffer& velocity_field);
+	void _set_populations_to_equilibrium(Buffer& density_field, Buffer& velocity_field);
+
 	std::chrono::duration<double, std::milli> total_time_elapsed;
 	std::chrono::duration<double, std::milli> step_deltatime = std::chrono::duration<double, std::milli>(1);
 	std::chrono::duration<double, std::milli> deltatime_overflow = std::chrono::duration<double, std::milli>(0);
