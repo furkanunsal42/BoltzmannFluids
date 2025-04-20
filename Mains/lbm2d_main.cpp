@@ -1,13 +1,16 @@
 #include "GraphicsCortex.h"
 #include "LBM2D/LBM2D.h"
+#include "Kernels/LBM2D/lbm2d_kernels.cuh"
 
 using namespace std::chrono_literals;
 
 int main() {
 
+	selectDevice(0);
+
 	glm::ivec2 simulation_resolution(512, 512);
 
-	WindowDescription desc;
+	WindowDescription desc; 
 	desc.f_swap_interval = 0;
 	desc.w_resolution = simulation_resolution;
 	Window window(desc);
@@ -77,5 +80,6 @@ int main() {
 
 		window.swap_buffers();
 	}
+
 
 }
