@@ -97,7 +97,7 @@ __host__ void cuda_collide(
 	dim3 threads_per_block(64);																							// Move to
 	dim3 blocks_per_grid((lattice_resolution.x * lattice_resolution.y + threads_per_block.x - 1) / threads_per_block.x);// host's kernel call
 	// Call the kernel
-	_cuda_collide_kernel<<<blocks_per_grid, threads_per_block>>>(
+	_cuda_collide_kernel << <blocks_per_grid, threads_per_block >> > (
 		make_int2(lattice_resolution.x, lattice_resolution.y),
 		velocity_count,
 		d_lattice_velocity_set,
@@ -105,12 +105,12 @@ __host__ void cuda_collide(
 		d_lattice_target,
 		lattice_speed_of_sound,
 		relaxation_time
-	)
+		);
 }
 
 
 // Helper functions
-__host__ void get_and_validate_info(
+__host__ void _get_and_validate_info(
 	FloatingPointAccuracy floating_point_accuracy,
 	VelocitySet velocity_set,
 	int& volume_dimensionality,
@@ -143,7 +143,7 @@ __host__ void get_and_validate_info(
 	}
 }
 
-__device__ inline int calculate_lattice_index(
+__device__ inline int _calculate_lattice_index(
 	int2 pixel_coord,
 	int velocity_index,
 	int velocity_count,
@@ -153,7 +153,7 @@ __device__ inline int calculate_lattice_index(
 }
 
 
-__device__ inline float get_lattice_source(
+__device__ inline float _get_lattice_source(
 	int2 pixel_coord,
 	int velocity_index,
 	int velocity_count,
@@ -165,7 +165,7 @@ __device__ inline float get_lattice_source(
 }
 
 
-__device__ inline void set_lattice_source(
+__device__ inline void _set_lattice_source(
 	int2 pixel_coord,
 	int velocity_index,
 	int velocity_count,
