@@ -32,7 +32,7 @@ __global__ void _cuda_stream_kernel(
 		(pixel_coord.y - velocity_offset.y + d_lattice_resolution.y) % d_lattice_resolution.y
 	);
 
-	int source_pixel_index = calculate_lattice_index(source_pixel_coord, velocity_index, velocity_count, d_lattice_resolution);
+	int source_pixel_index = _calculate_lattice_index(source_pixel_coord, velocity_index, velocity_count, d_lattice_resolution);
 
 	lattice_target[id] = lattice_source[source_pixel_index];
 }
@@ -47,7 +47,7 @@ __host__ void cuda_stream(
 ) {
 	int volume_dimentionality;
 	int velocity_count;
-	get_and_validate_info(floating_point_accuracy, velocity_set, volume_dimentionality, velocity_count);
+	_get_and_validate_info(floating_point_accuracy, velocity_set, volume_dimentionality, velocity_count);
 
 	int2 d_lattice_resolution = make_int2(lattice_resolution.x, lattice_resolution.y);
 	int total_threads = d_lattice_resolution.x * d_lattice_resolution.y * velocity_count;
@@ -92,7 +92,7 @@ __host__ void cuda_collide(
 ) {
 	int volume_dimentionality;
 	int velocity_count;
-	get_and_validate_info(floating_point_accuracy, velocity_set, volume_dimentionality, velocity_count);
+	_get_and_validate_info(floating_point_accuracy, velocity_set, volume_dimentionality, velocity_count);
 
 	dim3 threads_per_block(64);																							// Move to
 	dim3 blocks_per_grid((lattice_resolution.x * lattice_resolution.y + threads_per_block.x - 1) / threads_per_block.x);// host's kernel call
@@ -160,7 +160,7 @@ __device__ inline float _get_lattice_source(
 	int2 lattice_resolution,
 	const float* lattice_source
 ) {
-	int index = calculate_lattice_index(pixel_coord, velocity_index, velocity_count, lattice_resolution);
+	int index = _calculate_lattice_index(pixel_coord, velocity_index, velocity_count, lattice_resolution);
 	return lattice_source[index];
 }
 
@@ -173,6 +173,6 @@ __device__ inline void _set_lattice_source(
 	float* lattice_source,
 	float value
 ) {
-	int index = calculate_lattice_index(pixel_coord, velocity_index, velocity_count, lattice_resolution);
+	int index = _calculate_lattice_index(pixel_coord, velocity_index, velocity_count, lattice_resolution);
 	lattice_source[index] = value;
 }
