@@ -1,24 +1,27 @@
 #pragma once
 
-//#include <cuda.h>
-//#include <cuda_runtime.h>
-#include <device_launch_parameters.h>
-
 #include "LBMConstants/FloatingPointAccuracy.h"
 #include "LBMConstants/VelocitySet.h"
 #include "Kernels/handle_error.h"
 
-__host__ void selectDevice(int device);
+//#include <cuda.h>
+//#include <cuda_runtime.h>
+#include <device_launch_parameters.h>
 
-__host__ void add_random_population(
-	FloatingPointAccuracy floating_point_accuracy,
-	VelocitySet velocity_set,
-	int threads_per_block,
-	int blocks_per_grid
+// Stream
+__global__ void _cuda_stream_kernel(
+	int velocity_count,
+	int2 d_lattice_resolution,
+	const float* lattice_velocity_set,
+	const float* lattice_source,
+	float* lattice_target
 );
 
-__global__ void add_random_population_kernel(
+__host__ void _cuda_stream(
 	FloatingPointAccuracy floating_point_accuracy,
-	int volume_dimentionality,
-	int velocity_count
+	VelocitySet velocity_set,
+	int2 lattice_resolution,
+	const float* d_lattice_velocity_set,
+	const float* d_lattice_source,
+	float* d_lattice_target
 );

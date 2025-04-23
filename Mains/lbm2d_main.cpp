@@ -6,7 +6,6 @@ using namespace std::chrono_literals;
 
 int main() {
 
-	selectDevice(0);
 
 	glm::ivec2 simulation_resolution(512, 512);
 
