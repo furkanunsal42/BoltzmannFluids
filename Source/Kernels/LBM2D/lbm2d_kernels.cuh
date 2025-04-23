@@ -17,11 +17,64 @@ __global__ void _cuda_stream_kernel(
 	float* lattice_target
 );
 
-__host__ void _cuda_stream(
+__host__ void cuda_stream(
 	FloatingPointAccuracy floating_point_accuracy,
 	VelocitySet velocity_set,
 	int2 lattice_resolution,
 	const float* d_lattice_velocity_set,
 	const float* d_lattice_source,
 	float* d_lattice_target
+);
+
+// Collide
+__global__ void _cuda_collide_kernel(
+	int2 lattice_resolution,
+	int velocity_count,
+	const float* lattice_velocity_set, // 4 floats per velocity: x, y, z, weight
+	const float* lattice_source,
+	float* lattice_target,
+	float lattice_speed_of_sound,
+	float relaxation_time
+);
+
+__host__ void cuda_collide(
+	FloatingPointAccuracy floating_point_accuracy,
+	VelocitySet velocity_set,
+	int2 lattice_resolution,
+	const float* d_lattice_velocity_set,
+	const float* d_lattice_source,
+	float* d_lattice_target
+);
+
+
+// Helper function
+__host__ void _get_and_validate_info(
+	FloatingPointAccuracy floating_point_accuracy,
+	VelocitySet velocity_set,
+	int& volume_dimensionality,
+	int& velocity_count
+);
+
+__device__ inline int calculate_lattice_index(
+	int2 pixel_coord,
+	int velocity_index,
+	int velocity_count,
+	int2 lattice_resolution
+);
+
+__device__ inline float get_lattice_source(
+	int2 pixel_coord,
+	int velocity_index,
+	int velocity_count,
+	int2 lattice_resolution,
+	const float* lattice_source
+);
+
+__device__ inline void set_lattice_source(
+	int2 pixel_coord,
+	int velocity_index,
+	int velocity_count,
+	int2 lattice_resolution,
+	float* lattice_source,
+	float value
 );
