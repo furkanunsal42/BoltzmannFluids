@@ -1,9 +1,11 @@
+#include <thread>
+#include "GUI/GuiManager.h"
 #include "GraphicsCortex.h"
 #include "LBM2D/LBM2D.h"
 
 using namespace std::chrono_literals;
 
-int main() {
+void run_rendering_loop() {
 
 	glm::ivec2 simulation_resolution(1024);
 
@@ -92,5 +94,16 @@ int main() {
 
 		window.swap_buffers();
 	}
+}
 
+int main(int argc, char** argv) {
+	GuiManager guiManager(argc, argv);
+
+	std::thread renderingThread(run_rendering_loop); // OpenGL rendering part (will be embedded into Main UI using QTWidget)
+
+	guiManager.run();	// Main UI (QT)
+
+
+	renderingThread.join();	// Will be removed when embedded
+	return 0;
 }
