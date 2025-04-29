@@ -3,6 +3,10 @@
 #include "GraphicsCortex.h"
 #include "LBM2D/LBM2D.h"
 
+#include "Kernels/LBM2D/lbm2d_kernels.cuh"
+#include "LBMConstants/LBMParams.cuh"
+
+
 using namespace std::chrono_literals;
 
 void run_rendering_loop() {
@@ -12,6 +16,7 @@ void run_rendering_loop() {
 	WindowDescription desc;
 	desc.w_scale_framebuffer_size = false;
 	desc.w_scale_window_size = false;
+
 	desc.f_swap_interval = 0;
 	desc.w_resolution = simulation_resolution;
 	Window window(desc);
