@@ -20,15 +20,24 @@
 // u = "velocity"
 // rho = "density"
 
+
 class LBM2D {
 public:
-	
+	constexpr static uint32_t not_a_boundry = 0;
+
 	// simulation controls
 	void iterate_time(std::chrono::duration<double, std::milli> deltatime);
 	std::chrono::duration<double, std::milli> get_total_time_elapsed();
 
 	glm::ivec2 get_resolution();
 	int32_t get_velocity_set_vector_count();
+
+	void set_boundry_velocity(
+		uint32_t boundry_id,
+		glm::vec3 velocity_translational, 
+		glm::vec3 velocity_angular,
+		glm::vec3 object_center_of_mass_position
+	);
 
 	// high level field initialization api
 	struct FluidProperties {
@@ -37,7 +46,7 @@ public:
 		float density = 1;
 		float temperature = 20;
 		float scalar_quantity = 0;
-		bool is_boundry = false;
+		uint32_t boundry_id = not_a_boundry;
 	};
 	void initialize_fields(
 		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
@@ -67,15 +76,6 @@ public:
 	void set_relaxation_time(float relaxation_time);
 	float get_relaxation_time();
 
-	void map_boundries();
-	void unmap_boundries();
-	bool is_boundries_mapped();
-	void* get_mapped_boundries();
-	void set_boundry(glm::ivec2 voxel_coordinate, bool value);
-	void set_boundry(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_coordinate_end, bool value);
-	void set_boundry(bool value);
-	bool get_boundry(glm::ivec2 voxel_coordinate);
-
 	void set_population(glm::ivec2 voxel_coordinate, int32_t population_index, float value);
 	void set_population(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_coordinate_end, int32_t population_index, float value);
 	void set_population(int32_t population_index, float value);
@@ -98,24 +98,79 @@ private:
 	// initialization functions
 	void _collide_with_precomputed_velocities(Buffer& velocity_field);
 	void _set_populations_to_equilibrium(Buffer& density_field, Buffer& velocity_field);
+	void _initialize_fields_default_pass(
+		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
+		glm::ivec2 resolution,
+		bool& out_is_force_field_constant,
+		glm::vec3& out_constant_force_field,
+		FloatingPointAccuracy fp_accuracy = FloatingPointAccuracy::fp32
+	);
+	void _initialize_fields_force_pass(
+		bool is_force_field_constant,
+		glm::vec3 constant_force_field,
+		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
+		glm::ivec2 resolution,
+		FloatingPointAccuracy fp_accuracy = FloatingPointAccuracy::fp32
+	);
+	void _initialize_fields_boundries_pass(
+		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
+		glm::ivec2 resolution,
+		FloatingPointAccuracy fp_accuracy = FloatingPointAccuracy::fp32
+	);
+	
 
+	// simulation time controls
 	std::chrono::duration<double, std::milli> total_time_elapsed;
 	std::chrono::duration<double, std::milli> step_deltatime = std::chrono::duration<double, std::milli>(1);
 	std::chrono::duration<double, std::milli> deltatime_overflow = std::chrono::duration<double, std::milli>(0);
+	
+	// LBM simulation parameters
 	VelocitySet velocity_set = D2Q9;
 	FloatingPointAccuracy floating_point_accuracy = fp32;
 
 	glm::ivec2 resolution = glm::ivec2(0);
 	float relaxation_time = 0.53f;
 
-	bool is_lattice_0_is_source = true;
+	// forces control flags
+	bool is_force_field_constant = false;
+	
+	// moving/stationary boundries control flags
+	struct _object_desc {
+	public:
+		_object_desc(
+			uint32_t boundry_id = 0,
+			glm::vec3 velocity_translational = glm::vec3(0),
+			glm::vec3 velocity_angular = glm::vec3(0),
+			glm::vec3 center_of_mass = glm::vec3(0)
+		){}
+
+		uint32_t boundry_id;
+		glm::vec3 velocity_translational;
+		glm::vec3 velocity_angular;
+		glm::vec3 center_of_mass;
+	};
+
+	// boundries buffer holds the id of the object it is a part of (0 means not_a_boundry)
+	// number of bits per voxel can change dynamically basad on how many objects are defined
+	// velocity information of each object is hold in another buffer in device called "objects"
+	// objects buffer schema is [vec4 translational_velcoity (w is id), vec4 rotational_velocity, vec4 center_of_mass] 
+	std::vector<_object_desc> objects_cpu;
+	int32_t bits_per_boundry = 0;
+
+	// device buffers
 	std::shared_ptr<Buffer> lattice0 = nullptr;
 	std::shared_ptr<Buffer> lattice1 = nullptr;
 	std::shared_ptr<Buffer> boundries = nullptr;
+	std::shared_ptr<Buffer> objects = nullptr;
+	std::shared_ptr<Buffer> forces = nullptr;
+	
+	// dual buffer control
+	bool is_lattice_0_is_source = true;
 	std::shared_ptr<Buffer> _get_lattice_source();
 	std::shared_ptr<Buffer> _get_lattice_target();
 	void _swap_lattice_buffers();
 	
+	// kernels
 	bool is_programs_compiled = false;
 	std::shared_ptr<ComputeProgram> lbm2d_stream = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_collide = nullptr;

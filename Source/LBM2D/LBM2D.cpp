@@ -97,49 +97,181 @@ void LBM2D::initialize_fields(std::function<void(glm::ivec2, FluidProperties&)> 
 	set_floating_point_accuracy(fp_accuracy);
 	generate_lattice(resolution);
 
-	Buffer velocity_buffer(resolution.x * resolution.y * sizeof(glm::vec3));
-	Buffer density_buffer(resolution.x * resolution.y * sizeof(float));
+	bool is_force_field_constant;
+	glm::vec3 constant_force_field;
+
+	_initialize_fields_default_pass(
+		initialization_lambda,
+		resolution,
+		is_force_field_constant,
+		constant_force_field,
+		fp_accuracy
+	);
+
+	_initialize_fields_boundries_pass(
+		initialization_lambda,
+		resolution,
+		fp_accuracy
+	);
 	
+	_initialize_fields_force_pass(
+		is_force_field_constant,
+		constant_force_field,
+		initialization_lambda,
+		resolution,
+		fp_accuracy
+	);
+}
+
+void LBM2D::_initialize_fields_default_pass(std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda, glm::ivec2 resolution, bool& out_is_force_field_constant, glm::vec3& out_constant_force_field, FloatingPointAccuracy fp_accuracy)
+{
+	Buffer velocity_buffer(resolution.x * resolution.y * sizeof(glm::vec4));
+	Buffer density_buffer(resolution.x * resolution.y * sizeof(float));
+
 	velocity_buffer.map(Buffer::MapInfo(Buffer::MapInfo::Upload, Buffer::MapInfo::Temporary));
 	density_buffer.map(Buffer::MapInfo(Buffer::MapInfo::Upload, Buffer::MapInfo::Temporary));
-	
-	glm::vec3* velocity_buffer_data	= (glm::vec3*)velocity_buffer.get_mapped_pointer();
-	float* density_buffer_data		= (float*)density_buffer.get_mapped_pointer();
 
-	size_t voxel_count = resolution.x * resolution.y;
+	glm::vec4* velocity_buffer_data = (glm::vec4*)velocity_buffer.get_mapped_pointer();
+	float* density_buffer_data = (float*)density_buffer.get_mapped_pointer();
+
+	FluidProperties temp_properties;
+	initialization_lambda(glm::ivec2(0, 0), temp_properties);
+
+	bool is_force_field_constant = false;
+	glm::vec3 constant_force_field = temp_properties.force;
+
+	uint32_t object_count = 0;
 
 	for (int32_t x = 0; x < resolution.x; x++) {
 		for (int32_t y = 0; y < resolution.y; y++) {
 			FluidProperties properties;
 			initialization_lambda(glm::ivec2(x, y), properties);
-			
-			velocity_buffer_data[y*resolution.x + x] = properties.velocity;
-			density_buffer_data[y*resolution.x + x] = properties.density;
-			set_boundry(glm::ivec2(x, y), properties.is_boundry);
+
+			object_count = std::max(object_count, properties.boundry_id + 1);
+
+			if (properties.force != constant_force_field)
+				is_force_field_constant = false;
+
+			velocity_buffer_data[y * resolution.x + x] = glm::vec4(properties.velocity, 0.0f);
+			density_buffer_data[y * resolution.x + x] = properties.density;
 		}
 	}
 
 	// compute equilibrium and non-equilibrium populations according to chapter 5.
 	velocity_buffer.unmap();
 	density_buffer.unmap();
-	
+
 	velocity_buffer_data = nullptr;
 	density_buffer_data = nullptr;
 
-	//density_buffer.clear(1.0f);
-
-	//set_population(0.7);
 	_set_populations_to_equilibrium(density_buffer, velocity_buffer);
 
-	int32_t relaxation_iteration_count = 0;
+	int32_t relaxation_iteration_count = 1;
 	for (int32_t i = 0; i < relaxation_iteration_count; i++) {
 		_collide_with_precomputed_velocities(velocity_buffer);
 		// _apply_boundry_conditions(); the book doesn't specitfy whether or not to enforce boundry conditions in initialization algorithm
 		_stream();
 	}
 
-	// TEMP
-	//add_random_population(1, 0.7f);
+	objects_cpu.resize(object_count);
+}
+
+void LBM2D::_initialize_fields_boundries_pass(std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda, glm::ivec2 resolution, FloatingPointAccuracy fp_accuracy)
+{
+	uint32_t object_count = objects_cpu.size();
+
+	bool does_contain_boundry = object_count > 1;	// first object slot is indexed by non-boundry id (fluid)
+	if (!does_contain_boundry) {
+		boundries = nullptr;
+		objects = nullptr;
+		bits_per_boundry = 0;
+		return;
+	}
+
+	// bits per boudnry can only be 1, 2, 4, 8 to not cause a boundry spanning over 2 bytes
+	bits_per_boundry = std::exp2(std::ceil(std::log2f(std::ceil(std::log2f(object_count)))));
+	if (bits_per_boundry < 1 || bits_per_boundry > 8) {
+		std::cout << "[LBM Error] _initialize_fields_boundries_pass() is called but too many or too few objects are defined, maximum of 255 bits are possible but number of objets were: " << object_count << std::endl;
+		ASSERT(false);
+	}
+
+	
+	// objects initialization
+	//							   trans_vel + id	   angular_vel		   center_of_mass
+	size_t object_size_on_device = sizeof(glm::vec4) + sizeof(glm::vec4) + sizeof(glm::vec4);
+	objects = std::make_shared<Buffer>(object_size_on_device * object_count);
+
+	objects->map(Buffer::MapInfo(Buffer::MapInfo::Bothways, Buffer::MapInfo::Temporary));
+	glm::vec4* objects_mapped_buffer = (glm::vec4*)objects->get_mapped_pointer();
+	
+	for (uint32_t i = 0; i < objects_cpu.size(); i++) {
+		_object_desc& desc = objects_cpu[i];
+		objects_mapped_buffer[0] = glm::vec4(desc.velocity_translational, desc.boundry_id);
+		objects_mapped_buffer[1] = glm::vec4(desc.velocity_angular, 0);
+		objects_mapped_buffer[2] = glm::vec4(desc.center_of_mass, 0);
+	}
+
+	objects->unmap();
+	objects_mapped_buffer = nullptr;
+
+	
+	// boundries initialization
+
+	size_t boundries_buffer_size = std::ceil((bits_per_boundry * resolution.x * resolution.y) / 8.0f);
+	boundries = std::make_shared<Buffer>(boundries_buffer_size);
+
+	boundries->map();
+	int8_t* boundries_mapped_buffer = (int8_t*)boundries->get_mapped_pointer();
+
+	for (int32_t x = 0; x < resolution.x; x++) {
+		for (int32_t y = 0; y < resolution.y; y++) {
+			FluidProperties properties;
+			initialization_lambda(glm::ivec2(x, y), properties);
+			
+			size_t voxel_id = y * resolution.x + x;
+			size_t bits_begin = voxel_id * bits_per_boundry;
+			
+			size_t byte_offset = bits_begin / 8;
+			int32_t subbyte_offset_in_bits = bits_begin % 8;
+
+			boundries_mapped_buffer[byte_offset] |= (properties.boundry_id << subbyte_offset_in_bits);
+		}
+	}
+
+	boundries->unmap();
+	boundries_mapped_buffer = nullptr;
+
+}
+
+void LBM2D::_initialize_fields_force_pass(bool is_force_field_constant, glm::vec3 constant_force_field, std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda, glm::ivec2 resolution, FloatingPointAccuracy fp_accuracy)
+{
+	if (is_force_field_constant) {
+		if (constant_force_field == glm::vec3(0)) {
+			this->forces = nullptr;
+			this->is_force_field_constant = false;
+		}
+		else {
+			this->forces = std::make_shared<Buffer>(sizeof(glm::vec4) * 1);
+			this->is_force_field_constant = true;
+		}
+	}
+	else {
+		forces = std::make_shared<Buffer>(sizeof(glm::vec4) * resolution.x * resolution.y);
+		forces->map();
+		
+		glm::vec4* forces_buffer_data = (glm::vec4*)forces->get_mapped_pointer();
+
+		for (int32_t x = 0; x < resolution.x; x++) {
+			for (int32_t y = 0; y < resolution.y; y++) {
+				FluidProperties properties;
+				initialization_lambda(glm::ivec2(x, y), properties);
+				forces_buffer_data[y*resolution.x + x] = glm::vec4(properties.force, 0.0f);
+			}
+		}
+
+		forces->unmap();
+		forces_buffer_data = nullptr;
+	}
 }
 
 void LBM2D::copy_to_texture_population(Texture2D& target_texture, int32_t population_index)
@@ -633,3 +765,4 @@ void LBM2D::_set_populations_to_equilibrium(Buffer& density_field, Buffer& veloc
 
 	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
 }
+
