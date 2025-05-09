@@ -1,25 +1,23 @@
 #include "lbm2d_kernels.cuh"
 
-// Stream
+
+// Stream 
 __global__ void _cuda_stream_kernel(
-	int velocity_count,
-	int2 d_lattice_resolution,
 	const float* lattice_velocity_set,
 	const float* lattice_source,
 	float* lattice_target
 ) {
 	int id = blockIdx.x * blockDim.x + threadIdx.x;
-
-	if (id >= d_lattice_resolution.x * d_lattice_resolution.y * velocity_count) {
+	if (id >= d_lbm_params.lattice_resolution.x * d_lbm_params.lattice_resolution.y * d_lbm_params.velocity_count) {
 		return;
 	}
 
-	int pixel_id = id / velocity_count;
-	int velocity_index = id % velocity_count;
+	int pixel_id = id / d_lbm_params.velocity_count;
+	int velocity_index = id % d_lbm_params.velocity_count;
 
 	int2 pixel_coord = make_int2(
-		pixel_id % d_lattice_resolution.x, 
-		pixel_id / d_lattice_resolution.x
+		pixel_id % d_lbm_params.lattice_resolution.x,
+		pixel_id / d_lbm_params.lattice_resolution.x
 	);
 
 	int2 velocity_offset = make_int2(
@@ -28,151 +26,157 @@ __global__ void _cuda_stream_kernel(
 	);
 
 	int2 source_pixel_coord = make_int2(
-		(pixel_coord.x - velocity_offset.x + d_lattice_resolution.x) % d_lattice_resolution.x,
-		(pixel_coord.y - velocity_offset.y + d_lattice_resolution.y) % d_lattice_resolution.y
+		(pixel_coord.x - velocity_offset.x + d_lbm_params.lattice_resolution.x) % d_lbm_params.lattice_resolution.x,
+		(pixel_coord.y - velocity_offset.y + d_lbm_params.lattice_resolution.y) % d_lbm_params.lattice_resolution.y
 	);
 
-	int source_pixel_index = _calculate_lattice_index(source_pixel_coord, velocity_index, velocity_count, d_lattice_resolution);
-
-	lattice_target[id] = lattice_source[source_pixel_index];
+	lattice_target[id] = _get_lattice_source(source_pixel_coord, velocity_index, lattice_source);
 }
 
 __host__ void cuda_stream(
-	FloatingPointAccuracy floating_point_accuracy,
-	VelocitySet velocity_set,
-	int2 lattice_resolution,
-	const float* d_lattice_velocity_set,
-	const float* d_lattice_source,
-	float* d_lattice_target
+	const float* lattice_velocity_set,
+	const float* lattice_source,
+	float* lattice_target
 ) {
-	int volume_dimentionality;
-	int velocity_count;
-	_get_and_validate_info(floating_point_accuracy, velocity_set, volume_dimentionality, velocity_count);
+	// Move below part to host's kernel call
+	const int total_threads = d_lbm_params.lattice_resolution.x * d_lbm_params.lattice_resolution.y * d_lbm_params.velocity_count;
+	dim3 threads_per_block(64);
+	const dim3 blocks_per_grid((total_threads + threads_per_block.x - 1) / threads_per_block.x);
 
-	int2 d_lattice_resolution = make_int2(lattice_resolution.x, lattice_resolution.y);
-	int total_threads = d_lattice_resolution.x * d_lattice_resolution.y * velocity_count;
-
-	dim3 threads_per_block(64);																							// Move to
-	dim3 blocks_per_grid((lattice_resolution.x * lattice_resolution.y + threads_per_block.x - 1) / threads_per_block.x);// host's kernel call
 	// Call the kernel
 	_cuda_stream_kernel<<<blocks_per_grid, threads_per_block>>>(
-		velocity_count,
-		d_lattice_resolution,
-		d_lattice_velocity_set,
-		d_lattice_source,
-		d_lattice_target
+		lattice_velocity_set,
+		lattice_source,
+		lattice_target
 		);
-	cudaDeviceSynchronize(); // May not be needed
+	cudaDeviceSynchronize(); // TODO: May not be needed. Check this
 }
 
 // Collide
 __global__ void _cuda_collide_kernel(
-	int2 lattice_resolution,
-	int velocity_count,
-	const float* lattice_velocity_set, // 4 floats per velocity: x, y, z, weight
+	const float* lattice_velocity_set,
 	const float* lattice_source,
 	float* lattice_target,
-	float lattice_speed_of_sound,
-	float relaxation_time
+	int* boundries
 ) {
+	int id = blockIdx.x * blockDim.x + threadIdx.x;
+	if (id >= d_lbm_params.lattice_resolution.x * d_lbm_params.lattice_resolution.y * d_lbm_params.velocity_count) {
+		return;
+	}
 
-// TODO
+	int2 pixel_coord = make_int2(
+		id % d_lbm_params.lattice_resolution.x,
+		id / d_lbm_params.lattice_resolution.x
+	);
 
+	float density = _compute_density(pixel_coord, lattice_source);
+	if (density <= 0) 
+		return;
+	
+	float3 velocity = _compute_velocity(pixel_coord, density, lattice_source, lattice_velocity_set, boundries);
+
+	for (int population_id = 0; population_id < d_lbm_params.velocity_count; population_id++) {
+		float weight				= _get_lattice_weight(population_id, lattice_velocity_set);
+		float equilibrium_velocity	= _compute_equilibrium(density, velocity, population_id, lattice_velocity_set);
+		lattice_target[id * d_lbm_params.velocity_count + population_id] = _apply_bgk_collision(_get_lattice_source(pixel_coord, population_id, lattice_source), equilibrium_velocity);
+	}
 }
 
 __host__ void cuda_collide(
-	FloatingPointAccuracy floating_point_accuracy,
-	VelocitySet velocity_set,
-	int2 lattice_resolution,
-	const float* d_lattice_velocity_set,
-	const float* d_lattice_source,
-	float* d_lattice_target,
-	float lattice_speed_of_sound,
-	float relaxation_time
+	const float* lattice_velocity_set,
+	const float* lattice_source,
+	float* lattice_target,
+	int* boundries
 ) {
-	int volume_dimentionality;
-	int velocity_count;
-	_get_and_validate_info(floating_point_accuracy, velocity_set, volume_dimentionality, velocity_count);
-
-	dim3 threads_per_block(64);																							// Move to
-	dim3 blocks_per_grid((lattice_resolution.x * lattice_resolution.y + threads_per_block.x - 1) / threads_per_block.x);// host's kernel call
+	const int total_cells = d_lbm_params.lattice_resolution.x * d_lbm_params.lattice_resolution.y;
+	dim3 threads_per_block(64);																							
+	const dim3 blocks_per_grid((total_cells + threads_per_block.x - 1) / threads_per_block.x);
+	
 	// Call the kernel
-	_cuda_collide_kernel << <blocks_per_grid, threads_per_block >> > (
-		make_int2(lattice_resolution.x, lattice_resolution.y),
-		velocity_count,
-		d_lattice_velocity_set,
-		d_lattice_source,
-		d_lattice_target,
-		lattice_speed_of_sound,
-		relaxation_time
-		);
+	_cuda_collide_kernel<<<blocks_per_grid, threads_per_block>>>(
+		lattice_velocity_set, 
+		lattice_source, 
+		lattice_target,
+		boundries
+	);
 }
 
 
 // Helper functions
-__host__ void _get_and_validate_info(
-	FloatingPointAccuracy floating_point_accuracy,
-	VelocitySet velocity_set,
-	int& volume_dimensionality,
-	int& velocity_count
-) {
-	// Check FloatingPointAccuracy
-	if (floating_point_accuracy != FloatingPointAccuracy::fp32) {
-		HANDLE_ERROR("Error: other floating point systems than fp32 aren't supported.\n");
-	}
-
-	// Check Velocity Set
-	if (velocity_set == D2Q9) {
-		volume_dimensionality = 2;
-		velocity_count = 9;
-	}
-	else if (velocity_set == D3Q15) {
-		volume_dimensionality = 3;
-		velocity_count = 15;
-	}
-	else if (velocity_set == D3Q19) {
-		volume_dimensionality = 3;
-		velocity_count = 19;
-	}
-	else if (velocity_set == D3Q27) {
-		volume_dimensionality = 3;
-		velocity_count = 27;
-	}
-	else {
-		HANDLE_ERROR("Velocity set is not supported.\n");
-	}
+__device__ inline int _calculate_lattice_index(	int2 pixel_coord, int velocity_index) {
+	return (pixel_coord.y * d_lbm_params.lattice_resolution.x + pixel_coord.x) * d_lbm_params.velocity_count + velocity_index;
 }
 
-__device__ inline int _calculate_lattice_index(
-	int2 pixel_coord,
-	int velocity_index,
-	int velocity_count,
-	int2 lattice_resolution
-) {
-	return (pixel_coord.y * lattice_resolution.x + pixel_coord.x) * velocity_count + velocity_index;
+__device__ inline float _get_lattice_source(int2 pixel_coord, int velocity_index, const float* lattice_source) {
+	return lattice_source[_calculate_lattice_index(pixel_coord, velocity_index)];
 }
 
-
-__device__ inline float _get_lattice_source(
-	int2 pixel_coord,
-	int velocity_index,
-	int velocity_count,
-	int2 lattice_resolution,
-	const float* lattice_source
-) {
-	int index = _calculate_lattice_index(pixel_coord, velocity_index, velocity_count, lattice_resolution);
-	return lattice_source[index];
+__device__ inline void _set_lattice_source(int2 pixel_coord, int velocity_index, float* lattice_source,	float value) {
+	lattice_source[_calculate_lattice_index(pixel_coord, velocity_index)] = value;
 }
 
+__device__ float _compute_density(int2 pixel_coord, const float* lattice_source) {
+	//if(get_boundry(pixel_coord))
+	//	return 0;
+	float density = 0;
+	for (int i = 0; i < d_lbm_params.velocity_count; i++) {
+		density += _get_lattice_source(pixel_coord, i, lattice_source);
+	}
+	return density;
+}
 
-__device__ inline void _set_lattice_source(
-	int2 pixel_coord,
-	int velocity_index,
-	int velocity_count,
-	int2 lattice_resolution,
-	float* lattice_source,
-	float value
-) {
-	int index = _calculate_lattice_index(pixel_coord, velocity_index, velocity_count, lattice_resolution);
-	lattice_source[index] = value;
+__device__ float3 _compute_velocity(int2 pixel_coord, float density, const float* lattice_source, const float* lattice_velocity_set, int* boundries) {
+	if (_get_boundry(pixel_coord, boundries)) {
+		return make_float3(0.0f, 0.0f, 0.0f);
+	}
+
+	float3 velocity = make_float3(0.0f, 0.0f, 0.0f);
+	for (int i = 0; i < d_lbm_params.velocity_count; i++) {
+		float scalar = _get_lattice_source(pixel_coord, i, lattice_source);
+		float3 lattice_velocity = _get_lattice_velocity(i, lattice_velocity_set);
+		velocity.x += scalar * lattice_velocity.x;
+		velocity.y += scalar * lattice_velocity.y;
+		velocity.z += scalar * lattice_velocity.z;
+	}
+	return make_float3(
+		velocity.x / density,
+		velocity.y / density,
+		velocity.z / density
+	);
+}
+__device__ float3 _get_lattice_velocity(int velocity_index, const float* lattice_velocity_set) {
+	return make_float3(
+		lattice_velocity_set[velocity_index * 4 + 0],
+		lattice_velocity_set[velocity_index * 4 + 1],
+		lattice_velocity_set[velocity_index * 4 + 2]
+	);
+}
+__device__ bool _get_boundry(int2 pixel_coord, const int* boundries) {
+	int pixel_id = pixel_coord.y * d_lbm_params.lattice_resolution.x + pixel_coord.x;
+	int byte_id = pixel_id / 32;
+	int bit_id = pixel_id % 32;
+	return (boundries[byte_id] & (1 << bit_id)) != 0;
+}
+
+__device__ float _get_lattice_weight(int velocity_index, const float* lattice_velocity_set) {
+	return lattice_velocity_set[velocity_index * 4 + 3];
+}
+
+__device__ float _compute_equilibrium(float density, float3 velocity, int population_id, const float* lattice_velocity_set) {
+	float w = _get_lattice_weight(population_id, lattice_velocity_set);
+	float3 ci = _get_lattice_velocity(population_id, lattice_velocity_set);
+	float cs = d_lbm_params.cs;
+
+	float ci_dot_u = ci.x * velocity.x + ci.y * velocity.y + ci.z * velocity.z;
+	float ci_dot_u2 = ci_dot_u * ci_dot_u;
+	float u_dot_u = velocity.x * velocity.x + velocity.y * velocity.y + velocity.z * velocity.z;
+
+	float equilibrium = w * density * (
+		1 + 3 * ci_dot_u + 9 * ci_dot_u2 / 2 - 3 * u_dot_u / 2
+		);
+	return equilibrium;
+}
+
+__device__ float _apply_bgk_collision(float current_velocity, float equilibrium) {
+	return current_velocity - (current_velocity - equilibrium) / d_lbm_params.tau;
 }

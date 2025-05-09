@@ -1,6 +1,9 @@
 #include "GraphicsCortex.h"
 #include "LBM2D/LBM2D.h"
+
 #include "Kernels/LBM2D/lbm2d_kernels.cuh"
+#include "LBMConstants/LBMParams.cuh"
+
 
 using namespace std::chrono_literals;
 
