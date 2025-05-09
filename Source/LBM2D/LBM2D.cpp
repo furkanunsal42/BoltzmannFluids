@@ -445,114 +445,6 @@ void LBM2D::copy_to_texture_boundries(Texture2D& target_texture)
 	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
 }
 
-void LBM2D::map_boundries()
-{
-	if (boundries == nullptr) {
-		std::cout << "[LBM Error] LBM2D::map_boundries() is called but lattice isn't initialized yet. call generate_lattice() first" << std::endl;
-		ASSERT(false);
-	}
-
-	if (is_boundries_mapped())
-		return;
-
-	Buffer::MapInfo map_info;
-	map_info.lifetime = Buffer::MapInfo::Temporary;
-	map_info.direction = Buffer::MapInfo::Bothways;
-	boundries->map(map_info);
-}
-
-void LBM2D::unmap_boundries()
-{
-	boundries->unmap();
-}
-
-bool LBM2D::is_boundries_mapped() {
-	if (boundries == nullptr)
-		return false;
-	return boundries->is_mapped();
-}
-
-void* LBM2D::get_mapped_boundries() {
-	if (boundries == nullptr)
-		return nullptr;
-	return boundries->get_mapped_pointer();
-}
-
-void LBM2D::set_boundry(glm::ivec2 voxel_coordinate, bool value) {
-	
-	if (boundries == nullptr) {
-		std::cout << "[LBM Error] LBM2D::set_boundry() is called but lattice wasn't generated" << std::endl;
-		ASSERT(false);
-	}
-
-	if (!is_boundries_mapped())
-		map_boundries();
-
-	int8_t* mapped_buffer = (int8_t*)boundries->get_mapped_pointer();
-	size_t voxel_id = (voxel_coordinate.y * resolution.x + voxel_coordinate.x);
-	size_t byte_id = voxel_id / 8;
-	int8_t bit_id = voxel_id % 8;
-
-	if (mapped_buffer == nullptr) {
-		std::cout << "[LBM Error] LBM2D::set_boundry() mapped pointer was nullptr" << std::endl;
-		ASSERT(false);
-	}
-	if (byte_id < 0 || byte_id >= boundries->get_mapped_buffer_size()) {
-		std::cout << "[LBM Error] LBM2D::set_boundry() voxel_coordinate was out of bounds" << std::endl;
-		ASSERT(false);
-	}
-
-	if (value)
-		mapped_buffer[byte_id] |= 1 << bit_id;
-	else
-		mapped_buffer[byte_id] &= ~(1 << bit_id);
-}
-
-void LBM2D::set_boundry(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_coordinate_end, bool value)
-{
-	if (voxel_coordinate_begin.x > voxel_coordinate_end.x)
-		std::swap(voxel_coordinate_begin.x, voxel_coordinate_end.x);
-	if (voxel_coordinate_begin.y > voxel_coordinate_end.y)
-		std::swap(voxel_coordinate_begin.y, voxel_coordinate_end.y);
-	
-	for (int32_t x = voxel_coordinate_begin.x; x < voxel_coordinate_end.x; x++) {
-		for (int32_t y = voxel_coordinate_begin.y; x < voxel_coordinate_end.y; x++) {
-			set_boundry(glm::ivec2(x, y), value);
-		}
-	}
-}
-
-void LBM2D::set_boundry(bool value)
-{
-	set_boundry(glm::ivec2(0, 0), resolution, value);
-}
-
-bool LBM2D::get_boundry(glm::ivec2 voxel_coordinate) {
-	if (boundries == nullptr) {
-		std::cout << "[LBM Error] LBM2D::get_boundry() is called but lattice wasn't generated" << std::endl;
-		ASSERT(false);
-	}
-
-	if (!is_boundries_mapped())
-		map_boundries();
-
-	int8_t* mapped_buffer = (int8_t*)boundries->get_mapped_pointer();
-	size_t voxel_id = (voxel_coordinate.y * resolution.x + voxel_coordinate.x);
-	size_t byte_id = voxel_id / 8;
-	int32_t bit_id = voxel_id % 8;
-
-	if (mapped_buffer == nullptr) {
-		std::cout << "[LBM Error] LBM2D::get_boundry() mapped pointer was nullptr" << std::endl;
-		ASSERT(false);
-	}
-	if (byte_id < 0 || byte_id >= boundries->get_mapped_buffer_size()) {
-		std::cout << "[LBM Error] LBM2D::get_boundry() voxel_coordinate was out of bounds" << std::endl;
-		ASSERT(false);
-	}
-
-	return mapped_buffer[byte_id] &= 1 << bit_id;
-}
-
 void LBM2D::_generate_lattice_buffer()
 {
 	size_t voxel_count = resolution.x * resolution.y;
@@ -725,9 +617,6 @@ void LBM2D::_collide()
 
 void LBM2D::_apply_boundry_conditions() {
 
-	if (is_boundries_mapped())
-		unmap_boundries();
-	
 	compile_shaders();
 	ComputeProgram& kernel = *lbm2d_boundry_condition;
 
