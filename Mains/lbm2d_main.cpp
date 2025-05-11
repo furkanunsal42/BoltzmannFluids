@@ -94,7 +94,7 @@ void run_rendering_loop() {
 			lbm2d_solver.copy_to_texture_boundries(texture_target);
 			fb.attach_color(0, texture_target, 0);
 		}
-
+		 
 		fb.blit_to_screen(simulation_resolution, simulation_resolution, Framebuffer::Channel::COLOR, Framebuffer::Filter::LINEAR);
 
 		window.swap_buffers();
@@ -104,11 +104,11 @@ void run_rendering_loop() {
 int main(int argc, char** argv) {
 	GuiManager guiManager(argc, argv);
 
-	std::thread renderingThread(run_rendering_loop); // OpenGL rendering part (will be embedded into Main UI using QTWidget)
+//	std::thread renderingThread(run_rendering_loop); // OpenGL rendering part (will be embedded into Main UI using QTWidget)
 
 	guiManager.run();	// Main UI (QT)
 
 
-	renderingThread.join();	// Will be removed when embedded
+//	renderingThread.join();	// Will be removed when embedded
 	return 0;
 }
