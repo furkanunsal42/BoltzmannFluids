@@ -617,7 +617,6 @@ void LBM2D::_collide()
 	// add support for different boundry types
 	kernel.update_uniform_as_storage_buffer("lattice_buffer_source", lattice_source, 0);
 	kernel.update_uniform_as_storage_buffer("lattice_buffer_target", lattice_target, 0);
-	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 	kernel.update_uniform("lattice_resolution", resolution);
 	//kernel.update_uniform("lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3)));
