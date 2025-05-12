@@ -497,6 +497,17 @@ int32_t LBM2D::get_velocity_set_vector_count()
 	return get_VelocitySet_vector_count(velocity_set);
 }
 
+void LBM2D::set_boundry_velocity(uint32_t boundry_id, glm::vec3 velocity_translational, glm::vec3 velocity_angular, glm::vec3 center_of_mass)
+{
+	if (boundry_id > max_boundry_count){
+		std::cout << "[LBM Error] LBM2D::set_boundry_velocity() is called but boundry_id(" << boundry_id << ") is greater than maximum(" << max_boundry_count << ")" << std::endl;
+		ASSERT(false);
+	}
+
+	objects_cpu.resize(boundry_id + 1);
+	objects_cpu[boundry_id] = _object_desc(boundry_id, velocity_translational, velocity_angular, center_of_mass);
+}
+
 void LBM2D::set_population(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_coordinate_end, int32_t population_index, float value)
 {
 	compile_shaders();
@@ -583,11 +594,12 @@ void LBM2D::_stream()
 	Buffer& lattice_source = *_get_lattice_source();
 	Buffer& lattice_target = *_get_lattice_target();
 
+	// add forces implementation
 	kernel.update_uniform_as_storage_buffer("lattice_buffer_source", lattice_source, 0);
 	kernel.update_uniform_as_storage_buffer("lattice_buffer_target", lattice_target, 0);
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 	kernel.update_uniform("lattice_resolution", resolution);
-	
+
 	kernel.dispatch_thread(resolution.x * resolution.y * get_velocity_set_vector_count(), 1, 1);
 
 	_swap_lattice_buffers();
@@ -602,6 +614,7 @@ void LBM2D::_collide()
 	Buffer& lattice_source = *_get_lattice_source();
 	Buffer& lattice_target = *_get_lattice_target();
 
+	// add support for different boundry types
 	kernel.update_uniform_as_storage_buffer("lattice_buffer_source", lattice_source, 0);
 	kernel.update_uniform_as_storage_buffer("lattice_buffer_target", lattice_target, 0);
 	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
@@ -622,6 +635,7 @@ void LBM2D::_apply_boundry_conditions() {
 
 	Buffer& lattice = *_get_lattice_source();
 
+	// add support for different boundry types
 	kernel.update_uniform_as_storage_buffer("lattice_buffer", lattice, 0);
 	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);

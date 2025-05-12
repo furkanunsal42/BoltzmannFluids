@@ -13,6 +13,9 @@
 #define floating_point_accuracy fp32
 #define velocity_set D2Q9
 
+#define boundry_count 0
+#define boundry_bit_width 0
+
 #if velocity_set == D2Q9
 	#define volume_dimentionality 2
 	#define velocity_count 9
@@ -50,9 +53,11 @@ layout(std430, binding = 2) buffer lattice_buffer_target {
 	float[] lattice_target;
 };
 
+#if boundry_count != 0
 layout(std430, binding = 3) buffer boundries_buffer {
 	int[] boundries;
 };
+#endif
 
 uniform ivec2 lattice_resolution;
 uniform float lattice_speed_of_sound;
@@ -90,6 +95,7 @@ float get_lattice_weight(int velocity_index){
 	return lattice_velocity_set[velocity_index].w;
 }
 
+#if boundry_count != 0
 bool get_boundry(ivec2 pixel_coord) {
 	int boundry = 0;
 	int pixel_id = pixel_coord.y * lattice_resolution.x + pixel_coord.x;
@@ -97,6 +103,7 @@ bool get_boundry(ivec2 pixel_coord) {
 	int bit_id = pixel_id % 32;
 	return (boundries[byte_id] & 1 << bit_id) != 0;
 }
+#endif
 
 float compute_density(ivec2 pixel_coord){
 	//if(get_boundry(pixel_coord))
@@ -108,8 +115,10 @@ float compute_density(ivec2 pixel_coord){
 }
 
 vec3 compute_velocity(ivec2 pixel_coord, float density){
+	#if boundry_count != 0
 	if(get_boundry(pixel_coord))
 		return vec3(0);
+	#endif
 	vec3 velocity = vec3(0);
 	for (int i = 0; i < velocity_count; i++){
 		velocity += get_lattice_source(pixel_coord, i) * get_lattice_velocity(i);

@@ -24,6 +24,7 @@
 class LBM2D {
 public:
 	constexpr static uint32_t not_a_boundry = 0;
+	constexpr static uint32_t max_boundry_count = 255;
 
 	// simulation controls
 	void iterate_time(std::chrono::duration<double, std::milli> deltatime);
@@ -32,14 +33,14 @@ public:
 	glm::ivec2 get_resolution();
 	int32_t get_velocity_set_vector_count();
 
+	// high level field initialization api
 	void set_boundry_velocity(
 		uint32_t boundry_id,
 		glm::vec3 velocity_translational, 
 		glm::vec3 velocity_angular,
-		glm::vec3 object_center_of_mass_position
+		glm::vec3 center_of_mass
 	);
 
-	// high level field initialization api
 	struct FluidProperties {
 		glm::vec3 velocity = glm::vec3(0);
 		glm::vec3 force = glm::vec3(0);
@@ -92,6 +93,8 @@ private:
 	
 	void _stream();
 	void _collide();
+	void _collide_boundryless();
+	void _collide_with_boundry()
 	void _apply_boundry_conditions();
 	void _generate_lattice_buffer();
 
