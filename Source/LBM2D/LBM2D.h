@@ -93,8 +93,6 @@ private:
 	
 	void _stream();
 	void _collide();
-	void _collide_boundryless();
-	void _collide_with_boundry()
 	void _apply_boundry_conditions();
 	void _generate_lattice_buffer();
 

@@ -614,7 +614,6 @@ void LBM2D::_collide()
 	Buffer& lattice_source = *_get_lattice_source();
 	Buffer& lattice_target = *_get_lattice_target();
 
-	// add support for different boundry types
 	kernel.update_uniform_as_storage_buffer("lattice_buffer_source", lattice_source, 0);
 	kernel.update_uniform_as_storage_buffer("lattice_buffer_target", lattice_target, 0);
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
@@ -629,7 +628,16 @@ void LBM2D::_collide()
 
 void LBM2D::_apply_boundry_conditions() {
 
+	if (bits_per_boundry == 0)
+		return;
+
 	compile_shaders();
+	
+	if (objects == nullptr || boundries == nullptr) {
+		std::cout << "[LBM2D Error] LBM2D::_apply_boundry_conditions() is called and bits_per_boundry is non-zero but objects or boundries is nullptr" << std::endl;
+		ASSERT(false);
+	}
+	
 	ComputeProgram& kernel = *lbm2d_boundry_condition;
 
 	Buffer& lattice = *_get_lattice_source();
@@ -637,17 +645,18 @@ void LBM2D::_apply_boundry_conditions() {
 	// add support for different boundry types
 	kernel.update_uniform_as_storage_buffer("lattice_buffer", lattice, 0);
 	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+	kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 	kernel.update_uniform("lattice_resolution", resolution);
 
 	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
 }
 
-void LBM2D::_collide_with_precomputed_velocities(Buffer& velocity_field)
-{
-	ComputeProgram& kernel = *lbm2d_collide_with_precomputed_velocity;
-
-}
+//void LBM2D::_collide_with_precomputed_velocities(Buffer& velocity_field)
+//{
+//	ComputeProgram& kernel = *lbm2d_collide_with_precomputed_velocity;
+//
+//}
 
 void LBM2D::_set_populations_to_equilibrium(Buffer& density_field, Buffer& velocity_field)
 {

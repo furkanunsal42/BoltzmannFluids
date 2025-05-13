@@ -50,6 +50,11 @@ layout(std430, binding = 2) buffer boundries_buffer {
 	int[] boundries;
 };
 
+layout(std430, binding = 3) buffer objects_buffer {
+	vec4[] objects;
+};
+
+
 uniform ivec2 lattice_resolution;
 
 int get_inverse_lattice_direction_index(int lattice_velocity_index){
