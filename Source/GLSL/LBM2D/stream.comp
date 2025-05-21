@@ -1,7 +1,6 @@
 #<compute shader>
 
 #version 460 core
-#extension NV_shader_atomic_float : require
 
 #define D2Q9 0
 #define D3Q15 1
@@ -66,7 +65,7 @@ ivec2 positive_modulo(ivec2 i, ivec2 n){
 }
 
 void main(){
-	if (id.x >= lattice_resolution.x * lattice_resolution.y * velocity_count)
+	if (int(id.x) >= lattice_resolution.x * lattice_resolution.y * velocity_count)
 		return;
 
 	int pixel_id = int(id.x) / velocity_count;

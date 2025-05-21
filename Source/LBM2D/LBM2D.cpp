@@ -140,7 +140,7 @@ void LBM2D::_initialize_fields_default_pass(std::function<void(glm::ivec2, Fluid
 	bool is_force_field_constant = false;
 	glm::vec3 constant_force_field = temp_properties.force;
 
-	uint32_t object_count = 0;
+	uint32_t object_count = 1;
 
 	for (int32_t x = 0; x < resolution.x; x++) {
 		for (int32_t y = 0; y < resolution.y; y++) {
@@ -216,8 +216,8 @@ void LBM2D::_initialize_fields_boundries_pass(std::function<void(glm::ivec2, Flu
 
 	
 	// boundries initialization
-
-	size_t boundries_buffer_size = std::ceil((bits_per_boundry * resolution.x * resolution.y) / 8.0f);
+	
+	size_t boundries_buffer_size = std::ceil(std::ceil((bits_per_boundry * resolution.x * resolution.y) / 8.0f) / 4.0f) * 4;
 	boundries = std::make_shared<Buffer>(boundries_buffer_size);
 
 	boundries->map();
@@ -231,10 +231,10 @@ void LBM2D::_initialize_fields_boundries_pass(std::function<void(glm::ivec2, Flu
 			size_t voxel_id = y * resolution.x + x;
 			size_t bits_begin = voxel_id * bits_per_boundry;
 			
-			size_t byte_offset = bits_begin / 8;
-			int32_t subbyte_offset_in_bits = bits_begin % 8;
+			size_t dword_offset = bits_begin / 32;
+			int32_t subdword_offset_in_bits = bits_begin % 32;
 
-			boundries_mapped_buffer[byte_offset] |= (properties.boundry_id << subbyte_offset_in_bits);
+			((int32_t*)boundries_mapped_buffer)[dword_offset] |= (properties.boundry_id << subdword_offset_in_bits);
 		}
 	}
 
@@ -616,6 +616,7 @@ void LBM2D::_collide()
 
 	kernel.update_uniform_as_storage_buffer("lattice_buffer_source", lattice_source, 0);
 	kernel.update_uniform_as_storage_buffer("lattice_buffer_target", lattice_target, 0);
+	kernel.update_uniform_as_storage_buffer("")
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 	kernel.update_uniform("lattice_resolution", resolution);
 	//kernel.update_uniform("lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3)));

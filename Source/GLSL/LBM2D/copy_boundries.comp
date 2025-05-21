@@ -100,7 +100,7 @@ vec2 compute_velocity(ivec2 pixel_coord, float density){
 
 void main(){
 	
-	if (id.x >= lattice_resolution.x * lattice_resolution.y)
+	if (int(id.x) >= lattice_resolution.x * lattice_resolution.y)
 		return;
 	
 	int pixel_id = int(id.x);

@@ -13,8 +13,8 @@
 #define floating_point_accuracy fp32
 #define velocity_set D2Q9
 
-#define boundry_count 0
-#define boundry_bit_width 0
+#define boundry_count 1
+#define bits_per_boundry 0
 
 #if velocity_set == D2Q9
 	#define volume_dimentionality 2
@@ -53,9 +53,18 @@ layout(std430, binding = 2) buffer lattice_buffer_target {
 	float[] lattice_target;
 };
 
+layout(std430, binding = 3) buffer boundries_buffer {
+	int[] boundries;
+};
+
+layout(std430, binding = 4) buffer objects_buffer {
+	vec4[] objects;
+};
+
 uniform ivec2 lattice_resolution;
 uniform float lattice_speed_of_sound;
 uniform float relaxation_time;
+uniform int object_count;
 
 int get_inverse_lattice_population_id_index(int lattice_velocity_index){
 	if (lattice_velocity_index == 0 || lattice_velocity_index >= velocity_count)
@@ -89,15 +98,42 @@ float get_lattice_weight(int velocity_index){
 	return lattice_velocity_set[velocity_index].w;
 }
 
-#if boundry_count != 0
-bool get_boundry(ivec2 pixel_coord) {
-	int boundry = 0;
-	int pixel_id = pixel_coord.y * lattice_resolution.x + pixel_coord.x;
-	int byte_id = pixel_id / 32;
-	int bit_id = pixel_id % 32;
-	return (boundries[byte_id] & 1 << bit_id) != 0;
+#if boundry_count != 1
+int get_boundry(ivec2 pixel_coord) {
+
+	int voxel_id = pixel_coord.y * lattice_resolution.x + pixel_coord.x;
+	int bits_begin = voxel_id * bits_per_boundry;
+			
+	int dword_offset = bits_begin / 32;
+	int subdword_offset_in_bits = bits_begin % 32;
+	
+	int bitmask = (1 << bits_per_boundry) - 1;
+	int boundry = boundries[dword_offset] & (bitmask << subdword_offset_in_bits);
+		
+	return boundry;
+}
+#else
+int get_boundry(ivec2 pixel_coord) {
+	return 0;
 }
 #endif
+
+struct object_info_s {
+	int id;
+	vec3 velocity;
+	vec3 center_of_mass;
+	vec3 velocity_angular;
+};
+
+object_info_s get_object_info(int object_id){
+	object_info_s result;
+	result.id =					int(objects[object_id * 3 + 0].w);
+	result.velocity =			objects[object_id * 3 + 0].xyz;
+	result.center_of_mass =		objects[object_id * 3 + 1].xyz;
+	result.velocity_angular =	objects[object_id * 3 + 2].xyz;
+	
+	return result;
+}
 
 float compute_density(ivec2 pixel_coord){
 	float density = 0;
@@ -139,11 +175,17 @@ float apply_bgk_collision(float current_velocity, float equilibrium){
 
 void main(){
 	
-	if (id.x >= lattice_resolution.x * lattice_resolution.y)
+	if (int(id.x) >= lattice_resolution.x * lattice_resolution.y)
 		return;
 
 	int pixel_id = int(id.x);
 	ivec2 pixel_coord = ivec2(pixel_id % lattice_resolution.x, pixel_id / lattice_resolution.x);
+
+	#if boundry_count != 1
+	int boundry_id = get_boundry(pixel_coord);
+	if (boundry_id == 0)
+		return;
+	#endif
 
 	float density = compute_density(pixel_coord);
 	if (density == 0)
