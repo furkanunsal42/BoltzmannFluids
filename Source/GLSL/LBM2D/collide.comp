@@ -184,7 +184,7 @@ void main(){
 
 	#if boundry_count != 0
 	int boundry_id = get_boundry(pixel_coord);
-	if (boundry_id == 0)
+	if (boundry_id != 0)
 		return;
 	#endif
 

@@ -77,9 +77,9 @@ void main(){
 
 	int source_pixel_id = source_pixel_coord.y * lattice_resolution.x + source_pixel_coord.x;
 	
-	// for debug
+	//// for debug
 	//int inv_velocity_id = get_inverse_lattice_direction_index(velocity_id);
-	//if (pixel_coord == ivec2(95, 0) && velocity_id == 1){
+	//if (pixel_coord == ivec2(95, 300) && velocity_id == 1){
 	//	lattice_target[id.x] = 32;
 	//	return;
 	//}

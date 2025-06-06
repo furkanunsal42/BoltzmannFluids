@@ -694,7 +694,6 @@ void LBM2D::_apply_boundry_conditions() {
 
 	Buffer& lattice = *_get_lattice_source();
 
-	// add support for different boundry types
 	kernel.update_uniform_as_storage_buffer("lattice_buffer", lattice, 0);
 	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
 	kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);

@@ -56,7 +56,9 @@ int main() {
 			properties.boundry_id = false;
 			//properties.boundry_id |= glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1 / 4.0, simulation_resolution.y / 2)) < 32;
 			properties.boundry_id |= glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 3 / 4.0, simulation_resolution.y / 2)) < 32;
-			properties.velocity = glm::vec3(1, 1, 0) / 16.0f;
+			properties.velocity = glm::vec3(1, 1, 0) / 32.0f;
+			if (properties.boundry_id != 0)
+				properties.velocity = glm::vec3(0);
 			properties.density = 1.0f;
 			properties.force = glm::vec3(0, -1, 0);
 		},
