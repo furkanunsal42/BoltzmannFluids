@@ -92,6 +92,9 @@ float LBM2D::get_relaxation_time()
 
 void LBM2D::initialize_fields(std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda, glm::ivec2 resolution, float relaxation_time, VelocitySet velocity_set, FloatingPointAccuracy fp_accuracy)
 {
+	is_programs_compiled = false;
+	objects_cpu[0] = _object_desc();
+
 	set_relaxation_time(relaxation_time);
 	set_velocity_set(velocity_set);
 	set_floating_point_accuracy(fp_accuracy);
@@ -164,6 +167,18 @@ void LBM2D::_initialize_fields_default_pass(std::function<void(glm::ivec2, Fluid
 	velocity_buffer_data = nullptr;
 	density_buffer_data = nullptr;
 
+	objects_cpu.resize(object_count);
+
+	bool does_contain_boundry = object_count > 1;	// first object slot is indexed by non-boundry id (fluid)
+
+	// bits per boudnry can only be 1, 2, 4, 8 to not cause a boundry spanning over 2 bytes
+	bits_per_boundry = std::exp2(std::ceil(std::log2f(std::ceil(std::log2f(object_count)))));
+	if (bits_per_boundry < 1 || bits_per_boundry > 8) {
+		std::cout << "[LBM Error] _initialize_fields_default_pass() is called but too many or too few objects are defined, maximum of 255 bits are possible but number of objets were: " << object_count << std::endl;
+		ASSERT(false);
+	}
+	std::cout << "bits_per_boundery=" << bits_per_boundry << std::endl;
+
 	_set_populations_to_equilibrium(density_buffer, velocity_buffer);
 
 	int32_t relaxation_iteration_count = 1;
@@ -173,7 +188,6 @@ void LBM2D::_initialize_fields_default_pass(std::function<void(glm::ivec2, Fluid
 		_stream();
 	}
 
-	objects_cpu.resize(object_count);
 }
 
 void LBM2D::_initialize_fields_boundries_pass(std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda, glm::ivec2 resolution, FloatingPointAccuracy fp_accuracy)
@@ -206,9 +220,9 @@ void LBM2D::_initialize_fields_boundries_pass(std::function<void(glm::ivec2, Flu
 	
 	for (uint32_t i = 0; i < objects_cpu.size(); i++) {
 		_object_desc& desc = objects_cpu[i];
-		objects_mapped_buffer[0] = glm::vec4(desc.velocity_translational, desc.boundry_id);
-		objects_mapped_buffer[1] = glm::vec4(desc.velocity_angular, 0);
-		objects_mapped_buffer[2] = glm::vec4(desc.center_of_mass, 0);
+		objects_mapped_buffer[4*i + 0] = glm::vec4(desc.velocity_translational, desc.boundry_id);
+		objects_mapped_buffer[4*i + 1] = glm::vec4(desc.velocity_angular, 0);
+		objects_mapped_buffer[4*i + 2] = glm::vec4(desc.center_of_mass, 0);
 	}
 
 	objects->unmap();
@@ -221,7 +235,11 @@ void LBM2D::_initialize_fields_boundries_pass(std::function<void(glm::ivec2, Flu
 	boundries = std::make_shared<Buffer>(boundries_buffer_size);
 
 	boundries->map();
-	int8_t* boundries_mapped_buffer = (int8_t*)boundries->get_mapped_pointer();
+	uint32_t* boundries_mapped_buffer = (uint32_t*)boundries->get_mapped_pointer();
+
+	for (int32_t i = 0; i < boundries_buffer_size / 4; i++) {
+		(boundries_mapped_buffer)[i] = 0;
+	}
 
 	for (int32_t x = 0; x < resolution.x; x++) {
 		for (int32_t y = 0; y < resolution.y; y++) {
@@ -233,10 +251,33 @@ void LBM2D::_initialize_fields_boundries_pass(std::function<void(glm::ivec2, Flu
 			
 			size_t dword_offset = bits_begin / 32;
 			int32_t subdword_offset_in_bits = bits_begin % 32;
-
-			((int32_t*)boundries_mapped_buffer)[dword_offset] |= (properties.boundry_id << subdword_offset_in_bits);
+			
+			(boundries_mapped_buffer)[dword_offset] |= (properties.boundry_id << subdword_offset_in_bits);
 		}
 	}
+
+	//// debug
+	//for (int32_t x = 0; x < resolution.x; x++) {
+	//	for (int32_t y = 0; y < resolution.y; y++) {
+	//		FluidProperties properties;
+	//		initialization_lambda(glm::ivec2(x, y), properties);
+	//		
+	//		int voxel_id = y * resolution.x + x;
+	//		int bits_begin = voxel_id * bits_per_boundry;
+	//
+	//		int dword_offset = bits_begin / 32;
+	//		int subdword_offset_in_bits = bits_begin % 32;
+	//
+	//		uint32_t bitmask = (1 << bits_per_boundry) - 1;
+	//		uint32_t boundry = (boundries_mapped_buffer)[dword_offset] & (bitmask << subdword_offset_in_bits);
+	//		boundry = boundry >> subdword_offset_in_bits;
+	//
+	//		if (boundry != properties.boundry_id) {
+	//			std::cout << "FUCK  " << x << " " << y << " value="<< boundry << " original=" << properties.boundry_id << std::endl;
+	//			
+	//		}
+	//	}
+	//}
 
 	boundries->unmap();
 	boundries_mapped_buffer = nullptr;
@@ -424,7 +465,7 @@ void LBM2D::copy_to_texture_boundries(Texture2D& target_texture)
 		ASSERT(false);
 	}
 
-	if (target_texture.get_internal_format_color() != Texture2D::ColorTextureFormat::R32F) {
+	if (target_texture.get_internal_format_color() != Texture2D::ColorTextureFormat::RGBA32F) {
 		std::cout << "[LBM Error] LBM2D::copy_to_texture_boundries() is called but target_texture's format wasn't compatible" << std::endl;
 		ASSERT(false);
 	}
@@ -438,6 +479,7 @@ void LBM2D::copy_to_texture_boundries(Texture2D& target_texture)
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 	kernel.update_uniform_as_storage_buffer("lattice_buffer", lattice, 0);
 	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+	kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
 	kernel.update_uniform_as_image("target_texture", target_texture, 0);
 	kernel.update_uniform("lattice_resolution", resolution);
 	kernel.update_uniform("texture_resolution", target_texture.get_size());
@@ -504,7 +546,13 @@ void LBM2D::set_boundry_velocity(uint32_t boundry_id, glm::vec3 velocity_transla
 		ASSERT(false);
 	}
 
-	objects_cpu.resize(boundry_id + 1);
+	if (boundry_id == 0) {
+		std::cout << "[LBM Error] LBM2D::set_boundry_velocity() is called but boundry_id(0) is defined to be fluid, it cannot be treated as an object" << std::endl;
+		ASSERT(false);
+	}
+
+	if (boundry_id >= objects_cpu.size())
+		objects_cpu.resize(boundry_id + 1);
 	objects_cpu[boundry_id] = _object_desc(boundry_id, velocity_translational, velocity_angular, center_of_mass);
 }
 
@@ -580,6 +628,8 @@ std::vector<std::pair<std::string, std::string>> LBM2D::_generate_shader_macros(
 	std::vector<std::pair<std::string, std::string>> definitions{
 		{"floating_point_accuracy", get_FloatingPointAccuracy_to_macro(floating_point_accuracy)},
 		{"velocity_set", get_VelocitySet_to_macro(velocity_set)},
+		{"boundry_count", std::to_string(objects_cpu.size())},
+		{"bits_per_boundry", std::to_string(bits_per_boundry)},
 	};
 
 	return definitions;
@@ -616,7 +666,8 @@ void LBM2D::_collide()
 
 	kernel.update_uniform_as_storage_buffer("lattice_buffer_source", lattice_source, 0);
 	kernel.update_uniform_as_storage_buffer("lattice_buffer_target", lattice_target, 0);
-	kernel.update_uniform_as_storage_buffer("")
+	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+	kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 	kernel.update_uniform("lattice_resolution", resolution);
 	//kernel.update_uniform("lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3)));
@@ -653,11 +704,11 @@ void LBM2D::_apply_boundry_conditions() {
 	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
 }
 
-//void LBM2D::_collide_with_precomputed_velocities(Buffer& velocity_field)
-//{
-//	ComputeProgram& kernel = *lbm2d_collide_with_precomputed_velocity;
-//
-//}
+void LBM2D::_collide_with_precomputed_velocities(Buffer& velocity_field)
+{
+	ComputeProgram& kernel = *lbm2d_collide_with_precomputed_velocity;
+
+}
 
 void LBM2D::_set_populations_to_equilibrium(Buffer& density_field, Buffer& velocity_field)
 {
@@ -678,3 +729,8 @@ void LBM2D::_set_populations_to_equilibrium(Buffer& density_field, Buffer& veloc
 	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
 }
 
+LBM2D::_object_desc::_object_desc(uint32_t boundry_id, glm::vec3 velocity_translational, glm::vec3 velocity_angular, glm::vec3 center_of_mass) :
+	boundry_id(boundry_id), velocity_translational(velocity_translational), velocity_angular(velocity_angular), center_of_mass(center_of_mass)
+{
+
+}

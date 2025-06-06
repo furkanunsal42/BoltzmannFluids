@@ -143,7 +143,7 @@ private:
 			glm::vec3 velocity_translational = glm::vec3(0),
 			glm::vec3 velocity_angular = glm::vec3(0),
 			glm::vec3 center_of_mass = glm::vec3(0)
-		){}
+		);
 
 		uint32_t boundry_id;
 		glm::vec3 velocity_translational;
