@@ -128,14 +128,13 @@ struct object_info_s {
 
 object_info_s get_object_info(int object_id){
 	object_info_s result;
-	result.object_id =		int(objects[object_id * 3 + 0].w);
-	result.velocity =			objects[object_id * 3 + 0].xyz;
-	result.center_of_mass =		objects[object_id * 3 + 1].xyz;
-	result.velocity_angular =	objects[object_id * 3 + 2].xyz;
+	result.object_id =		int(objects[object_id * 4 + 0].w);
+	result.velocity =			objects[object_id * 4 + 0].xyz;
+	result.center_of_mass =		objects[object_id * 4 + 1].xyz;
+	result.velocity_angular =	objects[object_id * 4 + 2].xyz;
 	
 	return result;
 }
-
 
 float compute_density(ivec2 pixel_coord){
 	float density = 0;

@@ -83,6 +83,6 @@ void main(){
 	//	lattice_target[id.x] = 32;
 	//	return;
 	//}
-
+	
 	lattice_target[id.x] = lattice_source[source_pixel_id * velocity_count + velocity_id];
 }

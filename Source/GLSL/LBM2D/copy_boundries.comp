@@ -78,7 +78,7 @@ float get_lattice_population_weight(int velocity_index){
 	return lattice_velocity_set[velocity_index].w;
 }
 
-//#if boundry_count != 0
+#if boundry_count != 0
 int get_boundry(ivec2 pixel_coord) {
 
 	int voxel_id = pixel_coord.y * lattice_resolution.x + pixel_coord.x;
@@ -93,11 +93,11 @@ int get_boundry(ivec2 pixel_coord) {
 		
 	return boundry;
 }
-//#else
-//int get_boundry(ivec2 pixel_coord) {
-//	return 0;
-//}
-//#endif
+#else
+int get_boundry(ivec2 pixel_coord) {
+	return 0;
+}
+#endif
 
 struct object_info_s {
 	int object_id;
