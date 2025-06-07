@@ -1,23 +1,20 @@
-#pragma once
+#ifndef GUIMANAGER_H
+#define GUIMANAGER_H
 
-#include <QtWidgets/qapplication>
-#include <QtWidgets/qpushbutton.h>
-
-#include <QtCore/qstringliteral.h>
-#include <QtCore/qstring.h>
-
+#include <QApplication>
 
 #include "MainWindow.h"
 
-class GuiManager {
+class GuiManager
+{
 public:
-	GuiManager(int& argc, char** argv);
+    GuiManager(int& argc, char** argv);
 
-	void run();
+    void run();
 
 private:
-	QApplication app;
-	MainWindow mainWindow;
+    QApplication app;
+    MainWindow mainWindow;
 };
 
-
+#endif // GUIMANAGER_H

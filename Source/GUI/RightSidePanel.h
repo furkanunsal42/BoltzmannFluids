@@ -1,15 +1,24 @@
-#pragma once
-#include <QtWidgets/qboxlayout.h>
-#include <QtWidgets/qgroupbox.h>
+#ifndef R_GHTSIDEPANEL_H
+#define R_GHTSIDEPANEL_H
 
-class RightSidePanel : public QWidget{
-	Q_OBJECT
+#include <QWidget>
 
+#include <QVBoxLayout>
+#include <QGroupBox>
+
+class RightSidePanel : public QWidget
+{
+    Q_OBJECT
 public:
-	explicit RightSidePanel(QWidget* parent = nullptr);
+
+    explicit RightSidePanel(QWidget* parent = nullptr);
 
 private:
-	QVBoxLayout* mainLayout;
 
-	QGroupBox* createInitialConditionsGroup();
+    QVBoxLayout* mainLayout;
+
+    QGroupBox* createInitialConditionsGroup();
+
 };
+
+#endif // R_GHTSIDEPANEL_H
