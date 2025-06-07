@@ -10,6 +10,9 @@
 #define fp16 0
 #define fp32 1
 
+#define periodic_x 1
+#define periodic_y 1
+
 #define floating_point_accuracy fp32
 #define velocity_set D2Q9
 
@@ -64,6 +67,10 @@ ivec2 positive_modulo(ivec2 i, ivec2 n){
 	return ivec2(mod((mod(i, n) + n), n));
 }
 
+int positive_modulo(int i, int n){
+	return int(mod((mod(i, n) + n), n));
+}
+
 void main(){
 	if (int(id.x) >= lattice_resolution.x * lattice_resolution.y * velocity_count)
 		return;
@@ -73,10 +80,21 @@ void main(){
 	ivec2 pixel_coord = ivec2(pixel_id.x % lattice_resolution.x, pixel_id.x / lattice_resolution.x);
 	
 	ivec2 source_pixel_coord = pixel_coord - ivec2(lattice_velocity_set[velocity_id].xy);
-	source_pixel_coord = positive_modulo(source_pixel_coord, lattice_resolution);
+	
+	#if periodic_x == 1
+	source_pixel_coord.x = positive_modulo(source_pixel_coord.x, lattice_resolution.x);
+	#else
+	if (source_pixel_coord.x < 0 || source_pixel_coord.x >= lattice_resolution.x) return;
+	#endif
+	
+	#if periodic_y == 1
+	source_pixel_coord.y = positive_modulo(source_pixel_coord.y, lattice_resolution.y);
+	#else
+	if (source_pixel_coord.y < 0 || source_pixel_coord.y >= lattice_resolution.y) return;
+	#endif
 
 	int source_pixel_id = source_pixel_coord.y * lattice_resolution.x + source_pixel_coord.x;
-	
+
 	//// for debug
 	//int inv_velocity_id = get_inverse_lattice_direction_index(velocity_id);
 	//if (pixel_coord == ivec2(95, 300) && velocity_id == 1){

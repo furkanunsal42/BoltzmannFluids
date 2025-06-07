@@ -58,6 +58,8 @@ public:
 		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
 		glm::ivec2 resolution,
 		float relaxation_time,
+		bool periodic_x =  true,
+		bool periodic_y = true,
 		VelocitySet velocity_set = VelocitySet::D2Q9, 
 		FloatingPointAccuracy fp_accuracy = FloatingPointAccuracy::fp32
 	);
@@ -68,6 +70,7 @@ public:
 	void copy_to_texture_velocity_magnetude(Texture2D& target_texture);
 	void copy_to_texture_density(Texture2D& target_texture);
 	void copy_to_texture_boundries(Texture2D& target_texture);
+	void copy_to_texture_force_vector(Texture2D& target_texture);
 
 	// low level field initialization api
 	void compile_shaders(); 
@@ -137,6 +140,9 @@ private:
 	glm::ivec2 resolution = glm::ivec2(0);
 	float relaxation_time = 0.53f;
 
+	bool periodic_x = true;
+	bool periodic_y = true;
+
 	// forces control flags
 	bool is_force_field_constant = false;
 	
@@ -188,5 +194,6 @@ private:
 	std::shared_ptr<ComputeProgram> lbm2d_copy_population = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_copy_velocity_magnitude = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_copy_velocity_total = nullptr;
+	std::shared_ptr<ComputeProgram> lbm2d_copy_force_total = nullptr;
 	std::unique_ptr<UniformBuffer> lattice_velocity_set_buffer = nullptr;
 };

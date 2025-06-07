@@ -5,7 +5,7 @@ using namespace std::chrono_literals;
 
 int main() {
 
-	glm::ivec2 simulation_resolution(1024, 128);
+	glm::ivec2 simulation_resolution(1024, 1024);
 
 	WindowDescription desc;
 	desc.w_scale_framebuffer_size = false;
@@ -30,6 +30,9 @@ int main() {
 				break;
 			case Window::Key::NUM_4:
 				display_mode = 4;
+				break;
+			case Window::Key::NUM_5:
+				display_mode = 5;
 				break;
 			case Window::Key::ESCAPE:
 				exit(0);
@@ -57,22 +60,27 @@ int main() {
 		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
 			properties.boundry_id = false;
 			//properties.boundry_id |= glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 3 / 4.0, simulation_resolution.y / 2)) < 32;
-			//properties.velocity = glm::vec3(0, 1, 0) / 16.0f;
+			properties.velocity = glm::vec3(0, -1, 0) / 16.0f;
 			properties.density = 1.0f;
 			properties.force = glm::vec3(0, -1, 0);
-			
-			//if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1 / 4.0, simulation_resolution.y / 2)) < 32)
-			//	properties.boundry_id = 1;
-			if (coordinate.y == 0)
-				properties.boundry_id = 1;
-			if (coordinate.y == lbm2d_solver.get_resolution().y-1)
-				properties.boundry_id = 2;
-			//if (coordinate.y == 32)
-			//	properties.boundry_id = 4;
+			if (coordinate.y > 512)
+				properties.force = glm::vec3(1, 0, 0);
 
+			if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1 / 4.0, simulation_resolution.y / 2)) < 32)
+				properties.boundry_id = 1;
+			if (coordinate.x == 0)
+				properties.velocity = glm::vec3(0, 0, 0) / 16.0f;
+			if (coordinate.x == lbm2d_solver.get_resolution().x-1)
+				properties.velocity = glm::vec3(0, 0, 0) / 16.0f;
+			if (coordinate.y == 0)
+				properties.velocity = glm::vec3(0, 0, 0) / 16.0f;
+			if (coordinate.y == lbm2d_solver.get_resolution().y - 1)
+				properties.velocity = glm::vec3(0, 0, 0) / 16.0f;
 		},
 		glm::ivec2(simulation_resolution),
 		0.53f,
+		false,
+		false,
 		VelocitySet::D2Q9,
 		FloatingPointAccuracy::fp32
 	);
@@ -106,6 +114,11 @@ int main() {
 		else if (display_mode == 4){
 			Texture2D& texture_target = texture_4c;
 			lbm2d_solver.copy_to_texture_boundries(texture_target);
+			fb.attach_color(0, texture_target, 0);
+		}
+		else if (display_mode == 5) {
+			Texture2D& texture_target = texture_4c;
+			lbm2d_solver.copy_to_texture_force_vector(texture_target);
 			fb.attach_color(0, texture_target, 0);
 		}
 

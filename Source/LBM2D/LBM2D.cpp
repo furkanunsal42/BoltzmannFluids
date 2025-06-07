@@ -19,6 +19,7 @@ void LBM2D::compile_shaders()
 	lbm2d_copy_population					= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "copy_population.comp"), definitions);
 	lbm2d_copy_velocity_magnitude			= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "copy_velocity_magnitude.comp"), definitions);
 	lbm2d_copy_velocity_total				= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "copy_velocity_total.comp"), definitions);
+	lbm2d_copy_force_total					= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "copy_force_total.comp"), definitions);				
 	lbm2d_add_random_population				= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "add_random_population.comp"), definitions);
 	is_programs_compiled = true;
 }
@@ -90,8 +91,11 @@ float LBM2D::get_relaxation_time()
 	return relaxation_time;
 }
 
-void LBM2D::initialize_fields(std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda, glm::ivec2 resolution, float relaxation_time, VelocitySet velocity_set, FloatingPointAccuracy fp_accuracy)
+void LBM2D::initialize_fields(std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda, glm::ivec2 resolution, float relaxation_time, bool periodic_x, bool periodic_y, VelocitySet velocity_set, FloatingPointAccuracy fp_accuracy)
 {
+	this->periodic_x = periodic_x;
+	this->periodic_y = periodic_y;
+
 	is_programs_compiled = false;
 	objects_cpu[0] = _object_desc();
 
@@ -490,6 +494,41 @@ void LBM2D::copy_to_texture_boundries(Texture2D& target_texture)
 	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
 }
 
+void LBM2D::copy_to_texture_force_vector(Texture2D& target_texture)
+{
+	if (_get_lattice_source() == nullptr) {
+		std::cout << "[LBM Error] LBM2D::copy_to_texture_force_vector() is called but lattice wasn't generated" << std::endl;
+		ASSERT(false);
+	}
+
+	if (forces == nullptr) {
+		std::cout << "[LBM Error] LBM2D::copy_to_texture_force_vector() is called but boundries wasn't generated" << std::endl;
+		ASSERT(false);
+	}
+
+	if (target_texture.get_internal_format_color() != Texture2D::ColorTextureFormat::RGBA32F) {
+		std::cout << "[LBM Error] LBM2D::copy_to_texture_force_vector() is called but target_texture's format wasn't compatible" << std::endl;
+		ASSERT(false);
+	}
+
+	compile_shaders();
+
+	ComputeProgram& kernel = *lbm2d_copy_force_total;
+
+	Buffer& lattice = *_get_lattice_source();
+
+	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
+	kernel.update_uniform_as_storage_buffer("lattice_buffer", lattice, 0);
+	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+	kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
+	kernel.update_uniform_as_storage_buffer("forces_buffer", *forces, 0);
+	kernel.update_uniform_as_image("target_texture", target_texture, 0);
+	kernel.update_uniform("lattice_resolution", resolution);
+	kernel.update_uniform("texture_resolution", target_texture.get_size());
+
+	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
+}
+
 void LBM2D::_generate_lattice_buffer()
 {
 	size_t voxel_count = resolution.x * resolution.y;
@@ -638,6 +677,8 @@ std::vector<std::pair<std::string, std::string>> LBM2D::_generate_shader_macros(
 		{"velocity_set", get_VelocitySet_to_macro(velocity_set)},
 		{"boundry_count", std::to_string(objects_cpu.size())},
 		{"bits_per_boundry", std::to_string(bits_per_boundry)},
+		{"periodic_x", periodic_x ? "1" : "0"},
+		{"periodic_y", periodic_y ? "1" : "0"},
 	};
 
 	return definitions;
