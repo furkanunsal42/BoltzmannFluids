@@ -57,7 +57,6 @@ layout(std430, binding = 3) buffer objects_buffer {
 	vec4[] objects;
 };
 
-
 uniform ivec2 lattice_resolution;
 
 int get_inverse_lattice_direction_index(int lattice_velocity_index){
@@ -66,6 +65,14 @@ int get_inverse_lattice_direction_index(int lattice_velocity_index){
 
 	bool is_odd = lattice_velocity_index % 2 == 1;
 	return is_odd ? lattice_velocity_index + 1 : lattice_velocity_index - 1;
+}
+
+vec3 get_lattice_velocity(int velocity_index){
+	return lattice_velocity_set[velocity_index].xyz;
+}
+
+float get_lattice_weight(int velocity_index){
+	return lattice_velocity_set[velocity_index].w;
 }
 
 #if boundry_count != 0
@@ -104,6 +111,17 @@ object_info_s get_object_info(int object_id){
 	return result;
 }
 
+float dirichlet_boundry_correction_term(int lattice_velocity_index, float local_density, vec3 boundry_velocity){
+	vec3 c = get_lattice_velocity(lattice_velocity_index);
+	float w = get_lattice_weight(lattice_velocity_index);
+	float p = local_density;
+	vec3 v = boundry_velocity;
+	//float cs = 1.0 / sqrt(3);
+	//float cs2 = pow(1.0 / sqrt(3), 2);
+
+	return -2 * w * p * dot(c, v) * 3; 
+}
+
 void main(){
 	
 	if (id.x >= lattice_resolution.x * lattice_resolution.y)
@@ -112,18 +130,22 @@ void main(){
 	int pixel_id = int(id.x);
 	ivec2 pixel_coord = ivec2(pixel_id.x % lattice_resolution.x, pixel_id.x / lattice_resolution.x);
 	
-	// TEMP
-	if (get_boundry(pixel_coord) == 0)
+	int boundry = int(get_boundry(pixel_coord));
+	if (boundry == 0)
 		return;
 
-	for (int population_id = 1; population_id < velocity_count; population_id+=2){
-	
+	object_info_s object = get_object_info(boundry);
+	// include angular velocity term
+	vec3 boundry_velocity = object.velocity;
+
+	for (int population_id = 1; population_id < velocity_count; population_id+=2)
+	{
 		int inv_population_id = get_inverse_lattice_direction_index(population_id);
 		
 		float value_a = lattice[pixel_id * velocity_count + population_id];
 		float value_b = lattice[pixel_id * velocity_count + inv_population_id];
-	
-		lattice[pixel_id * velocity_count + population_id] = value_b;
-		lattice[pixel_id * velocity_count + inv_population_id] = value_a;
+		
+		lattice[pixel_id * velocity_count + population_id]		= value_b + dirichlet_boundry_correction_term(inv_population_id, 1.0, boundry_velocity);
+		lattice[pixel_id * velocity_count + inv_population_id]	= value_a + dirichlet_boundry_correction_term(population_id, 1.0, boundry_velocity);
 	}
 }

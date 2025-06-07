@@ -125,8 +125,8 @@ float compute_density(ivec2 pixel_coord){
 }
 
 vec2 compute_velocity(ivec2 pixel_coord, float density){
-	if(get_boundry(pixel_coord) != 0)
-		return vec2(0);
+	//if(get_boundry(pixel_coord) != 0)
+	//	return vec2(0);
 	vec2 velocity = vec2(0);
 	for (int i = 0; i < velocity_count; i++){
 		velocity += get_lattice_population(pixel_coord, i) * get_velocity_set_vector(i).xy;
@@ -149,8 +149,8 @@ void main(){
 	vec2 velocity = compute_velocity(pixel_coord, density);
 	vec4 write_value;
 
-	write_value.xy = int(density != 0) * abs(velocity) * 8;
-	write_value.xyz += int(density == 0) * 1;
+	write_value.xy = /*int(density != 0) **/ abs(velocity) * 8;
+	//write_value.xyz += int(density == 0) * 1;
 	write_value.a = 1;
 
 	imageStore(target_texture, pixel_coord, write_value);

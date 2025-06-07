@@ -38,8 +38,8 @@ void LBM2D::iterate_time(std::chrono::duration<double, std::milli> deltatime)
 		if (deltatime_overflow >= step_deltatime) {
 		
 			_stream();
-			_apply_boundry_conditions();
 			_collide();
+			_apply_boundry_conditions();
 
 			deltatime_overflow -= step_deltatime;
 			total_time_elapsed += step_deltatime;

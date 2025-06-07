@@ -182,13 +182,13 @@ void main(){
 
 	#if boundry_count != 0
 	uint boundry_id = get_boundry(pixel_coord);
-	if (boundry_id != 0)
-		return;
+	//if (boundry_id != 0)
+	//	return;
 	#endif
 
 	float density = compute_density(pixel_coord);
-	if (density == 0)
-		return;
+	//if (density == 0)
+	//	return;
 	vec3 velocity = compute_velocity(pixel_coord, density);
 	for (int population_id = 0; population_id < velocity_count; population_id++){
 		float weight = get_lattice_weight(population_id);
