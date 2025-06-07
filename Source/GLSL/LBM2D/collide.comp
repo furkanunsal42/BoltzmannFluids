@@ -195,8 +195,27 @@ float compute_equilibrium(float density, vec3 velocity, int population_id){
 	return equilibrium;
 }
 
-float apply_bgk_collision(float current_velocity, float equilibrium){
-	return current_velocity - (current_velocity - equilibrium) / relaxation_time;
+float compute_source_term(int lattice_velocity_index, vec3 force, vec3 velocity){
+#if forcing_scheme == 1
+	float tau = relaxation_time;
+	float dt = 1;
+	float w = get_lattice_weight(lattice_velocity_index);
+	vec3 c = get_lattice_velocity(lattice_velocity_index);
+	float cs = lattice_speed_of_sound;
+	float cs2 = pow(lattice_speed_of_sound, 2);
+	vec3 f = force;
+	vec3 u = velocity;
+
+	return (1 - dt/(2*tau))*w*(dot(f, c)*3 + (dot(f, c)*dot(c,u)*9 + dot(f, u)*3));
+
+#else
+	return 0;
+#endif
+	
+}
+
+float compute_bgk_collision_term(float current_velocity, float equilibrium){
+	return - (current_velocity - equilibrium) / relaxation_time;
 }
 
 void main(){
@@ -216,10 +235,16 @@ void main(){
 	float density = compute_density(pixel_coord);
 	//if (density == 0)
 	//	return;
-	vec3 velocity = compute_velocity(pixel_coord, density);
+
+	vec3 force = get_force(pixel_coord); 
+	vec3 velocity = compute_velocity(pixel_coord, density) + force/(2*density);
+
 	for (int population_id = 0; population_id < velocity_count; population_id++){
 		float weight = get_lattice_weight(population_id);
 		float equilibrium_velocity = compute_equilibrium(density, velocity, population_id);
-		lattice_target[pixel_id * velocity_count + population_id] = apply_bgk_collision(get_lattice_source(pixel_coord, population_id), equilibrium_velocity);
+		lattice_target[pixel_id * velocity_count + population_id] = 
+			get_lattice_source(pixel_coord, population_id) + 
+			compute_bgk_collision_term(get_lattice_source(pixel_coord, population_id), equilibrium_velocity) + 
+			compute_source_term(population_id, force, velocity);
 	}
 }

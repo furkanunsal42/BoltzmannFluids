@@ -180,10 +180,10 @@ void LBM2D::_initialize_fields_default_pass(std::function<void(glm::ivec2, Fluid
 
 	// bits per boudnry can only be 1, 2, 4, 8 to not cause a boundry spanning over 2 bytes
 	bits_per_boundry = std::exp2(std::ceil(std::log2f(std::ceil(std::log2f(object_count)))));
-	if (bits_per_boundry < 1 || bits_per_boundry > 8) {
-		std::cout << "[LBM Error] _initialize_fields_default_pass() is called but too many or too few objects are defined, maximum of 255 bits are possible but number of objets were: " << object_count << std::endl;
-		ASSERT(false);
-	}
+	//if (bits_per_boundry < 1 || bits_per_boundry > 8) {
+	//	std::cout << "[LBM Error] _initialize_fields_default_pass() is called but too many or too few objects are defined, maximum of 255 bits are possible but number of objets were: " << object_count << std::endl;
+	//	ASSERT(false);
+	//}
 	std::cout << "bits_per_boundery=" << bits_per_boundry << std::endl;
 
 	_set_populations_to_equilibrium(density_buffer, velocity_buffer);
@@ -717,9 +717,13 @@ void LBM2D::_collide()
 	kernel.update_uniform_as_storage_buffer("lattice_buffer_target", lattice_target, 0);
 	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
 	kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
+	if (forces != nullptr)
+		kernel.update_uniform_as_storage_buffer("forces_buffer", *forces, 0);
+	else
+		kernel.update_uniform("force_constant", constant_force);
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 	kernel.update_uniform("lattice_resolution", resolution);
-	//kernel.update_uniform("lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3)));
+	kernel.update_uniform("lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3)));
 	kernel.update_uniform("relaxation_time", relaxation_time);
 
 	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);

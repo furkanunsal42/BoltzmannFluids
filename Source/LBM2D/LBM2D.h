@@ -145,7 +145,8 @@ private:
 
 	// forces control flags
 	bool is_force_field_constant = false;
-	
+	glm::vec3 constant_force = glm::vec3(0);
+
 	// moving/stationary boundries control flags
 	struct _object_desc {
 	public:

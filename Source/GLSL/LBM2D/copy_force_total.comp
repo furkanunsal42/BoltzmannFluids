@@ -174,7 +174,7 @@ void main(){
 	vec3 force = get_force(pixel_coord);
 	vec4 write_value;
 
-	write_value.xyz = /*int(density != 0) **/ abs(force) / 8.0;
+	write_value.xyz = /*int(density != 0) **/ abs(force) * 1024.0 * 32;
 	//write_value.xyz += int(density == 0) * 1;
 	write_value.a = 1;
 
