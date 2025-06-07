@@ -41,6 +41,11 @@ public:
 		glm::vec3 center_of_mass
 	);
 
+	void set_boundry_velocity(
+		uint32_t boundry_id,
+		glm::vec3 velocity_translational
+	);
+
 	struct FluidProperties {
 		glm::vec3 velocity = glm::vec3(0);
 		glm::vec3 force = glm::vec3(0);
@@ -139,13 +144,11 @@ private:
 	struct _object_desc {
 	public:
 		_object_desc(
-			uint32_t boundry_id = 0,
 			glm::vec3 velocity_translational = glm::vec3(0),
 			glm::vec3 velocity_angular = glm::vec3(0),
 			glm::vec3 center_of_mass = glm::vec3(0)
 		);
 
-		uint32_t boundry_id;
 		glm::vec3 velocity_translational;
 		glm::vec3 velocity_angular;
 		glm::vec3 center_of_mass;

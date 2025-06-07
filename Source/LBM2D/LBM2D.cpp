@@ -150,6 +150,9 @@ void LBM2D::_initialize_fields_default_pass(std::function<void(glm::ivec2, Fluid
 			FluidProperties properties;
 			initialization_lambda(glm::ivec2(x, y), properties);
 
+			if (properties.boundry_id != 0)
+				properties.velocity = glm::vec3(0);
+
 			object_count = std::max(object_count, properties.boundry_id + 1);
 
 			if (properties.force != constant_force_field)
@@ -211,7 +214,7 @@ void LBM2D::_initialize_fields_boundries_pass(std::function<void(glm::ivec2, Flu
 
 	
 	// objects initialization
-	//							   trans_vel + id	   angular_vel		   center_of_mass
+	//							   trans_vel		   angular_vel		   center_of_mass
 	size_t object_size_on_device = sizeof(glm::vec4) + sizeof(glm::vec4) + sizeof(glm::vec4);
 	objects = std::make_shared<Buffer>(object_size_on_device * object_count);
 
@@ -220,9 +223,9 @@ void LBM2D::_initialize_fields_boundries_pass(std::function<void(glm::ivec2, Flu
 	
 	for (uint32_t i = 0; i < objects_cpu.size(); i++) {
 		_object_desc& desc = objects_cpu[i];
-		objects_mapped_buffer[4*i + 0] = glm::vec4(desc.velocity_translational, desc.boundry_id);
-		objects_mapped_buffer[4*i + 1] = glm::vec4(desc.velocity_angular, 0);
-		objects_mapped_buffer[4*i + 2] = glm::vec4(desc.center_of_mass, 0);
+		objects_mapped_buffer[3*i + 0] = glm::vec4(desc.velocity_translational, 0);
+		objects_mapped_buffer[3*i + 1] = glm::vec4(desc.velocity_angular, 0);
+		objects_mapped_buffer[3*i + 2] = glm::vec4(desc.center_of_mass, 0);
 	}
 
 	objects->unmap();
@@ -237,7 +240,7 @@ void LBM2D::_initialize_fields_boundries_pass(std::function<void(glm::ivec2, Flu
 	boundries->map();
 	uint32_t* boundries_mapped_buffer = (uint32_t*)boundries->get_mapped_pointer();
 
-	for (int32_t i = 0; i < boundries_buffer_size / 4; i++) {
+	for (size_t i = 0; i < boundries_buffer_size / 4; i++) {
 		(boundries_mapped_buffer)[i] = 0;
 	}
 
@@ -256,28 +259,28 @@ void LBM2D::_initialize_fields_boundries_pass(std::function<void(glm::ivec2, Flu
 		}
 	}
 
-	//// debug
-	//for (int32_t x = 0; x < resolution.x; x++) {
-	//	for (int32_t y = 0; y < resolution.y; y++) {
-	//		FluidProperties properties;
-	//		initialization_lambda(glm::ivec2(x, y), properties);
-	//		
-	//		int voxel_id = y * resolution.x + x;
-	//		int bits_begin = voxel_id * bits_per_boundry;
-	//
-	//		int dword_offset = bits_begin / 32;
-	//		int subdword_offset_in_bits = bits_begin % 32;
-	//
-	//		uint32_t bitmask = (1 << bits_per_boundry) - 1;
-	//		uint32_t boundry = (boundries_mapped_buffer)[dword_offset] & (bitmask << subdword_offset_in_bits);
-	//		boundry = boundry >> subdword_offset_in_bits;
-	//
-	//		if (boundry != properties.boundry_id) {
-	//			std::cout << "FUCK  " << x << " " << y << " value="<< boundry << " original=" << properties.boundry_id << std::endl;
-	//			
-	//		}
-	//	}
-	//}
+	// debug
+	for (int32_t x = 0; x < resolution.x; x++) {
+		for (int32_t y = 0; y < resolution.y; y++) {
+			FluidProperties properties;
+			initialization_lambda(glm::ivec2(x, y), properties);
+			
+			int voxel_id = y * resolution.x + x;
+			int bits_begin = voxel_id * bits_per_boundry;
+	
+			int dword_offset = bits_begin / 32;
+			int subdword_offset_in_bits = bits_begin % 32;
+	
+			uint32_t bitmask = (1 << bits_per_boundry) - 1;
+			uint32_t boundry = (boundries_mapped_buffer)[dword_offset] & (bitmask << subdword_offset_in_bits);
+			boundry = boundry >> subdword_offset_in_bits;
+	
+			if (boundry != properties.boundry_id) {
+				std::cout << "FUCK  " << x << " " << y << " value="<< boundry << " original=" << properties.boundry_id << std::endl;
+				
+			}
+		}
+	}
 
 	boundries->unmap();
 	boundries_mapped_buffer = nullptr;
@@ -553,7 +556,12 @@ void LBM2D::set_boundry_velocity(uint32_t boundry_id, glm::vec3 velocity_transla
 
 	if (boundry_id >= objects_cpu.size())
 		objects_cpu.resize(boundry_id + 1);
-	objects_cpu[boundry_id] = _object_desc(boundry_id, velocity_translational, velocity_angular, center_of_mass);
+	objects_cpu[boundry_id] = _object_desc(velocity_translational, velocity_angular, center_of_mass);
+}
+
+void LBM2D::set_boundry_velocity(uint32_t boundry_id, glm::vec3 velocity_translational)
+{
+	set_boundry_velocity(boundry_id, velocity_translational, glm::vec3(0), glm::vec3(0));
 }
 
 void LBM2D::set_population(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_coordinate_end, int32_t population_index, float value)
@@ -728,8 +736,8 @@ void LBM2D::_set_populations_to_equilibrium(Buffer& density_field, Buffer& veloc
 	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
 }
 
-LBM2D::_object_desc::_object_desc(uint32_t boundry_id, glm::vec3 velocity_translational, glm::vec3 velocity_angular, glm::vec3 center_of_mass) :
-	boundry_id(boundry_id), velocity_translational(velocity_translational), velocity_angular(velocity_angular), center_of_mass(center_of_mass)
+LBM2D::_object_desc::_object_desc(glm::vec3 velocity_translational, glm::vec3 velocity_angular, glm::vec3 center_of_mass) :
+	velocity_translational(velocity_translational), velocity_angular(velocity_angular), center_of_mass(center_of_mass)
 {
 
 }

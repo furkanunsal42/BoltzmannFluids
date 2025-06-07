@@ -49,18 +49,26 @@ int main() {
 
 	LBM2D lbm2d_solver;
 
-	lbm2d_solver.set_boundry_velocity(1, glm::vec3(1, 1, 1), glm::vec3(1, 1, 1), glm::vec3(1, 1, 1));
+	lbm2d_solver.set_boundry_velocity(1, glm::vec3(1, 0, 0) );
+	lbm2d_solver.set_boundry_velocity(2, glm::vec3(1, 0, 0));
 
 	lbm2d_solver.initialize_fields(
 		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
 			properties.boundry_id = false;
-			//properties.boundry_id |= glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1 / 4.0, simulation_resolution.y / 2)) < 32;
-			properties.boundry_id |= glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 3 / 4.0, simulation_resolution.y / 2)) < 32;
-			properties.velocity = glm::vec3(1, 1, 0) / 32.0f;
-			if (properties.boundry_id != 0)
-				properties.velocity = glm::vec3(0);
+			//properties.boundry_id |= glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 3 / 4.0, simulation_resolution.y / 2)) < 32;
+			properties.velocity = glm::vec3(1, 1, 0) / 16.0f;
 			properties.density = 1.0f;
 			properties.force = glm::vec3(0, -1, 0);
+			
+			if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1 / 4.0, simulation_resolution.y / 2)) < 32)
+				properties.boundry_id = 2;
+			//if (coordinate.x == 0)
+			//	properties.boundry_id = 1;
+			//if (coordinate.x == lbm2d_solver.get_resolution().x-1)
+			//	properties.boundry_id = 2;
+			//if (coordinate.y == 32)
+			//	properties.boundry_id = 4;
+
 		},
 		glm::ivec2(simulation_resolution),
 		0.53f,
