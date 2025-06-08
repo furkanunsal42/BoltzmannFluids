@@ -37,6 +37,20 @@
 	#error "other floating point systems than fp32 aren't supported"
 #endif
 
+#define D2Q5 4
+#define D3Q7 5
+
+#define thermal_flow 1
+#define velocity_set_thermal D2Q5
+
+#if velocity_set_thermal == D2Q5
+	#define thermal_velocity_count 5
+#elif velocity_set_thermal == D3Q7
+	#define thermal_velocity_count 7
+#else
+	#error "thermal_velocity_set is not supported"
+#endif
+
 #define id gl_GlobalInvocationID
 
 layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
@@ -100,17 +114,20 @@ struct object_info_s {
 	vec3 velocity;
 	vec3 center_of_mass;
 	vec3 velocity_angular;
+	float temperature;
 };
 
 object_info_s get_object_info(int object_id){
 #if boundry_count > 1
 	object_info_s result;
+	result.temperature		=	objects[object_id * 3 + 0].w;
 	result.velocity			=	objects[object_id * 3 + 0].xyz;
 	result.center_of_mass	=	objects[object_id * 3 + 1].xyz;
 	result.velocity_angular =	objects[object_id * 3 + 2].xyz;
 	return result;
 #else 
 	object_info_s result;
+	result.temperature		=	0;
 	result.velocity			=	vec3(0);
 	result.center_of_mass	=	vec3(0);
 	result.velocity_angular =	vec3(0);

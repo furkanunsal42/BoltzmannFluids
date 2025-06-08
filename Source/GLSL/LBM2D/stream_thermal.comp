@@ -55,27 +55,28 @@
 
 layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
-layout(std140, binding = 0) uniform velocity_set_buffer {
-	vec4[velocity_count] lattice_velocity_set;
+layout(std140, binding = 0) uniform thermal_velocity_set_buffer {
+	vec4[thermal_velocity_count] thermal_lattice_velocity_set;
 };
 
-layout(std430, binding = 1) buffer lattice_buffer_source {
-	float[] lattice_source;
+layout(std430, binding = 1) buffer thermal_lattice_buffer_source {
+	float[] thermal_lattice_source;
 };
 
-layout(std430, binding = 2) buffer lattice_buffer_target {
-	float[] lattice_target;
+layout(std430, binding = 2) buffer thermal_lattice_buffer_target {
+	float[] thermal_lattice_target;
 };
 
 uniform ivec2 lattice_resolution;
 
-int get_inverse_lattice_direction_index(int lattice_velocity_index){
-	if (lattice_velocity_index == 0 || lattice_velocity_index >= velocity_count)
+int get_inverse_lattice_population_id_index_thermal(int thermal_lattice_velocity_index){
+	if (thermal_lattice_velocity_index == 0 || thermal_lattice_velocity_index >= thermal_velocity_count)
 		return 0;
 
-	bool is_odd = lattice_velocity_index % 2 == 1;
-	return is_odd ? lattice_velocity_index + 1 : lattice_velocity_index - 1;
+	bool is_odd = thermal_lattice_velocity_index % 2 == 1;
+	return is_odd ? thermal_lattice_velocity_index + 1 : thermal_lattice_velocity_index - 1;
 }
+
 
 ivec2 positive_modulo(ivec2 i, ivec2 n){
 	return ivec2(mod((mod(i, n) + n), n));
@@ -89,11 +90,11 @@ void main(){
 	if (int(id.x) >= lattice_resolution.x * lattice_resolution.y * velocity_count)
 		return;
 
-	int pixel_id = int(id.x) / velocity_count;
-	int velocity_id = int(id.x) % velocity_count;
+	int pixel_id = int(id.x) / thermal_velocity_count;
+	int velocity_id = int(id.x) % thermal_velocity_count;
 	ivec2 pixel_coord = ivec2(pixel_id.x % lattice_resolution.x, pixel_id.x / lattice_resolution.x);
 	
-	ivec2 source_pixel_coord = pixel_coord - ivec2(lattice_velocity_set[velocity_id].xy);
+	ivec2 source_pixel_coord = pixel_coord - ivec2(thermal_lattice_velocity_set[velocity_id].xy);
 	
 	#if periodic_x == 1
 	source_pixel_coord.x = positive_modulo(source_pixel_coord.x, lattice_resolution.x);
@@ -116,5 +117,5 @@ void main(){
 	//	return;
 	//}
 	
-	lattice_target[id.x] = lattice_source[source_pixel_id * velocity_count + velocity_id];
+	thermal_lattice_target[id.x] = thermal_lattice_source[source_pixel_id * thermal_velocity_count + velocity_id];
 }

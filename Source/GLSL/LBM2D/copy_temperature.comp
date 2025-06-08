@@ -51,6 +51,20 @@
 	#error "thermal_velocity_set is not supported"
 #endif
 
+#define D2Q5 4
+#define D3Q7 5
+
+#define thermal_flow 1
+#define velocity_set_thermal D2Q5
+
+#if velocity_set_thermal == D2Q5
+	#define thermal_velocity_count 5
+#elif velocity_set_thermal == D3Q7
+	#define thermal_velocity_count 7
+#else
+	#error "thermal_velocity_set is not supported"
+#endif
+
 #define id gl_GlobalInvocationID
 
 layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
@@ -58,7 +72,7 @@ layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 layout(rgba32f, binding = 0) uniform image2D target_texture;
 
 layout(std140, binding = 0) uniform velocity_set_buffer {
-	vec4[velocity_count] lattice_velocity_set;
+	vec4[thermal_velocity_count] lattice_velocity_set;
 };
 
 layout(std430, binding = 1) buffer lattice_buffer {
@@ -79,11 +93,11 @@ uniform ivec2 lattice_resolution;
 uniform ivec2 texture_resolution;
 
 float get_lattice_population(ivec2 pixel_coord, int population_index){
-	return lattice[(pixel_coord.y * lattice_resolution.x + pixel_coord.x) * velocity_count + population_index];
+	return lattice[(pixel_coord.y * lattice_resolution.x + pixel_coord.x) * thermal_velocity_count + population_index];
 }
 
 void set_lattice_population(ivec2 pixel_coord, int population_index, float value){
-	lattice[(pixel_coord.y * lattice_resolution.x + pixel_coord.x) * velocity_count + population_index] = value;
+	lattice[(pixel_coord.y * lattice_resolution.x + pixel_coord.x) * thermal_velocity_count + population_index] = value;
 }
 
 vec3 get_velocity_set_vector(int velocity_index){
@@ -135,9 +149,18 @@ object_info_s get_object_info(int object_id){
 #endif
 }
 
+float compute_temperature(ivec2 pixel_coord){
+	if(get_boundry(pixel_coord) != 0)
+		return 0;
+	float temperature = 0;
+	for (int i = 0; i < thermal_velocity_count; i++)
+		temperature += get_lattice_population(pixel_coord, i);
+	return temperature;
+}
+
 void main(){
 	
-	if (int(id.x) >= lattice_resolution.x * lattice_resolution.y)
+	if (id.x >= lattice_resolution.x * lattice_resolution.y)
 		return;
 	
 	int pixel_id = int(id.x);
@@ -146,11 +169,11 @@ void main(){
 	if (any(greaterThanEqual(pixel_coord, texture_resolution)) || any(lessThan(pixel_coord, ivec2(0))))
 		return;
 
-	int boundry = int(get_boundry(pixel_coord));
-	object_info_s object = get_object_info(boundry);
+	float temperature = compute_temperature(pixel_coord);
 	vec4 write_value;
-	write_value.x = float(boundry != 0);
-	write_value.yz = glm::vec2(object.velocity);
+
+	write_value.xyz = int(temperature != 0) * vec3(abs(temperature)) / 16.0;
+	//write_value.xyz += int(temperature == 0) * 1;
 	write_value.a = 1;
 
 	imageStore(target_texture, pixel_coord, write_value);

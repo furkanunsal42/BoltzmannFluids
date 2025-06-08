@@ -20,11 +20,11 @@
 // u = "velocity"
 // rho = "density"
 
-
 class LBM2D {
 public:
 	constexpr static uint32_t not_a_boundry = 0;
 	constexpr static uint32_t max_boundry_count = 255;
+	constexpr static float referance_temperature = 1.0;
 
 	// simulation controls
 	void iterate_time(std::chrono::duration<double, std::milli> deltatime);
@@ -34,23 +34,42 @@ public:
 	int32_t get_velocity_set_vector_count();
 
 	// high level field initialization api
-	void set_boundry_velocity(
+	void set_boundry_properties(
+		uint32_t boundry_id,
+		glm::vec3 velocity_translational,
+		glm::vec3 velocity_angular,
+		glm::vec3 center_of_mass,
+		float temperature
+	);
+	
+	void set_boundry_properties(
 		uint32_t boundry_id,
 		glm::vec3 velocity_translational, 
 		glm::vec3 velocity_angular,
 		glm::vec3 center_of_mass
 	);
 
-	void set_boundry_velocity(
+	void set_boundry_properties(
+		uint32_t boundry_id,
+		glm::vec3 velocity_translational,
+		float temperature
+	);
+
+	void set_boundry_properties(
 		uint32_t boundry_id,
 		glm::vec3 velocity_translational
+	);
+
+	void set_boundry_properties(
+		uint32_t boundry_id,
+		float temperature
 	);
 
 	struct FluidProperties {
 		glm::vec3 velocity = glm::vec3(0);
 		glm::vec3 force = glm::vec3(0);
 		float density = 1;
-		float temperature = 20;
+		float temperature = referance_temperature;
 		float scalar_quantity = 0;
 		uint32_t boundry_id = not_a_boundry;
 	};
@@ -71,6 +90,7 @@ public:
 	void copy_to_texture_density(Texture2D& target_texture);
 	void copy_to_texture_boundries(Texture2D& target_texture);
 	void copy_to_texture_force_vector(Texture2D& target_texture);
+	void copy_to_texture_temperature(Texture2D& target_texture);
 
 	// low level field initialization api
 	void compile_shaders(); 
@@ -84,6 +104,21 @@ public:
 
 	void set_relaxation_time(float relaxation_time);
 	float get_relaxation_time();
+
+	void set_periodic_boundry_x(bool value);
+	bool get_periodic_boundry_x();
+
+	void set_periodic_boundry_y(bool value);
+	bool get_periodic_boundry_y();
+
+	void set_is_forcing_scheme(bool value);
+	bool get_is_forcing_scheme();
+
+	void set_is_force_field_constant(bool value);
+	bool get_is_force_field_constant();
+
+	void set_constant_force(glm::vec3 constant_force);
+	glm::vec3 get_constant_force();
 
 	void set_population(glm::ivec2 voxel_coordinate, int32_t population_index, float value);
 	void set_population(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_coordinate_end, int32_t population_index, float value);
@@ -107,22 +142,22 @@ private:
 	// initialization functions
 	void _collide_with_precomputed_velocities(Buffer& velocity_field);
 	void _set_populations_to_equilibrium(Buffer& density_field, Buffer& velocity_field);
+
 	void _initialize_fields_default_pass(
 		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
-		glm::ivec2 resolution,
-		FloatingPointAccuracy fp_accuracy = FloatingPointAccuracy::fp32
-	);
-	void _initialize_fields_force_pass(
-		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
-		glm::ivec2 resolution,
-		FloatingPointAccuracy fp_accuracy = FloatingPointAccuracy::fp32
-	);
+		std::shared_ptr<Buffer>& out_density_field,
+		std::shared_ptr<Buffer>& out_velocity_field
+		);
 	void _initialize_fields_boundries_pass(
+		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda
+		);
+	void _initialize_fields_force_pass(
+		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda
+		);
+	void _initialize_fields_thermal_pass(
 		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
-		glm::ivec2 resolution,
-		FloatingPointAccuracy fp_accuracy = FloatingPointAccuracy::fp32
-	);
-	
+		std::shared_ptr<Buffer> in_velocity_field
+		);
 
 	// simulation time controls
 	std::chrono::duration<double, std::milli> total_time_elapsed;
@@ -135,35 +170,57 @@ private:
 
 	glm::ivec2 resolution = glm::ivec2(0);
 	float relaxation_time = 0.53f;
-
-	bool periodic_x = true;
-	bool periodic_y = true;
-
+	
 	// forces control flags
 	bool is_forcing_scheme = false;
 	bool is_force_field_constant = true;
 	glm::vec3 constant_force = glm::vec3(0);
 
 	// moving/stationary boundries control flags
+	bool periodic_x = true;
+	bool periodic_y = true;
+	
 	struct _object_desc {
 	public:
 		_object_desc(
 			glm::vec3 velocity_translational = glm::vec3(0),
 			glm::vec3 velocity_angular = glm::vec3(0),
-			glm::vec3 center_of_mass = glm::vec3(0)
+			glm::vec3 center_of_mass = glm::vec3(0),
+			float temperature = referance_temperature
 		);
 
 		glm::vec3 velocity_translational;
 		glm::vec3 velocity_angular;
 		glm::vec3 center_of_mass;
+		float temperature;
 	};
 
 	// boundries buffer holds the id of the object it is a part of (0 means not_a_boundry)
 	// number of bits per voxel can change dynamically basad on how many objects are defined
-	// velocity information of each object is hold in another buffer in device called "objects"
-	// objects buffer schema is [vec4 translational_velcoity (w is id), vec4 rotational_velocity, vec4 center_of_mass] 
+	// velocity information of each object is held in another buffer in device called "objects"
+	// objects buffer schema is [vec4 translational_velcoity, vec4 rotational_velocity, vec4 center_of_mass] 
 	std::vector<_object_desc> objects_cpu;
 	int32_t bits_per_boundry = 0;
+	void _set_bits_per_boundry(int32_t value);
+	int32_t _get_bits_per_boundry(int32_t value);
+
+	// thermal flow control flags
+	bool is_flow_thermal = false;
+	SimplifiedVelocitySet thermal_lattice_velocity_set = SimplifiedVelocitySet::D2Q5;
+	float thermal_relaxation_time = 0.53;
+	float thermal_expension_coeficient = 0.5f;
+
+	void _set_is_flow_thermal(bool value);
+	bool _get_is_flow_thermal();
+
+	void _set_thermal_lattice_velocity_set(SimplifiedVelocitySet set);
+	SimplifiedVelocitySet _get_thermal_lattice_velocity_set();
+	
+	// thermal flow physics
+	void _stream_thermal();
+	void _collide_thermal();
+	void _apply_boundry_conditions_thermal();
+	void _set_populations_to_equilibrium_thermal(Buffer& temperature_field, Buffer& velocity_field);
 
 	// device buffers
 	std::shared_ptr<Buffer> lattice0 = nullptr;
@@ -171,20 +228,31 @@ private:
 	std::shared_ptr<Buffer> boundries = nullptr;
 	std::shared_ptr<Buffer> objects = nullptr;
 	std::shared_ptr<Buffer> forces = nullptr;
-	
+	std::shared_ptr<Buffer> thermal_lattice0 = nullptr;
+	std::shared_ptr<Buffer> thermal_lattice1 = nullptr;
+
 	// dual buffer control
 	bool is_lattice_0_is_source = true;
 	std::shared_ptr<Buffer> _get_lattice_source();
 	std::shared_ptr<Buffer> _get_lattice_target();
 	void _swap_lattice_buffers();
+
+	bool is_thermal_lattice_0_is_source = true;
+	std::shared_ptr<Buffer> _get_thermal_lattice_source();
+	std::shared_ptr<Buffer> _get_thermal_lattice_target();
+	void _swap_thermal_lattice_buffers();
 	
 	// kernels
 	bool is_programs_compiled = false;
 	std::shared_ptr<ComputeProgram> lbm2d_stream = nullptr;
+	std::shared_ptr<ComputeProgram> lbm2d_stream_thermal = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_collide = nullptr;
+	std::shared_ptr<ComputeProgram> lbm2d_collide_thermal = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_boundry_condition = nullptr;
+	std::shared_ptr<ComputeProgram> lbm2d_boundry_condition_thermal = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_collide_with_precomputed_velocity = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_set_equilibrium_populations = nullptr;
+	std::shared_ptr<ComputeProgram> lbm2d_set_equilibrium_populations_thermal = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_set_population = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_add_random_population = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_copy_boundries = nullptr;
@@ -193,5 +261,8 @@ private:
 	std::shared_ptr<ComputeProgram> lbm2d_copy_velocity_magnitude = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_copy_velocity_total = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_copy_force_total = nullptr;
+	std::shared_ptr<ComputeProgram> lbm2d_copy_temperature = nullptr;
+
 	std::unique_ptr<UniformBuffer> lattice_velocity_set_buffer = nullptr;
+	std::unique_ptr<UniformBuffer> thermal_lattice_velocity_set_buffer = nullptr;
 };

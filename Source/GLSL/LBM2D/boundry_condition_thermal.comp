@@ -28,7 +28,7 @@
 #elif velocity_set == D3Q27
 	#define volume_dimentionality 3
 	#define velocity_count 27
-#else	
+#else
 	#error "velocity set is not supported"
 #endif
 
@@ -55,15 +55,15 @@
 
 layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
-layout(rgba32f, binding = 0) uniform image2D target_texture;
-
-layout(std140, binding = 0) uniform velocity_set_buffer {
-	vec4[velocity_count] lattice_velocity_set;
+#if thermal_flow == 1
+layout(std140, binding = 0) uniform thermal_velocity_set_buffer {
+	vec4[thermal_velocity_count] thermal_lattice_velocity_set;
 };
 
-layout(std430, binding = 1) buffer lattice_buffer {
-	float[] lattice;
+layout(std430, binding = 1) buffer thermal_lattice_buffer {
+	float[] thermal_lattice;
 };
+#endif
 
 #if boundry_count > 1
 layout(std430, binding = 2) buffer boundries_buffer {
@@ -76,22 +76,21 @@ layout(std430, binding = 3) buffer objects_buffer {
 #endif
 
 uniform ivec2 lattice_resolution;
-uniform ivec2 texture_resolution;
 
-float get_lattice_population(ivec2 pixel_coord, int population_index){
-	return lattice[(pixel_coord.y * lattice_resolution.x + pixel_coord.x) * velocity_count + population_index];
+int get_inverse_lattice_direction_index_thermal(int lattice_velocity_index){
+	if (lattice_velocity_index == 0 || lattice_velocity_index >= thermal_velocity_count)
+		return 0;
+
+	bool is_odd = lattice_velocity_index % 2 == 1;
+	return is_odd ? lattice_velocity_index + 1 : lattice_velocity_index - 1;
 }
 
-void set_lattice_population(ivec2 pixel_coord, int population_index, float value){
-	lattice[(pixel_coord.y * lattice_resolution.x + pixel_coord.x) * velocity_count + population_index] = value;
+vec3 get_lattice_velocity_thermal(int velocity_index){
+	return thermal_lattice_velocity_set[velocity_index].xyz;
 }
 
-vec3 get_velocity_set_vector(int velocity_index){
-	return lattice_velocity_set[velocity_index].xyz;
-}
-
-float get_lattice_population_weight(int velocity_index){
-	return lattice_velocity_set[velocity_index].w;
+float get_lattice_weight_thermal(int velocity_index){
+	return thermal_lattice_velocity_set[velocity_index].w;
 }
 
 uint get_boundry(ivec2 pixel_coord) {
@@ -117,17 +116,20 @@ struct object_info_s {
 	vec3 velocity;
 	vec3 center_of_mass;
 	vec3 velocity_angular;
+	float temperature;
 };
 
 object_info_s get_object_info(int object_id){
 #if boundry_count > 1
 	object_info_s result;
+	result.temperature		=	objects[object_id * 3 + 0].w;
 	result.velocity			=	objects[object_id * 3 + 0].xyz;
 	result.center_of_mass	=	objects[object_id * 3 + 1].xyz;
 	result.velocity_angular =	objects[object_id * 3 + 2].xyz;
 	return result;
 #else 
 	object_info_s result;
+	result.temperature		=	0;
 	result.velocity			=	vec3(0);
 	result.center_of_mass	=	vec3(0);
 	result.velocity_angular =	vec3(0);
@@ -135,23 +137,40 @@ object_info_s get_object_info(int object_id){
 #endif
 }
 
+float dirichlet_boundry_correction_term(int lattice_velocity_index, float boundry_temperature){
+	vec3 c = get_lattice_velocity_thermal(lattice_velocity_index);
+	float w = get_lattice_weight_thermal(lattice_velocity_index);
+	float t = boundry_temperature;
+	//float cs = 1.0 / sqrt(3);
+	//float cs2 = pow(1.0 / sqrt(3), 2);
+
+	return +2 * w * t; 
+}
+
 void main(){
 	
-	if (int(id.x) >= lattice_resolution.x * lattice_resolution.y)
+	if (id.x >= lattice_resolution.x * lattice_resolution.y)
 		return;
 	
 	int pixel_id = int(id.x);
-	ivec2 pixel_coord = ivec2(pixel_id % lattice_resolution.x, pixel_id / lattice_resolution.x);
-
-	if (any(greaterThanEqual(pixel_coord, texture_resolution)) || any(lessThan(pixel_coord, ivec2(0))))
+	ivec2 pixel_coord = ivec2(pixel_id.x % lattice_resolution.x, pixel_id.x / lattice_resolution.x);
+	
+	int boundry = int(get_boundry(pixel_coord));
+	if (boundry == 0)
 		return;
 
-	int boundry = int(get_boundry(pixel_coord));
 	object_info_s object = get_object_info(boundry);
-	vec4 write_value;
-	write_value.x = float(boundry != 0);
-	write_value.yz = glm::vec2(object.velocity);
-	write_value.a = 1;
+	// include angular velocity term
+	float boundry_temperature = object.temperature;
 
-	imageStore(target_texture, pixel_coord, write_value);
+	for (int population_id = 1; population_id < thermal_velocity_count; population_id+=2)
+	{
+		int inv_population_id = get_inverse_lattice_direction_index_thermal(population_id);
+		
+		float value_a = thermal_lattice[pixel_id * thermal_velocity_count + population_id];
+		float value_b = thermal_lattice[pixel_id * thermal_velocity_count + inv_population_id];
+		
+		thermal_lattice[pixel_id * thermal_velocity_count + population_id]		= -value_b + dirichlet_boundry_correction_term(inv_population_id, boundry_temperature);
+		thermal_lattice[pixel_id * thermal_velocity_count + inv_population_id]	= -value_a + dirichlet_boundry_correction_term(population_id, boundry_temperature);
+	}
 }
