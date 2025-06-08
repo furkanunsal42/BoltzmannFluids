@@ -166,11 +166,13 @@ void LBM2D::initialize_fields(std::function<void(glm::ivec2, FluidProperties&)> 
 	is_programs_compiled = false;
 	objects_cpu[0] = _object_desc();
 
-	set_periodic_boundry_x(periodic_x);
-	set_periodic_boundry_y(periodic_y);
 	set_relaxation_time(relaxation_time);
 	set_velocity_set(velocity_set);
 	set_floating_point_accuracy(fp_accuracy);
+	set_periodic_boundry_x(periodic_x);
+	set_periodic_boundry_y(periodic_y);
+	_set_thermal_lattice_velocity_set(get_VelocitySet_dimention(velocity_set) == 2 ? SimplifiedVelocitySet::D2Q5 : SimplifiedVelocitySet::D3Q7);
+	
 	generate_lattice(resolution);
 
 	_initialize_fields_default_pass(
@@ -209,6 +211,8 @@ void LBM2D::_initialize_fields_default_pass(std::function<void(glm::ivec2, Fluid
 	set_is_force_field_constant(true);
 	set_constant_force(temp_properties.force);
 
+	_set_is_flow_thermal(false);
+	
 	uint32_t object_count = 1;
 
 	for (int32_t x = 0; x < resolution.x; x++) {
@@ -223,6 +227,8 @@ void LBM2D::_initialize_fields_default_pass(std::function<void(glm::ivec2, Fluid
 
 			if (properties.force != constant_force)
 				set_is_force_field_constant(false);
+			if (properties.temperature != temp_properties.temperature)
+				_set_is_flow_thermal(true);
 
 			velocity_buffer_data[y * resolution.x + x] = glm::vec4(properties.velocity, 0.0f);
 			density_buffer_data[y * resolution.x + x] = properties.density;
@@ -849,6 +855,8 @@ std::vector<std::pair<std::string, std::string>> LBM2D::_generate_shader_macros(
 		{"periodic_y", periodic_y ? "1" : "0"},
 		{"forcing_scheme", is_forcing_scheme ? "1" : "0"},
 		{"constant_force", is_force_field_constant ? "1" : "0"},
+		{"thermal_flow", is_flow_thermal ? "1" : "0"},
+		{"thermal_velocity_set", get_SimplifiedVelocitySet_to_macro(thermal_lattice_velocity_set)},
 	};
 
 	return definitions;
