@@ -5,7 +5,7 @@ using namespace std::chrono_literals;
 
 int main() {
 
-	glm::ivec2 simulation_resolution(1024, 1024);
+	glm::ivec2 simulation_resolution(2048, 110);
 
 	WindowDescription desc;
 	desc.w_scale_framebuffer_size = false;
@@ -60,9 +60,9 @@ int main() {
 	lbm2d_solver.initialize_fields(
 		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
 			
-			properties.temperature = coordinate.y / 1024.0f;
+			properties.temperature = 1 + coordinate.y / 1024.0f;
 
-			properties.force = glm::vec3(0, -4, 0) / 128000.0f;
+			//properties.force = glm::vec3(0, -4, 0) / 128000.0f;
 			//properties.force = glm::vec3(0);
 			//if (coordinate.x > 512)
 			//	properties.force += glm::vec3(0, -1, 0) / 128000.0f;
