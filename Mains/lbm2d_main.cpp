@@ -59,7 +59,7 @@ int main() {
 	lbm2d_solver.initialize_fields(
 		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
 			
-			properties.force = glm::vec3(0, -4, 0) / 128000.0f;
+			//properties.force = glm::vec3(0, -4, 0) / 128000.0f;
 
 			//properties.force = glm::vec3(0);
 			//if (coordinate.x > 512)
@@ -72,8 +72,8 @@ int main() {
 			//	properties.force += glm::vec3(-1, 0, 0) / 128000.0f;
 
 			properties.boundry_id = false;
-			if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1 / 4.0, simulation_resolution.y / 2)) < 32)
-				properties.boundry_id = 1;
+			//if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1 / 4.0, simulation_resolution.y / 2)) < 32)
+			//	properties.boundry_id = 1;
 			
 			if (coordinate.x == 0)
 				properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
@@ -101,7 +101,7 @@ int main() {
 
 	while (true) {
 		double deltatime = window.handle_events(true);
-		lbm2d_solver.iterate_time(std::chrono::duration<double, std::milli>(deltatime*10));
+		lbm2d_solver.iterate_time(std::chrono::duration<double, std::milli>(deltatime*100));
 		
 		if (display_mode == 1) {
 			Texture2D& texture_target = texture_1c;

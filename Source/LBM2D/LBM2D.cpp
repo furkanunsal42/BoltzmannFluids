@@ -340,8 +340,8 @@ void LBM2D::copy_to_texture_population(Texture2D& target_texture, int32_t popula
 		ASSERT(false);
 	}
 
-	if (boundries == nullptr) {
-		std::cout << "[LBM Error] LBM2D::copy_to_texture_population() is called but boundries wasn't generated" << std::endl;
+	if ((boundries == nullptr || objects == nullptr) && bits_per_boundry != 0) {
+		std::cout << "[LBM Error] LBM2D::copy_to_texture_population() is called with boundries activated but boundries buffer wasn't generated" << std::endl;
 		ASSERT(false);
 	}
 
@@ -364,7 +364,10 @@ void LBM2D::copy_to_texture_population(Texture2D& target_texture, int32_t popula
 
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 	kernel.update_uniform_as_storage_buffer("lattice_buffer", lattice, 0);
-	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+	if (bits_per_boundry != 0) {
+		kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+		kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
+	}
 	kernel.update_uniform_as_image("target_texture", target_texture, 0);
 	kernel.update_uniform("lattice_resolution", resolution);
 	kernel.update_uniform("texture_resolution", target_texture.get_size());
@@ -380,8 +383,8 @@ void LBM2D::copy_to_texture_density(Texture2D& target_texture)
 		ASSERT(false);
 	}
 
-	if (boundries == nullptr) {
-		std::cout << "[LBM Error] LBM2D::copy_to_texture_density() is called but boundries wasn't generated" << std::endl;
+	if ((boundries == nullptr || objects == nullptr) && bits_per_boundry != 0) {
+		std::cout << "[LBM Error] LBM2D::copy_to_texture_density() is called with boundries activated but boundries buffer wasn't generated" << std::endl;
 		ASSERT(false);
 	}
 
@@ -398,7 +401,10 @@ void LBM2D::copy_to_texture_density(Texture2D& target_texture)
 
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 	kernel.update_uniform_as_storage_buffer("lattice_buffer", lattice, 0);
-	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+	if (bits_per_boundry != 0) {
+		kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+		kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
+	};
 	kernel.update_uniform_as_image("target_texture", target_texture, 0);
 	kernel.update_uniform("lattice_resolution", resolution);
 	kernel.update_uniform("texture_resolution", target_texture.get_size());
@@ -413,8 +419,8 @@ void LBM2D::copy_to_texture_velocity_vector(Texture2D& target_texture)
 		ASSERT(false);
 	}
 
-	if (boundries == nullptr) {
-		std::cout << "[LBM Error] LBM2D::copy_to_texture_velocity_vector() is called but boundries wasn't generated" << std::endl;
+	if ((boundries == nullptr || objects == nullptr) && bits_per_boundry != 0) {
+		std::cout << "[LBM Error] LBM2D::copy_to_texture_velocity_vector() is called with boundries activated but boundries buffer wasn't generated" << std::endl;
 		ASSERT(false);
 	}
 
@@ -431,7 +437,10 @@ void LBM2D::copy_to_texture_velocity_vector(Texture2D& target_texture)
 
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 	kernel.update_uniform_as_storage_buffer("lattice_buffer", lattice, 0);
-	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+	if (bits_per_boundry != 0) {
+		kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+		kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
+	}
 	kernel.update_uniform_as_image("target_texture", target_texture, 0);
 	kernel.update_uniform("lattice_resolution", resolution);
 	kernel.update_uniform("texture_resolution", target_texture.get_size());
@@ -445,8 +454,8 @@ void LBM2D::copy_to_texture_velocity_magnetude(Texture2D& target_texture) {
 		ASSERT(false);
 	}
 
-	if (boundries == nullptr) {
-		std::cout << "[LBM Error] LBM2D::copy_to_texture_velocity_magnetude() is called but boundries wasn't generated" << std::endl;
+	if ((boundries == nullptr || objects == nullptr) && bits_per_boundry != 0) {
+		std::cout << "[LBM Error] LBM2D::copy_to_texture_velocity_magnetude() is called with boundries activated but boundries buffer wasn't generated" << std::endl;
 		ASSERT(false);
 	}
 
@@ -463,7 +472,10 @@ void LBM2D::copy_to_texture_velocity_magnetude(Texture2D& target_texture) {
 
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 	kernel.update_uniform_as_storage_buffer("lattice_buffer", lattice, 0);
-	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+	if (bits_per_boundry != 0) {
+		kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+		kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
+	}
 	kernel.update_uniform_as_image("target_texture", target_texture, 0);
 	kernel.update_uniform("lattice_resolution", resolution);
 	kernel.update_uniform("texture_resolution", target_texture.get_size());
@@ -478,8 +490,8 @@ void LBM2D::copy_to_texture_boundries(Texture2D& target_texture)
 		ASSERT(false);
 	}
 
-	if (boundries == nullptr) {
-		std::cout << "[LBM Error] LBM2D::copy_to_texture_boundries() is called but boundries wasn't generated" << std::endl;
+	if ((boundries == nullptr || objects == nullptr) && bits_per_boundry != 0) {
+		std::cout << "[LBM Error] LBM2D::copy_to_texture_boundries() is called with boundries activated but boundries buffer wasn't generated" << std::endl;
 		ASSERT(false);
 	}
 
@@ -496,8 +508,10 @@ void LBM2D::copy_to_texture_boundries(Texture2D& target_texture)
 
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 	kernel.update_uniform_as_storage_buffer("lattice_buffer", lattice, 0);
-	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
-	kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
+	if (bits_per_boundry != 0) {
+		kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+		kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
+	}
 	kernel.update_uniform_as_image("target_texture", target_texture, 0);
 	kernel.update_uniform("lattice_resolution", resolution);
 	kernel.update_uniform("texture_resolution", target_texture.get_size());
@@ -512,8 +526,13 @@ void LBM2D::copy_to_texture_force_vector(Texture2D& target_texture)
 		ASSERT(false);
 	}
 
+	if ((boundries == nullptr || objects == nullptr) && bits_per_boundry != 0) {
+		std::cout << "[LBM Error] LBM2D::copy_to_texture_force_vector() is called with boundries activated but boundries buffer wasn't generated" << std::endl;
+		ASSERT(false);
+	}
+
 	if (forces == nullptr) {
-		std::cout << "[LBM Error] LBM2D::copy_to_texture_force_vector() is called but boundries wasn't generated" << std::endl;
+		std::cout << "[LBM Error] LBM2D::copy_to_texture_force_vector() is called but forces wasn't generated" << std::endl;
 		ASSERT(false);
 	}
 
@@ -530,8 +549,10 @@ void LBM2D::copy_to_texture_force_vector(Texture2D& target_texture)
 
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 	kernel.update_uniform_as_storage_buffer("lattice_buffer", lattice, 0);
-	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
-	kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
+	if (bits_per_boundry != 0) {
+		kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+		kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
+	}
 	kernel.update_uniform_as_storage_buffer("forces_buffer", *forces, 0);
 	kernel.update_uniform_as_image("target_texture", target_texture, 0);
 	kernel.update_uniform("lattice_resolution", resolution);
@@ -728,8 +749,11 @@ void LBM2D::_collide()
 
 	kernel.update_uniform_as_storage_buffer("lattice_buffer_source", lattice_source, 0);
 	kernel.update_uniform_as_storage_buffer("lattice_buffer_target", lattice_target, 0);
-	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
-	kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
+	
+	if (bits_per_boundry != 0) {
+		kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+		kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
+	}
 
 	if (is_forcing_scheme && !is_force_field_constant)
 		kernel.update_uniform_as_storage_buffer("forces_buffer", *forces, 0);
