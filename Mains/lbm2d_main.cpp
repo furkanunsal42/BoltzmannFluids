@@ -34,6 +34,9 @@ int main() {
 			case Window::Key::NUM_5:
 				display_mode = 5;
 				break;
+			case Window::Key::NUM_6:
+				display_mode = 6;
+				break;
 			case Window::Key::ESCAPE:
 				exit(0);
 				break;
@@ -90,8 +93,8 @@ int main() {
 			//	properties.boundry_id = 1;
 			//if (coordinate.y == 0)
 			//	properties.boundry_id = 1;
-			if (coordinate.y == lbm2d_solver.get_resolution().y - 1)
-				properties.boundry_id = 1;
+			//if (coordinate.y == lbm2d_solver.get_resolution().y - 1)
+			//	properties.boundry_id = 1;
 
 		},
 		glm::ivec2(simulation_resolution),
@@ -136,6 +139,11 @@ int main() {
 		else if (display_mode == 5) {
 			Texture2D& texture_target = texture_4c;
 			lbm2d_solver.copy_to_texture_force_vector(texture_target);
+			fb.attach_color(0, texture_target, 0);
+		}
+		else if (display_mode == 6) {
+			Texture2D& texture_target = texture_1c;
+			lbm2d_solver.copy_to_texture_temperature(texture_target);
 			fb.attach_color(0, texture_target, 0);
 		}
 

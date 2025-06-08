@@ -90,6 +90,7 @@ public:
 	void copy_to_texture_density(Texture2D& target_texture);
 	void copy_to_texture_boundries(Texture2D& target_texture);
 	void copy_to_texture_force_vector(Texture2D& target_texture);
+	void copy_to_texture_temperature(Texture2D& target_texture);
 
 	// low level field initialization api
 	void compile_shaders(); 
@@ -141,21 +142,20 @@ private:
 	// initialization functions
 	void _collide_with_precomputed_velocities(Buffer& velocity_field);
 	void _set_populations_to_equilibrium(Buffer& density_field, Buffer& velocity_field);
+	void _set_populations_to_equilibrium_thermal(Buffer& temperature_field, Buffer& velocity_field);
+
 	void _initialize_fields_default_pass(
-		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
-		glm::ivec2 resolution,
-		FloatingPointAccuracy fp_accuracy = FloatingPointAccuracy::fp32
-	);
+		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda
+		);
 	void _initialize_fields_boundries_pass(
-		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
-		glm::ivec2 resolution,
-		FloatingPointAccuracy fp_accuracy = FloatingPointAccuracy::fp32
-	);
+		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda
+		);
 	void _initialize_fields_force_pass(
-		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
-		glm::ivec2 resolution,
-		FloatingPointAccuracy fp_accuracy = FloatingPointAccuracy::fp32
-	);
+		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda
+		);
+	void _initialize_fields_themral_pass(
+		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda
+		);
 
 	// simulation time controls
 	std::chrono::duration<double, std::milli> total_time_elapsed;
@@ -219,8 +219,8 @@ private:
 	std::shared_ptr<Buffer> boundries = nullptr;
 	std::shared_ptr<Buffer> objects = nullptr;
 	std::shared_ptr<Buffer> forces = nullptr;
-	std::shared_ptr<Buffer> temperature_lattice0 = nullptr;
-	std::shared_ptr<Buffer> temperature_lattice1 = nullptr;
+	std::shared_ptr<Buffer> thermal_lattice0 = nullptr;
+	std::shared_ptr<Buffer> thermal_lattice1 = nullptr;
 
 	// dual buffer control
 	bool is_lattice_0_is_source = true;
@@ -228,10 +228,10 @@ private:
 	std::shared_ptr<Buffer> _get_lattice_target();
 	void _swap_lattice_buffers();
 
-	bool is_temperature_lattice_0_is_source = true;
-	std::shared_ptr<Buffer> _get_temperature_lattice_source();
-	std::shared_ptr<Buffer> _get_temperature_lattice_target();
-	void _swap_temperature_lattice_buffers();
+	bool is_thermal_lattice_0_is_source = true;
+	std::shared_ptr<Buffer> _get_thermal_lattice_source();
+	std::shared_ptr<Buffer> _get_thermal_lattice_target();
+	void _swap_thermal_lattice_buffers();
 	
 	// kernels
 	bool is_programs_compiled = false;
@@ -240,6 +240,7 @@ private:
 	std::shared_ptr<ComputeProgram> lbm2d_boundry_condition = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_collide_with_precomputed_velocity = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_set_equilibrium_populations = nullptr;
+	std::shared_ptr<ComputeProgram> lbm2d_set_equilibrium_populations_thermal = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_set_population = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_add_random_population = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_copy_boundries = nullptr;
@@ -248,5 +249,7 @@ private:
 	std::shared_ptr<ComputeProgram> lbm2d_copy_velocity_magnitude = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_copy_velocity_total = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_copy_force_total = nullptr;
+	std::shared_ptr<ComputeProgram> lbm2d_copy_temperature = nullptr;
+
 	std::unique_ptr<UniformBuffer> lattice_velocity_set_buffer = nullptr;
 };

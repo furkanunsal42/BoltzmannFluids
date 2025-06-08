@@ -1,0 +1,166 @@
+#<compute shader>
+
+#version 460 core
+
+#define D2Q9 0
+#define D3Q15 1
+#define D3Q19 2
+#define D3Q27 3
+
+#define fp16 0
+#define fp32 1
+
+#define floating_point_accuracy fp32
+#define velocity_set D2Q9
+
+#define boundry_count 1
+#define bits_per_boundry 0
+
+#if velocity_set == D2Q9
+	#define volume_dimentionality 2
+	#define velocity_count 9
+#elif velocity_set == D3Q15
+	#define volume_dimentionality 3
+	#define velocity_count 15
+#elif velocity_set == D3Q19
+	#define volume_dimentionality 3
+	#define velocity_count 19
+#elif velocity_set == D3Q27
+	#define volume_dimentionality 3
+	#define velocity_count 27
+#else	
+	#error "velocity set is not supported"
+#endif
+
+#if floating_point_accuracy == fp32
+#else
+	#error "other floating point systems than fp32 aren't supported"
+#endif
+
+#define D2Q5 4
+#define D3Q7 5
+
+#define thermal_flow 1
+#define velocity_set_thermal D2Q5
+
+#if velocity_set_thermal == D2Q5
+	#define thermal_velocity_count 5
+#elif velocity_set_thermal == D3Q7
+	#define thermal_velocity_count 7
+#else
+	#error "thermal_velocity_set is not supported"
+#endif
+
+#define id gl_GlobalInvocationID
+
+layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+layout(rgba32f, binding = 0) uniform image2D target_texture;
+
+layout(std140, binding = 0) uniform velocity_set_buffer {
+	vec4[velocity_count] lattice_velocity_set;
+};
+
+layout(std430, binding = 1) buffer lattice_buffer {
+	float[] lattice;
+};
+
+#if boundry_count > 1
+layout(std430, binding = 2) buffer boundries_buffer {
+	uint[] boundries;
+};
+
+layout(std430, binding = 3) buffer objects_buffer {
+	vec4[] objects;
+};
+#endif
+
+uniform ivec2 lattice_resolution;
+uniform ivec2 texture_resolution;
+
+float get_lattice_population(ivec2 pixel_coord, int population_index){
+	return lattice[(pixel_coord.y * lattice_resolution.x + pixel_coord.x) * velocity_count + population_index];
+}
+
+void set_lattice_population(ivec2 pixel_coord, int population_index, float value){
+	lattice[(pixel_coord.y * lattice_resolution.x + pixel_coord.x) * velocity_count + population_index] = value;
+}
+
+vec3 get_velocity_set_vector(int velocity_index){
+	return lattice_velocity_set[velocity_index].xyz;
+}
+
+float get_lattice_population_weight(int velocity_index){
+	return lattice_velocity_set[velocity_index].w;
+}
+
+uint get_boundry(ivec2 pixel_coord) {
+#if boundry_count > 1
+
+	uint voxel_id = pixel_coord.y * lattice_resolution.x + pixel_coord.x;
+	uint bits_begin = voxel_id * bits_per_boundry;
+			
+	uint dword_offset = bits_begin / 32;
+	uint subdword_offset_in_bits = bits_begin % 32;
+	
+	uint bitmask = (1 << bits_per_boundry) - 1;
+	uint boundry = boundries[dword_offset] & (bitmask << subdword_offset_in_bits);
+	boundry = boundry >> subdword_offset_in_bits;
+		
+	return boundry;
+#else
+	return 0;
+#endif
+}
+
+struct object_info_s {
+	vec3 velocity;
+	vec3 center_of_mass;
+	vec3 velocity_angular;
+};
+
+object_info_s get_object_info(int object_id){
+#if boundry_count > 1
+	object_info_s result;
+	result.velocity			=	objects[object_id * 3 + 0].xyz;
+	result.center_of_mass	=	objects[object_id * 3 + 1].xyz;
+	result.velocity_angular =	objects[object_id * 3 + 2].xyz;
+	return result;
+#else 
+	object_info_s result;
+	result.velocity			=	vec3(0);
+	result.center_of_mass	=	vec3(0);
+	result.velocity_angular =	vec3(0);
+	return result;
+#endif
+}
+
+float compute_temperature(ivec2 pixel_coord){
+	if(get_boundry(pixel_coord) != 0)
+		return 0;
+	float temperature = 0;
+	for (int i = 0; i < thermal_velocity_count; i++)
+		temperature += get_lattice_population(pixel_coord, i);
+	return temperature;
+}
+
+void main(){
+	
+	if (id.x >= lattice_resolution.x * lattice_resolution.y)
+		return;
+	
+	int pixel_id = int(id.x);
+	ivec2 pixel_coord = ivec2(pixel_id % lattice_resolution.x, pixel_id / lattice_resolution.x);
+
+	if (any(greaterThanEqual(pixel_coord, texture_resolution)) || any(lessThan(pixel_coord, ivec2(0))))
+		return;
+
+	float temperature = compute_temperature(pixel_coord);
+	vec4 write_value;
+
+	write_value.x = int(temperature != 0) * abs(temperature);
+	write_value.xyz += int(temperature == 0) * 1;
+	write_value.a = 1;
+
+	imageStore(target_texture, pixel_coord, write_value);
+}
