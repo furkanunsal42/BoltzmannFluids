@@ -63,11 +63,16 @@ int main() {
 			properties.velocity = glm::vec3(0, 1, 0) / 160.0f;
 			properties.density = 1.0f;
 			
+			properties.force = glm::vec3(0);
 			if (coordinate.x > 512)
-				properties.force = glm::vec3(0, -1, 0) / 128000.0f;
+				properties.force += glm::vec3(0, -1, 0) / 128000.0f;
 			if (coordinate.x <= 512)
-				properties.force = glm::vec3(0, 1, 0) / 128000.0f;
-			
+				properties.force += glm::vec3(0, 1, 0) / 128000.0f;
+			if (coordinate.y > 512)
+				properties.force += glm::vec3(1, 0, 0) / 128000.0f;
+			if (coordinate.y <= 512)
+				properties.force += glm::vec3(-1, 0, 0) / 128000.0f;
+
 			//if (coordinate.y > 512)
 			//	properties.force = glm::vec3(1, 0, 0);
 

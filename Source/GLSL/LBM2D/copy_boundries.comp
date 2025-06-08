@@ -51,6 +51,7 @@ layout(std430, binding = 1) buffer lattice_buffer {
 	float[] lattice;
 };
 
+#if boundry_count > 1
 layout(std430, binding = 2) buffer boundries_buffer {
 	uint[] boundries;
 };
@@ -58,6 +59,7 @@ layout(std430, binding = 2) buffer boundries_buffer {
 layout(std430, binding = 3) buffer objects_buffer {
 	vec4[] objects;
 };
+#endif
 
 uniform ivec2 lattice_resolution;
 uniform ivec2 texture_resolution;
@@ -78,8 +80,8 @@ float get_lattice_population_weight(int velocity_index){
 	return lattice_velocity_set[velocity_index].w;
 }
 
-#if boundry_count != 0
 uint get_boundry(ivec2 pixel_coord) {
+#if boundry_count > 1
 
 	uint voxel_id = pixel_coord.y * lattice_resolution.x + pixel_coord.x;
 	uint bits_begin = voxel_id * bits_per_boundry;
@@ -92,12 +94,10 @@ uint get_boundry(ivec2 pixel_coord) {
 	boundry = boundry >> subdword_offset_in_bits;
 		
 	return boundry;
-}
 #else
-int get_boundry(ivec2 pixel_coord) {
 	return 0;
-}
 #endif
+}
 
 struct object_info_s {
 	vec3 velocity;
@@ -106,12 +106,19 @@ struct object_info_s {
 };
 
 object_info_s get_object_info(int object_id){
+#if boundry_count > 1
 	object_info_s result;
-	result.velocity =			objects[object_id * 3 + 0].xyz;
-	result.center_of_mass =		objects[object_id * 3 + 1].xyz;
+	result.velocity			=	objects[object_id * 3 + 0].xyz;
+	result.center_of_mass	=	objects[object_id * 3 + 1].xyz;
 	result.velocity_angular =	objects[object_id * 3 + 2].xyz;
-	
 	return result;
+#else 
+	object_info_s result;
+	result.velocity			=	vec3(0);
+	result.center_of_mass	=	vec3(0);
+	result.velocity_angular =	vec3(0);
+	return result;
+#endif
 }
 
 void main(){

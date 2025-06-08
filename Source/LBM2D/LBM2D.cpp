@@ -22,6 +22,10 @@ void LBM2D::compile_shaders()
 	lbm2d_copy_force_total					= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "copy_force_total.comp"), definitions);				
 	lbm2d_add_random_population				= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "add_random_population.comp"), definitions);
 	is_programs_compiled = true;
+
+	std::cout << "[LBM Info] kernels are compiled with configuration : " << std::endl;
+	for (auto& definition : definitions)
+		std::cout << "\t" << definition.first << " : " << definition.second << std::endl;
 }
 
 void LBM2D::generate_lattice(glm::ivec2 resolution)
@@ -104,14 +108,9 @@ void LBM2D::initialize_fields(std::function<void(glm::ivec2, FluidProperties&)> 
 	set_floating_point_accuracy(fp_accuracy);
 	generate_lattice(resolution);
 
-	bool is_force_field_constant;
-	glm::vec3 constant_force_field;
-
 	_initialize_fields_default_pass(
 		initialization_lambda,
 		resolution,
-		is_force_field_constant,
-		constant_force_field,
 		fp_accuracy
 	);
 
@@ -122,15 +121,13 @@ void LBM2D::initialize_fields(std::function<void(glm::ivec2, FluidProperties&)> 
 	);
 	
 	_initialize_fields_force_pass(
-		is_force_field_constant,
-		constant_force_field,
 		initialization_lambda,
 		resolution,
 		fp_accuracy
 	);
 }
 
-void LBM2D::_initialize_fields_default_pass(std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda, glm::ivec2 resolution, bool& out_is_force_field_constant, glm::vec3& out_constant_force_field, FloatingPointAccuracy fp_accuracy)
+void LBM2D::_initialize_fields_default_pass(std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda, glm::ivec2 resolution, FloatingPointAccuracy fp_accuracy)
 {
 	Buffer velocity_buffer(resolution.x * resolution.y * sizeof(glm::vec4));
 	Buffer density_buffer(resolution.x * resolution.y * sizeof(float));
@@ -144,7 +141,7 @@ void LBM2D::_initialize_fields_default_pass(std::function<void(glm::ivec2, Fluid
 	FluidProperties temp_properties;
 	initialization_lambda(glm::ivec2(0, 0), temp_properties);
 
-	bool is_force_field_constant = false;
+	is_force_field_constant = true;
 	glm::vec3 constant_force_field = temp_properties.force;
 
 	uint32_t object_count = 1;
@@ -167,6 +164,8 @@ void LBM2D::_initialize_fields_default_pass(std::function<void(glm::ivec2, Fluid
 		}
 	}
 
+	is_forcing_scheme = !(is_force_field_constant && constant_force_field == glm::vec3(0));
+
 	// compute equilibrium and non-equilibrium populations according to chapter 5.
 	velocity_buffer.unmap();
 	density_buffer.unmap();
@@ -180,21 +179,36 @@ void LBM2D::_initialize_fields_default_pass(std::function<void(glm::ivec2, Fluid
 
 	// bits per boudnry can only be 1, 2, 4, 8 to not cause a boundry spanning over 2 bytes
 	bits_per_boundry = std::exp2(std::ceil(std::log2f(std::ceil(std::log2f(object_count)))));
-	//if (bits_per_boundry < 1 || bits_per_boundry > 8) {
-	//	std::cout << "[LBM Error] _initialize_fields_default_pass() is called but too many or too few objects are defined, maximum of 255 bits are possible but number of objets were: " << object_count << std::endl;
-	//	ASSERT(false);
-	//}
-	std::cout << "bits_per_boundery=" << bits_per_boundry << std::endl;
+	if (bits_per_boundry > 8) {
+		std::cout << "[LBM Error] _initialize_fields_default_pass() is called but too many objects are defined, maximum of 255 bits are possible but number of objets were: " << object_count << std::endl;
+		ASSERT(false);
+	}
+	
+	std::cout << "[LBM Info] _initialize_fields_default_pass() is called and " << object_count << " boundry types are defined" << std::endl;
+	std::cout << "[LBM Info] _initialize_fields_default_pass() is called and " << bits_per_boundry << " bits per voxel is allocated for boundries" << std::endl;
+	
+	if (is_forcing_scheme && is_force_field_constant)
+		std::cout << "[LBM Info] _initialize_fields_default_pass() is called and the simulation is determined to be a forcing scheme with constant_force_field(" << constant_force_field.x << ", " << constant_force_field.y << ", " << constant_force_field.z << ")" << std::endl;
+	if (is_forcing_scheme && !is_force_field_constant)
+		std::cout << "[LBM Info] _initialize_fields_default_pass() is called and the simulation is determined to be a forcing scheme with a varying force field" << std::endl;
+	if (!is_forcing_scheme)
+		std::cout << "[LBM Info] _initialize_fields_default_pass() is called and the simulation is determined to be a non-forcing scheme" << std::endl;
+
+	compile_shaders();
+
+	int32_t relaxation_iteration_count = 1;
+	std::cout << "[LBM Info] _initialize_fields_default_pass() initialization of particle population distributions from given veloicty and density fields is initiated" << std::endl;
 
 	_set_populations_to_equilibrium(density_buffer, velocity_buffer);
 
-	int32_t relaxation_iteration_count = 1;
 	for (int32_t i = 0; i < relaxation_iteration_count; i++) {
 		_collide_with_precomputed_velocities(velocity_buffer);
-		// _apply_boundry_conditions(); the book doesn't specitfy whether or not to enforce boundry conditions in initialization algorithm
+		//_apply_boundry_conditions(); //the book doesn't specitfy whether or not to enforce boundry conditions in initialization algorithm
 		_stream();
 	}
 
+	std::cout << "[LBM Info] _initialize_fields_default_pass() fields initialization scheme completed with relaxation_iteration_count(" << relaxation_iteration_count << ")" << std::endl;
+	std::cout << "[LBM Info] _initialize_fields_default_pass() completed" << std::endl;
 }
 
 void LBM2D::_initialize_fields_boundries_pass(std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda, glm::ivec2 resolution, FloatingPointAccuracy fp_accuracy)
@@ -215,6 +229,7 @@ void LBM2D::_initialize_fields_boundries_pass(std::function<void(glm::ivec2, Flu
 		std::cout << "[LBM Error] _initialize_fields_boundries_pass() is called but too many or too few objects are defined, maximum of 255 bits are possible but number of objets were: " << object_count << std::endl;
 		ASSERT(false);
 	}
+	compile_shaders();
 
 	
 	// objects initialization
@@ -278,10 +293,11 @@ void LBM2D::_initialize_fields_boundries_pass(std::function<void(glm::ivec2, Flu
 			uint32_t bitmask = (1 << bits_per_boundry) - 1;
 			uint32_t boundry = (boundries_mapped_buffer)[dword_offset] & (bitmask << subdword_offset_in_bits);
 			boundry = boundry >> subdword_offset_in_bits;
-	
+	 
 			if (boundry != properties.boundry_id) {
-				std::cout << "FUCK  " << x << " " << y << " value="<< boundry << " original=" << properties.boundry_id << std::endl;
-				
+				std::cout << "[LBM Error] _initialize_fields_boundries_pass() is called but an error occured during writing or reading the boundries bits" << std::endl;
+				std::cout << "[LBM Error] boundry value read(" << boundry << ") mismatch the value written(" << properties.boundry_id << ")" << " at the coordinates(" << x << ", " << y << ")" << std::endl;
+				ASSERT(false);
 			}
 		}
 	}
@@ -289,12 +305,13 @@ void LBM2D::_initialize_fields_boundries_pass(std::function<void(glm::ivec2, Flu
 	boundries->unmap();
 	boundries_mapped_buffer = nullptr;
 
+	std::cout << "[LBM Info] _initialize_fields_boundries_pass() completed" << std::endl;
 }
 
-void LBM2D::_initialize_fields_force_pass(bool is_force_field_constant, glm::vec3 constant_force_field, std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda, glm::ivec2 resolution, FloatingPointAccuracy fp_accuracy)
+void LBM2D::_initialize_fields_force_pass(std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda, glm::ivec2 resolution, FloatingPointAccuracy fp_accuracy)
 {
 	if (is_force_field_constant) {
-		if (constant_force_field == glm::vec3(0)) {
+		if (constant_force == glm::vec3(0)) {
 			this->forces = nullptr;
 			this->is_force_field_constant = false;
 		}
@@ -320,6 +337,8 @@ void LBM2D::_initialize_fields_force_pass(bool is_force_field_constant, glm::vec
 		forces->unmap();
 		forces_buffer_data = nullptr;
 	}
+
+	std::cout << "[LBM Info] _initialize_fields_force_pass() completed" << std::endl;
 }
 
 void LBM2D::copy_to_texture_population(Texture2D& target_texture, int32_t population_index)
@@ -679,6 +698,8 @@ std::vector<std::pair<std::string, std::string>> LBM2D::_generate_shader_macros(
 		{"bits_per_boundry", std::to_string(bits_per_boundry)},
 		{"periodic_x", periodic_x ? "1" : "0"},
 		{"periodic_y", periodic_y ? "1" : "0"},
+		{"forcing_scheme", is_forcing_scheme ? "1" : "0"},
+		{"constant_force", is_force_field_constant ? "1" : "0"},
 	};
 
 	return definitions;

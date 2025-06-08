@@ -110,13 +110,9 @@ private:
 	void _initialize_fields_default_pass(
 		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
 		glm::ivec2 resolution,
-		bool& out_is_force_field_constant,
-		glm::vec3& out_constant_force_field,
 		FloatingPointAccuracy fp_accuracy = FloatingPointAccuracy::fp32
 	);
 	void _initialize_fields_force_pass(
-		bool is_force_field_constant,
-		glm::vec3 constant_force_field,
 		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
 		glm::ivec2 resolution,
 		FloatingPointAccuracy fp_accuracy = FloatingPointAccuracy::fp32
@@ -144,6 +140,7 @@ private:
 	bool periodic_y = true;
 
 	// forces control flags
+	bool is_forcing_scheme = false;
 	bool is_force_field_constant = false;
 	glm::vec3 constant_force = glm::vec3(0);
 
