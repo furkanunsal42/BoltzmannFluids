@@ -58,37 +58,34 @@ int main() {
 
 	lbm2d_solver.initialize_fields(
 		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
-			properties.boundry_id = false;
-			//properties.boundry_id |= glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 3 / 4.0, simulation_resolution.y / 2)) < 32;
-			properties.velocity = glm::vec3(0, 1, 0) / 160.0f;
-			properties.density = 1.0f;
 			
-			properties.force = glm::vec3(0);
-			if (coordinate.x > 512)
-				properties.force += glm::vec3(0, -1, 0) / 128000.0f;
-			if (coordinate.x <= 512)
-				properties.force += glm::vec3(0, 1, 0) / 128000.0f;
-			if (coordinate.y > 512)
-				properties.force += glm::vec3(1, 0, 0) / 128000.0f;
-			if (coordinate.y <= 512)
-				properties.force += glm::vec3(-1, 0, 0) / 128000.0f;
+			properties.force = glm::vec3(0, -4, 0) / 128000.0f;
 
+			//properties.force = glm::vec3(0);
+			//if (coordinate.x > 512)
+			//	properties.force += glm::vec3(0, -1, 0) / 128000.0f;
+			//if (coordinate.x <= 512)
+			//	properties.force += glm::vec3(0, 1, 0) / 128000.0f;
 			//if (coordinate.y > 512)
-			//	properties.force = glm::vec3(1, 0, 0);
+			//	properties.force += glm::vec3(1, 0, 0) / 128000.0f;
+			//if (coordinate.y <= 512)
+			//	properties.force += glm::vec3(-1, 0, 0) / 128000.0f;
 
+			properties.boundry_id = false;
 			if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1 / 4.0, simulation_resolution.y / 2)) < 32)
 				properties.boundry_id = 1;
-			//if (coordinate.x == 0)
-			//	properties.velocity = glm::vec3(0, 0, 0) / 16.0f;
-			//if (coordinate.x == lbm2d_solver.get_resolution().x-1)
-			//	properties.velocity = glm::vec3(0, 0, 0) / 16.0f;
-			//if (coordinate.y == 0)
-			//	properties.velocity = glm::vec3(0, 0, 0) / 16.0f;
-			//if (coordinate.y == lbm2d_solver.get_resolution().y - 1)
-			//	properties.velocity = glm::vec3(0, 0, 0) / 16.0f;
+			
+			if (coordinate.x == 0)
+				properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
+			if (coordinate.x == lbm2d_solver.get_resolution().x-1)
+				properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
+			if (coordinate.y == 0)
+				properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
+			if (coordinate.y == lbm2d_solver.get_resolution().y - 1)
+				properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
 		},
 		glm::ivec2(simulation_resolution),
-		0.53f,
+		0.51f,
 		false,
 		false,
 		VelocitySet::D2Q9,

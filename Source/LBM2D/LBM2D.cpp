@@ -142,7 +142,7 @@ void LBM2D::_initialize_fields_default_pass(std::function<void(glm::ivec2, Fluid
 	initialization_lambda(glm::ivec2(0, 0), temp_properties);
 
 	is_force_field_constant = true;
-	glm::vec3 constant_force_field = temp_properties.force;
+	constant_force = temp_properties.force;
 
 	uint32_t object_count = 1;
 
@@ -156,7 +156,7 @@ void LBM2D::_initialize_fields_default_pass(std::function<void(glm::ivec2, Fluid
 
 			object_count = std::max(object_count, properties.boundry_id + 1);
 
-			if (properties.force != constant_force_field)
+			if (properties.force != constant_force)
 				is_force_field_constant = false;
 
 			velocity_buffer_data[y * resolution.x + x] = glm::vec4(properties.velocity, 0.0f);
@@ -164,7 +164,7 @@ void LBM2D::_initialize_fields_default_pass(std::function<void(glm::ivec2, Fluid
 		}
 	}
 
-	is_forcing_scheme = !(is_force_field_constant && constant_force_field == glm::vec3(0));
+	is_forcing_scheme = !(is_force_field_constant && constant_force == glm::vec3(0));
 
 	// compute equilibrium and non-equilibrium populations according to chapter 5.
 	velocity_buffer.unmap();
@@ -188,7 +188,7 @@ void LBM2D::_initialize_fields_default_pass(std::function<void(glm::ivec2, Fluid
 	std::cout << "[LBM Info] _initialize_fields_default_pass() is called and " << bits_per_boundry << " bits per voxel is allocated for boundries" << std::endl;
 	
 	if (is_forcing_scheme && is_force_field_constant)
-		std::cout << "[LBM Info] _initialize_fields_default_pass() is called and the simulation is determined to be a forcing scheme with constant_force_field(" << constant_force_field.x << ", " << constant_force_field.y << ", " << constant_force_field.z << ")" << std::endl;
+		std::cout << "[LBM Info] _initialize_fields_default_pass() is called and the simulation is determined to be a forcing scheme with constant_force_field(" << constant_force.x << ", " << constant_force.y << ", " << constant_force.z << ")" << std::endl;
 	if (is_forcing_scheme && !is_force_field_constant)
 		std::cout << "[LBM Info] _initialize_fields_default_pass() is called and the simulation is determined to be a forcing scheme with a varying force field" << std::endl;
 	if (!is_forcing_scheme)
@@ -310,16 +310,8 @@ void LBM2D::_initialize_fields_boundries_pass(std::function<void(glm::ivec2, Flu
 
 void LBM2D::_initialize_fields_force_pass(std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda, glm::ivec2 resolution, FloatingPointAccuracy fp_accuracy)
 {
-	if (is_force_field_constant) {
-		if (constant_force == glm::vec3(0)) {
-			this->forces = nullptr;
-			this->is_force_field_constant = false;
-		}
-		else {
-			this->forces = std::make_shared<Buffer>(sizeof(glm::vec4) * 1);
-			this->is_force_field_constant = true;
-		}
-	}
+	if (is_force_field_constant)
+		this->forces = nullptr;
 	else {
 		forces = std::make_shared<Buffer>(sizeof(glm::vec4) * resolution.x * resolution.y);
 		forces->map();
@@ -738,10 +730,12 @@ void LBM2D::_collide()
 	kernel.update_uniform_as_storage_buffer("lattice_buffer_target", lattice_target, 0);
 	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
 	kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
-	if (forces != nullptr)
+
+	if (is_forcing_scheme && !is_force_field_constant)
 		kernel.update_uniform_as_storage_buffer("forces_buffer", *forces, 0);
-	else
+	if (is_forcing_scheme && is_force_field_constant)
 		kernel.update_uniform("force_constant", constant_force);
+	
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 	kernel.update_uniform("lattice_resolution", resolution);
 	kernel.update_uniform("lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3)));

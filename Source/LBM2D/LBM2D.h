@@ -141,7 +141,7 @@ private:
 
 	// forces control flags
 	bool is_forcing_scheme = false;
-	bool is_force_field_constant = false;
+	bool is_force_field_constant = true;
 	glm::vec3 constant_force = glm::vec3(0);
 
 	// moving/stationary boundries control flags
