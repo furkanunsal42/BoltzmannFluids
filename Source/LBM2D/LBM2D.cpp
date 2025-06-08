@@ -296,9 +296,8 @@ void LBM2D::_initialize_fields_boundries_pass(std::function<void(glm::ivec2, Flu
 	}
 	compile_shaders();
 
-	
-	// objects initialization
-	//							   trans_vel		   angular_vel		   center_of_mass
+	// objects initialization	   a=temperature	   a=scalar
+	//							   rgb=trans_vel	   rgb=angular_vel	   rgb=center_of_mass
 	size_t object_size_on_device = sizeof(glm::vec4) + sizeof(glm::vec4) + sizeof(glm::vec4);
 	objects = std::make_shared<Buffer>(object_size_on_device * object_count);
 
@@ -711,26 +710,65 @@ int32_t LBM2D::get_velocity_set_vector_count()
 	return get_VelocitySet_vector_count(velocity_set);
 }
 
-void LBM2D::set_boundry_velocity(uint32_t boundry_id, glm::vec3 velocity_translational, glm::vec3 velocity_angular, glm::vec3 center_of_mass)
+void LBM2D::set_boundry_properties(uint32_t boundry_id, glm::vec3 velocity_translational, glm::vec3 velocity_angular, glm::vec3 center_of_mass, float temperature)
 {
-	if (boundry_id > max_boundry_count){
-		std::cout << "[LBM Error] LBM2D::set_boundry_velocity() is called but boundry_id(" << boundry_id << ") is greater than maximum(" << max_boundry_count << ")" << std::endl;
+	if (boundry_id > max_boundry_count) {
+		std::cout << "[LBM Error] LBM2D::set_boundry_properties() is called but boundry_id(" << boundry_id << ") is greater than maximum(" << max_boundry_count << ")" << std::endl;
 		ASSERT(false);
 	}
 
 	if (boundry_id == 0) {
-		std::cout << "[LBM Error] LBM2D::set_boundry_velocity() is called but boundry_id(0) is defined to be fluid, it cannot be treated as an object" << std::endl;
+		std::cout << "[LBM Error] LBM2D::set_boundry_properties() is called but boundry_id(0) is defined to be fluid, it cannot be treated as an object" << std::endl;
 		ASSERT(false);
 	}
 
 	if (boundry_id >= objects_cpu.size())
 		objects_cpu.resize(boundry_id + 1);
-	objects_cpu[boundry_id] = _object_desc(velocity_translational, velocity_angular, center_of_mass);
+	objects_cpu[boundry_id] = _object_desc(velocity_translational, velocity_angular, center_of_mass, temperature);
 }
 
-void LBM2D::set_boundry_velocity(uint32_t boundry_id, glm::vec3 velocity_translational)
+void LBM2D::set_boundry_properties(uint32_t boundry_id, glm::vec3 velocity_translational, glm::vec3 velocity_angular, glm::vec3 center_of_mass)
 {
-	set_boundry_velocity(boundry_id, velocity_translational, glm::vec3(0), glm::vec3(0));
+	set_boundry_properties(
+		boundry_id,
+		velocity_translational,
+		velocity_angular,
+		center_of_mass,
+		referance_temperature
+	);
+}
+
+void LBM2D::set_boundry_properties(uint32_t boundry_id, glm::vec3 velocity_translational, float temperature)
+{
+	set_boundry_properties(
+		boundry_id,
+		velocity_translational,
+		glm::vec3(0),
+		glm::vec3(0),
+		temperature
+	);
+}
+
+void LBM2D::set_boundry_properties(uint32_t boundry_id, glm::vec3 velocity_translational)
+{
+	set_boundry_properties(
+		boundry_id, 
+		velocity_translational, 
+		glm::vec3(0), 
+		glm::vec3(0), 
+		referance_temperature
+	);
+}
+
+void LBM2D::set_boundry_properties(uint32_t boundry_id, float temperature)
+{
+	set_boundry_properties(
+		boundry_id,
+		glm::vec3(0),
+		glm::vec3(0),
+		glm::vec3(0),
+		temperature
+	);
 }
 
 void LBM2D::set_population(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_coordinate_end, int32_t population_index, float value)
@@ -915,8 +953,8 @@ void LBM2D::_set_populations_to_equilibrium(Buffer& density_field, Buffer& veloc
 	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
 }
 
-LBM2D::_object_desc::_object_desc(glm::vec3 velocity_translational, glm::vec3 velocity_angular, glm::vec3 center_of_mass) :
-	velocity_translational(velocity_translational), velocity_angular(velocity_angular), center_of_mass(center_of_mass)
+LBM2D::_object_desc::_object_desc(glm::vec3 velocity_translational, glm::vec3 velocity_angular, glm::vec3 center_of_mass, float temperature) :
+	velocity_translational(velocity_translational), velocity_angular(velocity_angular), center_of_mass(center_of_mass), temperature(temperature)
 {
 
 }

@@ -24,6 +24,7 @@ class LBM2D {
 public:
 	constexpr static uint32_t not_a_boundry = 0;
 	constexpr static uint32_t max_boundry_count = 255;
+	constexpr static float referance_temperature = 1.0;
 
 	// simulation controls
 	void iterate_time(std::chrono::duration<double, std::milli> deltatime);
@@ -33,7 +34,7 @@ public:
 	int32_t get_velocity_set_vector_count();
 
 	// high level field initialization api
-	void set_boundry_velocity(
+	void set_boundry_properties(
 		uint32_t boundry_id,
 		glm::vec3 velocity_translational,
 		glm::vec3 velocity_angular,
@@ -41,25 +42,25 @@ public:
 		float temperature
 	);
 	
-	void set_boundry_velocity(
+	void set_boundry_properties(
 		uint32_t boundry_id,
 		glm::vec3 velocity_translational, 
 		glm::vec3 velocity_angular,
 		glm::vec3 center_of_mass
 	);
 
-	void set_boundry_velocity(
+	void set_boundry_properties(
 		uint32_t boundry_id,
 		glm::vec3 velocity_translational,
 		float temperature
 	);
 
-	void set_boundry_velocity(
+	void set_boundry_properties(
 		uint32_t boundry_id,
 		glm::vec3 velocity_translational
 	);
 
-	void set_boundry_velocity(
+	void set_boundry_properties(
 		uint32_t boundry_id,
 		float temperature
 	);
@@ -68,7 +69,7 @@ public:
 		glm::vec3 velocity = glm::vec3(0);
 		glm::vec3 force = glm::vec3(0);
 		float density = 1;
-		float temperature = 1;
+		float temperature = referance_temperature;
 		float scalar_quantity = 0;
 		uint32_t boundry_id = not_a_boundry;
 	};
@@ -182,12 +183,14 @@ private:
 		_object_desc(
 			glm::vec3 velocity_translational = glm::vec3(0),
 			glm::vec3 velocity_angular = glm::vec3(0),
-			glm::vec3 center_of_mass = glm::vec3(0)
+			glm::vec3 center_of_mass = glm::vec3(0),
+			float temperature = referance_temperature
 		);
 
 		glm::vec3 velocity_translational;
 		glm::vec3 velocity_angular;
 		glm::vec3 center_of_mass;
+		float temperature;
 	};
 
 	// boundries buffer holds the id of the object it is a part of (0 means not_a_boundry)
