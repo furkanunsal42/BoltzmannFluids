@@ -13,6 +13,9 @@
 #define floating_point_accuracy fp32
 #define velocity_set D2Q9
 
+#define boundry_count 1
+#define bits_per_boundry 0
+
 #if velocity_set == D2Q9
 	#define volume_dimentionality 2
 	#define velocity_count 9
@@ -46,9 +49,15 @@ layout(std430, binding = 1) buffer lattice_buffer {
 	float[] lattice;
 };
 
+#if boundry_count > 1
 layout(std430, binding = 2) buffer boundries_buffer {
-	int[] boundries;
+	uint[] boundries;
 };
+
+layout(std430, binding = 3) buffer objects_buffer {
+	vec4[] objects;
+};
+#endif
 
 uniform ivec2 lattice_resolution;
 
@@ -60,12 +69,64 @@ int get_inverse_lattice_direction_index(int lattice_velocity_index){
 	return is_odd ? lattice_velocity_index + 1 : lattice_velocity_index - 1;
 }
 
-bool get_boundry(ivec2 pixel_coord) {
-	int boundry = 0;
-	int pixel_id = pixel_coord.y * lattice_resolution.x + pixel_coord.x;
-	int byte_id = pixel_id / 32;
-	int bit_id = pixel_id % 32;
-	return (boundries[byte_id] & 1 << bit_id) != 0;
+vec3 get_lattice_velocity(int velocity_index){
+	return lattice_velocity_set[velocity_index].xyz;
+}
+
+float get_lattice_weight(int velocity_index){
+	return lattice_velocity_set[velocity_index].w;
+}
+
+uint get_boundry(ivec2 pixel_coord) {
+#if boundry_count > 1
+
+	uint voxel_id = pixel_coord.y * lattice_resolution.x + pixel_coord.x;
+	uint bits_begin = voxel_id * bits_per_boundry;
+			
+	uint dword_offset = bits_begin / 32;
+	uint subdword_offset_in_bits = bits_begin % 32;
+	
+	uint bitmask = (1 << bits_per_boundry) - 1;
+	uint boundry = boundries[dword_offset] & (bitmask << subdword_offset_in_bits);
+	boundry = boundry >> subdword_offset_in_bits;
+		
+	return boundry;
+#else
+	return 0;
+#endif
+}
+
+struct object_info_s {
+	vec3 velocity;
+	vec3 center_of_mass;
+	vec3 velocity_angular;
+};
+
+object_info_s get_object_info(int object_id){
+#if boundry_count > 1
+	object_info_s result;
+	result.velocity			=	objects[object_id * 3 + 0].xyz;
+	result.center_of_mass	=	objects[object_id * 3 + 1].xyz;
+	result.velocity_angular =	objects[object_id * 3 + 2].xyz;
+	return result;
+#else 
+	object_info_s result;
+	result.velocity			=	vec3(0);
+	result.center_of_mass	=	vec3(0);
+	result.velocity_angular =	vec3(0);
+	return result;
+#endif
+}
+
+float dirichlet_boundry_correction_term(int lattice_velocity_index, float local_density, vec3 boundry_velocity){
+	vec3 c = get_lattice_velocity(lattice_velocity_index);
+	float w = get_lattice_weight(lattice_velocity_index);
+	float p = local_density;
+	vec3 v = boundry_velocity;
+	//float cs = 1.0 / sqrt(3);
+	//float cs2 = pow(1.0 / sqrt(3), 2);
+
+	return -2 * w * p * dot(c, v) * 3; 
 }
 
 void main(){
@@ -76,17 +137,22 @@ void main(){
 	int pixel_id = int(id.x);
 	ivec2 pixel_coord = ivec2(pixel_id.x % lattice_resolution.x, pixel_id.x / lattice_resolution.x);
 	
-	if (!get_boundry(pixel_coord))
+	int boundry = int(get_boundry(pixel_coord));
+	if (boundry == 0)
 		return;
 
-	for (int population_id = 1; population_id < velocity_count; population_id+=2){
-	
+	object_info_s object = get_object_info(boundry);
+	// include angular velocity term
+	vec3 boundry_velocity = object.velocity;
+
+	for (int population_id = 1; population_id < velocity_count; population_id+=2)
+	{
 		int inv_population_id = get_inverse_lattice_direction_index(population_id);
 		
 		float value_a = lattice[pixel_id * velocity_count + population_id];
 		float value_b = lattice[pixel_id * velocity_count + inv_population_id];
-	
-		lattice[pixel_id * velocity_count + population_id] = value_b;
-		lattice[pixel_id * velocity_count + inv_population_id] = value_a;
+		
+		lattice[pixel_id * velocity_count + population_id]		= value_b + dirichlet_boundry_correction_term(inv_population_id, 1.0, boundry_velocity);
+		lattice[pixel_id * velocity_count + inv_population_id]	= value_a + dirichlet_boundry_correction_term(population_id, 1.0, boundry_velocity);
 	}
 }

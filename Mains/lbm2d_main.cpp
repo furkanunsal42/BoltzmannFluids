@@ -1,22 +1,15 @@
-#include <thread>
-#include "GUI/GuiManager.h"
 #include "GraphicsCortex.h"
 #include "LBM2D/LBM2D.h"
 
-#include "Kernels/LBM2D/lbm2d_kernels.cuh"
-#include "LBMConstants/LBMParams.cuh"
-
-
 using namespace std::chrono_literals;
 
-void run_rendering_loop() {
+int main() {
 
-	glm::ivec2 simulation_resolution(1024);
+	glm::ivec2 simulation_resolution(1024, 1024);
 
 	WindowDescription desc;
 	desc.w_scale_framebuffer_size = false;
 	desc.w_scale_window_size = false;
-
 	desc.f_swap_interval = 0;
 	desc.w_resolution = simulation_resolution;
 	Window window(desc);
@@ -38,6 +31,9 @@ void run_rendering_loop() {
 			case Window::Key::NUM_4:
 				display_mode = 4;
 				break;
+			case Window::Key::NUM_5:
+				display_mode = 5;
+				break;
 			case Window::Key::ESCAPE:
 				exit(0);
 				break;
@@ -49,16 +45,49 @@ void run_rendering_loop() {
 		exit(0);
 		});
 
+	//window.newsletters->on_window_refresh_events.subscribe([&]() {
+	//	//std::cout << "here" << std::endl;
+	//	//primitive_renderer::set_viewport_size(window.get_framebuffer_resolution());
+	//	});
+
 	LBM2D lbm2d_solver;
+
+	lbm2d_solver.set_boundry_velocity(1, glm::vec3(0, 0, 0) / 16.0f);
+	lbm2d_solver.set_boundry_velocity(2, glm::vec3(1, 0, 0) / 16.0f);
+	lbm2d_solver.set_boundry_velocity(3, glm::vec3(1, 0, 0) / 16.0f);
 
 	lbm2d_solver.initialize_fields(
 		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
-			properties.is_boundry = glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution) / glm::vec2(4, 2)) < 32;
-			properties.velocity = glm::vec3(1, 1, 0) / 16.0f;
-			properties.density = 1.0f;
+			
+			//properties.force = glm::vec3(0, -4, 0) / 128000.0f;
+
+			//properties.force = glm::vec3(0);
+			//if (coordinate.x > 512)
+			//	properties.force += glm::vec3(0, -1, 0) / 128000.0f;
+			//if (coordinate.x <= 512)
+			//	properties.force += glm::vec3(0, 1, 0) / 128000.0f;
+			//if (coordinate.y > 512)
+			//	properties.force += glm::vec3(1, 0, 0) / 128000.0f;
+			//if (coordinate.y <= 512)
+			//	properties.force += glm::vec3(-1, 0, 0) / 128000.0f;
+
+			properties.boundry_id = false;
+			//if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1 / 4.0, simulation_resolution.y / 2)) < 32)
+			//	properties.boundry_id = 1;
+			
+			if (coordinate.x == 0)
+				properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
+			if (coordinate.x == lbm2d_solver.get_resolution().x-1)
+				properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
+			if (coordinate.y == 0)
+				properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
+			if (coordinate.y == lbm2d_solver.get_resolution().y - 1)
+				properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
 		},
 		glm::ivec2(simulation_resolution),
-		0.53f,
+		0.51f,
+		false,
+		false,
 		VelocitySet::D2Q9,
 		FloatingPointAccuracy::fp32
 	);
@@ -72,7 +101,7 @@ void run_rendering_loop() {
 
 	while (true) {
 		double deltatime = window.handle_events(true);
-		lbm2d_solver.iterate_time(std::chrono::duration<double, std::milli>(deltatime*10));
+		lbm2d_solver.iterate_time(std::chrono::duration<double, std::milli>(deltatime*100));
 		
 		if (display_mode == 1) {
 			Texture2D& texture_target = texture_1c;
@@ -90,25 +119,19 @@ void run_rendering_loop() {
 			fb.attach_color(0, texture_target, 0);
 		}
 		else if (display_mode == 4){
-			Texture2D& texture_target = texture_1c;
+			Texture2D& texture_target = texture_4c;
 			lbm2d_solver.copy_to_texture_boundries(texture_target);
 			fb.attach_color(0, texture_target, 0);
 		}
-		 
-		fb.blit_to_screen(simulation_resolution, simulation_resolution, Framebuffer::Channel::COLOR, Framebuffer::Filter::LINEAR);
+		else if (display_mode == 5) {
+			Texture2D& texture_target = texture_4c;
+			lbm2d_solver.copy_to_texture_force_vector(texture_target);
+			fb.attach_color(0, texture_target, 0);
+		}
+
+		fb.blit_to_screen(simulation_resolution, window.get_framebuffer_resolution(), Framebuffer::Channel::COLOR, Framebuffer::Filter::NEAREST);
 
 		window.swap_buffers();
 	}
-}
 
-int main(int argc, char** argv) {
-	GuiManager guiManager(argc, argv);
-
-//	std::thread renderingThread(run_rendering_loop); // OpenGL rendering part (will be embedded into Main UI using QTWidget)
-
-	guiManager.run();	// Main UI (QT)
-
-
-//	renderingThread.join();	// Will be removed when embedded
-	return 0;
 }
