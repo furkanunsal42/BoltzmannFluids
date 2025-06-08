@@ -4,3 +4,4 @@
 *.dll
 *.qtvscr
 *.obj
+/Source/GUI/build

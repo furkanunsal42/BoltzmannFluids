@@ -25,9 +25,11 @@ InitialConditionsBox::InitialConditionsBox(QWidget* parent)
 QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
 {
     auto group = new QGroupBox();
+    group->setStyleSheet("QGroupBox { border: 2px solid gray; border-color: rgb(75, 76, 77);}");
 
     auto layout = new QVBoxLayout();
     layout->setSpacing(10);
+
 
     // Box Label - Initial Conditions
     auto box_label_initial_conditions = new QLabel("Initial Conditions");
