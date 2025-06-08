@@ -2,7 +2,8 @@
 #include "./ui_MainWindow.h"
 
 #include <QTextEdit>
-#include "RightSidePanel.h"
+#include "InitialConditionsBox.h"
+#include "CollabsibleBox.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -33,11 +34,23 @@ MainWindow::MainWindow(QWidget *parent)
         }
     }
 
-    auto right_side_panel = new RightSidePanel();
+
+    auto right_side_panel = new CollapsibleBox("Initial Conditions");
+    //right_side_panel->setMinimumWidth(360);
+
+    // Initial Conditions
+    auto initial_conditions = new InitialConditionsBox();
+    initial_conditions->setMinimumWidth(360);
+    right_side_panel->addWidget(initial_conditions);
     main_layout->addWidget(right_side_panel);
 
+    // Initial Conditions 2
+    auto initial_conditions_2 = new InitialConditionsBox();
+    right_side_panel->addWidget(initial_conditions_2);
+
+
     // MenuBar
-    qss_text += "QMenuBar { background-color: rgb(45, 46, 47); color: rgb(180, 181, 182); }"
+    qss_text += "QMenuBar { background-color: rgb(45, 46, 47); color: rgb(180, 181, 182); frameStyle: box;}"
                 "QMenuBar::item { padding: 5px 15px; background: transparent; }"
                 "QMenuBar::item:selected { background-color: rgb(93, 94, 95); }";
 

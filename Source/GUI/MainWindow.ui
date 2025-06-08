@@ -17,8 +17,8 @@
       <brush brushstyle="SolidPattern">
        <color alpha="255">
         <red>160</red>
-        <green>160</green>
-        <blue>160</blue>
+        <green>161</green>
+        <blue>162</blue>
        </color>
       </brush>
      </colorrole>
@@ -35,8 +35,8 @@
       <brush brushstyle="SolidPattern">
        <color alpha="255">
         <red>180</red>
-        <green>180</green>
-        <blue>180</blue>
+        <green>181</green>
+        <blue>182</blue>
        </color>
       </brush>
      </colorrole>
@@ -44,8 +44,17 @@
       <brush brushstyle="SolidPattern">
        <color alpha="255">
         <red>180</red>
-        <green>180</green>
-        <blue>180</blue>
+        <green>181</green>
+        <blue>182</blue>
+       </color>
+      </brush>
+     </colorrole>
+     <colorrole role="Mid">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>160</red>
+        <green>161</green>
+        <blue>162</blue>
        </color>
       </brush>
      </colorrole>
@@ -53,8 +62,8 @@
       <brush brushstyle="SolidPattern">
        <color alpha="255">
         <red>180</red>
-        <green>180</green>
-        <blue>180</blue>
+        <green>181</green>
+        <blue>182</blue>
        </color>
       </brush>
      </colorrole>
@@ -89,17 +98,17 @@
       <brush brushstyle="SolidPattern">
        <color alpha="255">
         <red>45</red>
-        <green>45</green>
-        <blue>45</blue>
+        <green>46</green>
+        <blue>47</blue>
        </color>
       </brush>
      </colorrole>
      <colorrole role="Highlight">
       <brush brushstyle="SolidPattern">
        <color alpha="255">
-        <red>120</red>
-        <green>121</green>
-        <blue>122</blue>
+        <red>87</red>
+        <green>101</green>
+        <blue>116</blue>
        </color>
       </brush>
      </colorrole>
@@ -127,8 +136,8 @@
       <brush brushstyle="SolidPattern">
        <color alpha="255">
         <red>160</red>
-        <green>160</green>
-        <blue>160</blue>
+        <green>161</green>
+        <blue>162</blue>
        </color>
       </brush>
      </colorrole>
@@ -145,8 +154,8 @@
       <brush brushstyle="SolidPattern">
        <color alpha="255">
         <red>180</red>
-        <green>180</green>
-        <blue>180</blue>
+        <green>181</green>
+        <blue>182</blue>
        </color>
       </brush>
      </colorrole>
@@ -154,8 +163,17 @@
       <brush brushstyle="SolidPattern">
        <color alpha="255">
         <red>180</red>
-        <green>180</green>
-        <blue>180</blue>
+        <green>181</green>
+        <blue>182</blue>
+       </color>
+      </brush>
+     </colorrole>
+     <colorrole role="Mid">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>160</red>
+        <green>161</green>
+        <blue>162</blue>
        </color>
       </brush>
      </colorrole>
@@ -163,8 +181,8 @@
       <brush brushstyle="SolidPattern">
        <color alpha="255">
         <red>180</red>
-        <green>180</green>
-        <blue>180</blue>
+        <green>181</green>
+        <blue>182</blue>
        </color>
       </brush>
      </colorrole>
@@ -199,17 +217,17 @@
       <brush brushstyle="SolidPattern">
        <color alpha="255">
         <red>45</red>
-        <green>45</green>
-        <blue>45</blue>
+        <green>46</green>
+        <blue>47</blue>
        </color>
       </brush>
      </colorrole>
      <colorrole role="Highlight">
       <brush brushstyle="SolidPattern">
        <color alpha="255">
-        <red>120</red>
-        <green>121</green>
-        <blue>122</blue>
+        <red>87</red>
+        <green>101</green>
+        <blue>116</blue>
        </color>
       </brush>
      </colorrole>
@@ -237,8 +255,8 @@
       <brush brushstyle="SolidPattern">
        <color alpha="255">
         <red>180</red>
-        <green>180</green>
-        <blue>180</blue>
+        <green>181</green>
+        <blue>182</blue>
        </color>
       </brush>
      </colorrole>
@@ -255,8 +273,8 @@
       <brush brushstyle="SolidPattern">
        <color alpha="255">
         <red>180</red>
-        <green>180</green>
-        <blue>180</blue>
+        <green>181</green>
+        <blue>182</blue>
        </color>
       </brush>
      </colorrole>
@@ -264,8 +282,17 @@
       <brush brushstyle="SolidPattern">
        <color alpha="255">
         <red>180</red>
-        <green>180</green>
-        <blue>180</blue>
+        <green>181</green>
+        <blue>182</blue>
+       </color>
+      </brush>
+     </colorrole>
+     <colorrole role="Mid">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>160</red>
+        <green>161</green>
+        <blue>162</blue>
        </color>
       </brush>
      </colorrole>
@@ -273,8 +300,8 @@
       <brush brushstyle="SolidPattern">
        <color alpha="255">
         <red>180</red>
-        <green>180</green>
-        <blue>180</blue>
+        <green>181</green>
+        <blue>182</blue>
        </color>
       </brush>
      </colorrole>
@@ -291,8 +318,8 @@
       <brush brushstyle="SolidPattern">
        <color alpha="255">
         <red>180</red>
-        <green>180</green>
-        <blue>180</blue>
+        <green>181</green>
+        <blue>182</blue>
        </color>
       </brush>
      </colorrole>
@@ -309,8 +336,8 @@
       <brush brushstyle="SolidPattern">
        <color alpha="255">
         <red>45</red>
-        <green>45</green>
-        <blue>45</blue>
+        <green>46</green>
+        <blue>47</blue>
        </color>
       </brush>
      </colorrole>
@@ -329,6 +356,15 @@
         <red>240</red>
         <green>241</green>
         <blue>242</blue>
+       </color>
+      </brush>
+     </colorrole>
+     <colorrole role="Link">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>24</red>
+        <green>80</green>
+        <blue>51</blue>
        </color>
       </brush>
      </colorrole>
@@ -419,51 +455,81 @@ selection-background-color: rgb(93, 94, 95);</string>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionNew_Project">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::DocumentNew"/>
+   </property>
    <property name="text">
     <string>New Project</string>
    </property>
   </action>
   <action name="actionOpen_Project">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::DocumentOpen"/>
+   </property>
    <property name="text">
     <string>Open Project</string>
    </property>
   </action>
   <action name="actionSave">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::DocumentSave"/>
+   </property>
    <property name="text">
     <string>Save</string>
    </property>
   </action>
   <action name="actionSave_as">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::DocumentSaveAs"/>
+   </property>
    <property name="text">
     <string>Save As...</string>
    </property>
   </action>
   <action name="actionUndo">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::EditUndo"/>
+   </property>
    <property name="text">
     <string>Undo</string>
    </property>
   </action>
   <action name="actionRedo">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::EditRedo"/>
+   </property>
    <property name="text">
     <string>Redo</string>
    </property>
   </action>
   <action name="actionCut">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::EditCut"/>
+   </property>
    <property name="text">
     <string>Cut</string>
    </property>
   </action>
   <action name="actionCopy">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::EditCopy"/>
+   </property>
    <property name="text">
     <string>Copy</string>
    </property>
   </action>
   <action name="actionPaste">
+   <property name="icon">
+    <iconset theme="QIcon::ThemeIcon::EditPaste"/>
+   </property>
    <property name="text">
     <string>Paste</string>
    </property>
   </action>
   <action name="actionShow_Right_Side_Bar">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>Show Right Side Bar</string>
    </property>

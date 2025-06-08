@@ -25,9 +25,11 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         ${PROJECT_SOURCES}
         GuiManager.h
         GuiManager.cpp
-        RightSidePanel.h
-        RightSidePanel.cpp
+        InitialConditionsBox.h
+        InitialConditionsBox.cpp
         UI_Config.h
+        CollabsibleBox.h
+        CollabsibleBox.cpp
 
 
     )
