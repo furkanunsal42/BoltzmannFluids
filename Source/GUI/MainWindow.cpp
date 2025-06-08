@@ -24,7 +24,7 @@ MainWindow::MainWindow(QWidget *parent)
 //        menu_bar_frame->setFrameStyle(QFrame::HLine | QFrame::Raised);
 //        menu_bar->setFixedHeight(26);
 //    }
-/*    {
+    {   // File
         auto menu_File = new QMenu("File", this);
         menu_bar->addMenu(menu_File);
         {
@@ -38,7 +38,38 @@ MainWindow::MainWindow(QWidget *parent)
             menu_File->addAction(actionSave);
             menu_File->addAction(actionSave_as);
         }
-    }*/
+    }
+    {   // Edit
+        auto menu_Edit = new QMenu("Edit", this);
+        menu_bar->addMenu(menu_Edit);
+        {
+            auto actionUndo         = new QAction("Undo");
+            auto actionRedo         = new QAction("Redo");
+            auto actionCut          = new QAction("Cut");
+            auto actionCopy         = new QAction("Copy");
+            auto actionPaste        = new QAction("Paste");
+            menu_Edit->addAction(actionUndo);
+            menu_Edit->addAction(actionRedo);
+            menu_Edit->addSeparator();
+            menu_Edit->addAction(actionCut);
+            menu_Edit->addAction(actionCopy);
+            menu_Edit->addAction(actionPaste);
+        }
+    }
+    {   // View
+        auto menu_View = new QMenu("View", this);
+        menu_bar->addMenu(menu_View);
+        {
+            auto actionShow_Right_Side_Bar  = new QAction("Show Right Side Bar");
+            menu_View->addAction(actionShow_Right_Side_Bar);
+        }
+    }
+    {   // Help
+        auto menu_Help = new QMenu("Help", this);
+        menu_bar->addMenu(menu_Help);
+        {
+        }
+    }
     qss_text += "QMenuBar { "
                     "background-color: rgb(45, 46, 47); "
                     "color: rgb(180, 181, 182); "
