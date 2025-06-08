@@ -95,14 +95,79 @@ float LBM2D::get_relaxation_time()
 	return relaxation_time;
 }
 
+void LBM2D::set_periodic_boundry_x(bool value)
+{
+	if (periodic_x == value)
+		return;
+
+	periodic_x = value;
+	is_programs_compiled = false;
+}
+
+bool LBM2D::get_periodic_boundry_x()
+{
+	return periodic_x;
+}
+
+void LBM2D::set_periodic_boundry_y(bool value)
+{
+	if (periodic_y == value)
+		return;
+
+	periodic_y = value;
+	is_programs_compiled = false;
+}
+
+bool LBM2D::get_periodic_boundry_y()
+{
+	return periodic_y;
+}
+
+void LBM2D::set_is_forcing_scheme(bool value)
+{
+	if (is_forcing_scheme == value)
+		return;
+
+	is_forcing_scheme = value;
+	is_programs_compiled = false;
+}
+
+bool LBM2D::get_is_forcing_scheme()
+{
+	return is_forcing_scheme;
+}
+
+void LBM2D::set_is_force_field_constant(bool value)
+{
+	if (is_force_field_constant == value)
+		return;
+
+	is_force_field_constant = value;
+	is_programs_compiled = false;
+}
+
+bool LBM2D::get_is_force_field_constant()
+{
+	return is_force_field_constant;
+}
+
+void LBM2D::set_constant_force(glm::vec3 constant_force)
+{
+	this->constant_force = constant_force;
+}
+
+glm::vec3 LBM2D::get_constant_force()
+{
+	return constant_force;
+}
+
 void LBM2D::initialize_fields(std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda, glm::ivec2 resolution, float relaxation_time, bool periodic_x, bool periodic_y, VelocitySet velocity_set, FloatingPointAccuracy fp_accuracy)
 {
-	this->periodic_x = periodic_x;
-	this->periodic_y = periodic_y;
-
 	is_programs_compiled = false;
 	objects_cpu[0] = _object_desc();
 
+	set_periodic_boundry_x(periodic_x);
+	set_periodic_boundry_y(periodic_y);
 	set_relaxation_time(relaxation_time);
 	set_velocity_set(velocity_set);
 	set_floating_point_accuracy(fp_accuracy);
@@ -141,8 +206,8 @@ void LBM2D::_initialize_fields_default_pass(std::function<void(glm::ivec2, Fluid
 	FluidProperties temp_properties;
 	initialization_lambda(glm::ivec2(0, 0), temp_properties);
 
-	is_force_field_constant = true;
-	constant_force = temp_properties.force;
+	set_is_force_field_constant(true);
+	set_constant_force(temp_properties.force);
 
 	uint32_t object_count = 1;
 
@@ -157,14 +222,14 @@ void LBM2D::_initialize_fields_default_pass(std::function<void(glm::ivec2, Fluid
 			object_count = std::max(object_count, properties.boundry_id + 1);
 
 			if (properties.force != constant_force)
-				is_force_field_constant = false;
+				set_is_force_field_constant(false);
 
 			velocity_buffer_data[y * resolution.x + x] = glm::vec4(properties.velocity, 0.0f);
 			density_buffer_data[y * resolution.x + x] = properties.density;
 		}
 	}
 
-	is_forcing_scheme = !(is_force_field_constant && constant_force == glm::vec3(0));
+	set_is_forcing_scheme(!(is_force_field_constant && constant_force == glm::vec3(0)));
 
 	// compute equilibrium and non-equilibrium populations according to chapter 5.
 	velocity_buffer.unmap();
@@ -178,7 +243,7 @@ void LBM2D::_initialize_fields_default_pass(std::function<void(glm::ivec2, Fluid
 	bool does_contain_boundry = object_count > 1;	// first object slot is indexed by non-boundry id (fluid)
 
 	// bits per boudnry can only be 1, 2, 4, 8 to not cause a boundry spanning over 2 bytes
-	bits_per_boundry = std::exp2(std::ceil(std::log2f(std::ceil(std::log2f(object_count)))));
+	_set_bits_per_boundry(std::exp2(std::ceil(std::log2f(std::ceil(std::log2f(object_count))))));
 	if (bits_per_boundry > 8) {
 		std::cout << "[LBM Error] _initialize_fields_default_pass() is called but too many objects are defined, maximum of 255 bits are possible but number of objets were: " << object_count << std::endl;
 		ASSERT(false);
@@ -219,12 +284,12 @@ void LBM2D::_initialize_fields_boundries_pass(std::function<void(glm::ivec2, Flu
 	if (!does_contain_boundry) {
 		boundries = nullptr;
 		objects = nullptr;
-		bits_per_boundry = 0;
+		_set_bits_per_boundry(0);
 		return;
 	}
 
 	// bits per boudnry can only be 1, 2, 4, 8 to not cause a boundry spanning over 2 bytes
-	bits_per_boundry = std::exp2(std::ceil(std::log2f(std::ceil(std::log2f(object_count)))));
+	_set_bits_per_boundry(std::exp2(std::ceil(std::log2f(std::ceil(std::log2f(object_count))))));
 	if (bits_per_boundry < 1 || bits_per_boundry > 8) {
 		std::cout << "[LBM Error] _initialize_fields_boundries_pass() is called but too many or too few objects are defined, maximum of 255 bits are possible but number of objets were: " << object_count << std::endl;
 		ASSERT(false);
@@ -567,6 +632,45 @@ void LBM2D::_generate_lattice_buffer()
 	lattice_velocity_set_buffer->upload_data();
 }
 
+void LBM2D::_set_bits_per_boundry(int32_t value)
+{
+	if (value == bits_per_boundry)
+		return;
+
+	bits_per_boundry = value;
+	is_programs_compiled = false;
+}
+
+int32_t LBM2D::_get_bits_per_boundry(int32_t value)
+{
+	return bits_per_boundry;
+}
+
+void LBM2D::_set_is_flow_thermal(bool value){
+	if (is_flow_thermal == value)
+		return;
+
+	is_flow_thermal = value;
+	is_programs_compiled = false;
+}
+
+bool LBM2D::_get_is_flow_thermal(){
+	return is_flow_thermal;
+}
+
+void LBM2D::_set_thermal_lattice_velocity_set(SimplifiedVelocitySet set){
+	if (thermal_lattice_velocity_set == set)
+		return;
+
+	thermal_lattice_velocity_set = set;
+	is_programs_compiled = false;
+}
+
+SimplifiedVelocitySet LBM2D::_get_thermal_lattice_velocity_set(){
+	return thermal_lattice_velocity_set;
+}
+
+
 std::shared_ptr<Buffer> LBM2D::_get_lattice_source()
 {
 	return is_lattice_0_is_source ? lattice0 : lattice1;
@@ -580,6 +684,21 @@ std::shared_ptr<Buffer> LBM2D::_get_lattice_target()
 void LBM2D::_swap_lattice_buffers()
 {
 	is_lattice_0_is_source = !is_lattice_0_is_source;
+}
+
+std::shared_ptr<Buffer> LBM2D::_get_temperature_lattice_source()
+{
+	return is_temperature_lattice_0_is_source ? temperature_lattice0 : temperature_lattice1;
+}
+
+std::shared_ptr<Buffer> LBM2D::_get_temperature_lattice_target()
+{
+	return is_temperature_lattice_0_is_source ? temperature_lattice1 : temperature_lattice0;
+}
+
+void LBM2D::_swap_temperature_lattice_buffers()
+{
+	is_temperature_lattice_0_is_source = !is_temperature_lattice_0_is_source;
 }
 
 glm::ivec2 LBM2D::get_resolution()

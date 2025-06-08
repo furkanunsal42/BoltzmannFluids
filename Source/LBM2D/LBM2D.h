@@ -35,6 +35,14 @@ public:
 	// high level field initialization api
 	void set_boundry_velocity(
 		uint32_t boundry_id,
+		glm::vec3 velocity_translational,
+		glm::vec3 velocity_angular,
+		glm::vec3 center_of_mass,
+		float temperature
+	);
+	
+	void set_boundry_velocity(
+		uint32_t boundry_id,
 		glm::vec3 velocity_translational, 
 		glm::vec3 velocity_angular,
 		glm::vec3 center_of_mass
@@ -42,14 +50,25 @@ public:
 
 	void set_boundry_velocity(
 		uint32_t boundry_id,
+		glm::vec3 velocity_translational,
+		float temperature
+	);
+
+	void set_boundry_velocity(
+		uint32_t boundry_id,
 		glm::vec3 velocity_translational
+	);
+
+	void set_boundry_velocity(
+		uint32_t boundry_id,
+		float temperature
 	);
 
 	struct FluidProperties {
 		glm::vec3 velocity = glm::vec3(0);
 		glm::vec3 force = glm::vec3(0);
 		float density = 1;
-		float temperature = 20;
+		float temperature = 1;
 		float scalar_quantity = 0;
 		uint32_t boundry_id = not_a_boundry;
 	};
@@ -84,6 +103,21 @@ public:
 	void set_relaxation_time(float relaxation_time);
 	float get_relaxation_time();
 
+	void set_periodic_boundry_x(bool value);
+	bool get_periodic_boundry_x();
+
+	void set_periodic_boundry_y(bool value);
+	bool get_periodic_boundry_y();
+
+	void set_is_forcing_scheme(bool value);
+	bool get_is_forcing_scheme();
+
+	void set_is_force_field_constant(bool value);
+	bool get_is_force_field_constant();
+
+	void set_constant_force(glm::vec3 constant_force);
+	glm::vec3 get_constant_force();
+
 	void set_population(glm::ivec2 voxel_coordinate, int32_t population_index, float value);
 	void set_population(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_coordinate_end, int32_t population_index, float value);
 	void set_population(int32_t population_index, float value);
@@ -111,17 +145,16 @@ private:
 		glm::ivec2 resolution,
 		FloatingPointAccuracy fp_accuracy = FloatingPointAccuracy::fp32
 	);
-	void _initialize_fields_force_pass(
-		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
-		glm::ivec2 resolution,
-		FloatingPointAccuracy fp_accuracy = FloatingPointAccuracy::fp32
-	);
 	void _initialize_fields_boundries_pass(
 		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
 		glm::ivec2 resolution,
 		FloatingPointAccuracy fp_accuracy = FloatingPointAccuracy::fp32
 	);
-	
+	void _initialize_fields_force_pass(
+		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
+		glm::ivec2 resolution,
+		FloatingPointAccuracy fp_accuracy = FloatingPointAccuracy::fp32
+	);
 
 	// simulation time controls
 	std::chrono::duration<double, std::milli> total_time_elapsed;
@@ -163,11 +196,19 @@ private:
 	// objects buffer schema is [vec4 translational_velcoity, vec4 rotational_velocity, vec4 center_of_mass] 
 	std::vector<_object_desc> objects_cpu;
 	int32_t bits_per_boundry = 0;
+	void _set_bits_per_boundry(int32_t value);
+	int32_t _get_bits_per_boundry(int32_t value);
 
 	// thermal flow control flags
 	bool is_flow_thermal = false;
 	SimplifiedVelocitySet thermal_lattice_velocity_set = SimplifiedVelocitySet::D2Q5;
 	float thermal_relaxation_time = 0.53;
+
+	void _set_is_flow_thermal(bool value);
+	bool _get_is_flow_thermal();
+
+	void _set_thermal_lattice_velocity_set(SimplifiedVelocitySet set);
+	SimplifiedVelocitySet _get_thermal_lattice_velocity_set();
 
 	// device buffers
 	std::shared_ptr<Buffer> lattice0 = nullptr;
