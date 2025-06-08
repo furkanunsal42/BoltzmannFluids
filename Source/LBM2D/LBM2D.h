@@ -20,7 +20,6 @@
 // u = "velocity"
 // rho = "density"
 
-
 class LBM2D {
 public:
 	constexpr static uint32_t not_a_boundry = 0;
@@ -135,16 +134,16 @@ private:
 
 	glm::ivec2 resolution = glm::ivec2(0);
 	float relaxation_time = 0.53f;
-
-	bool periodic_x = true;
-	bool periodic_y = true;
-
+	
 	// forces control flags
 	bool is_forcing_scheme = false;
 	bool is_force_field_constant = true;
 	glm::vec3 constant_force = glm::vec3(0);
 
 	// moving/stationary boundries control flags
+	bool periodic_x = true;
+	bool periodic_y = true;
+	
 	struct _object_desc {
 	public:
 		_object_desc(
@@ -160,10 +159,15 @@ private:
 
 	// boundries buffer holds the id of the object it is a part of (0 means not_a_boundry)
 	// number of bits per voxel can change dynamically basad on how many objects are defined
-	// velocity information of each object is hold in another buffer in device called "objects"
-	// objects buffer schema is [vec4 translational_velcoity (w is id), vec4 rotational_velocity, vec4 center_of_mass] 
+	// velocity information of each object is held in another buffer in device called "objects"
+	// objects buffer schema is [vec4 translational_velcoity, vec4 rotational_velocity, vec4 center_of_mass] 
 	std::vector<_object_desc> objects_cpu;
 	int32_t bits_per_boundry = 0;
+
+	// thermal flow control flags
+	bool is_flow_thermal = false;
+	SimplifiedVelocitySet thermal_lattice_velocity_set = SimplifiedVelocitySet::D2Q5;
+	float thermal_relaxation_time = 0.53;
 
 	// device buffers
 	std::shared_ptr<Buffer> lattice0 = nullptr;
@@ -171,12 +175,19 @@ private:
 	std::shared_ptr<Buffer> boundries = nullptr;
 	std::shared_ptr<Buffer> objects = nullptr;
 	std::shared_ptr<Buffer> forces = nullptr;
-	
+	std::shared_ptr<Buffer> temperature_lattice0 = nullptr;
+	std::shared_ptr<Buffer> temperature_lattice1 = nullptr;
+
 	// dual buffer control
 	bool is_lattice_0_is_source = true;
 	std::shared_ptr<Buffer> _get_lattice_source();
 	std::shared_ptr<Buffer> _get_lattice_target();
 	void _swap_lattice_buffers();
+
+	bool is_temperature_lattice_0_is_source = true;
+	std::shared_ptr<Buffer> _get_temperature_lattice_source();
+	std::shared_ptr<Buffer> _get_temperature_lattice_target();
+	void _swap_temperature_lattice_buffers();
 	
 	// kernels
 	bool is_programs_compiled = false;
