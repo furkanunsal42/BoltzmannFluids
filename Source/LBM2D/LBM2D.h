@@ -145,7 +145,9 @@ private:
 	void _set_populations_to_equilibrium_thermal(Buffer& temperature_field, Buffer& velocity_field);
 
 	void _initialize_fields_default_pass(
-		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda
+		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
+		std::shared_ptr<Buffer>& out_density_field,
+		std::shared_ptr<Buffer>& out_velocity_field
 		);
 	void _initialize_fields_boundries_pass(
 		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda
@@ -153,8 +155,9 @@ private:
 	void _initialize_fields_force_pass(
 		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda
 		);
-	void _initialize_fields_themral_pass(
-		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda
+	void _initialize_fields_thermal_pass(
+		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
+		std::shared_ptr<Buffer> in_velocity_field
 		);
 
 	// simulation time controls
@@ -252,4 +255,6 @@ private:
 	std::shared_ptr<ComputeProgram> lbm2d_copy_temperature = nullptr;
 
 	std::unique_ptr<UniformBuffer> lattice_velocity_set_buffer = nullptr;
+	std::unique_ptr<UniformBuffer> thermal_lattice_velocity_set_buffer = nullptr;
+
 };

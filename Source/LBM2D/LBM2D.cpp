@@ -180,8 +180,13 @@ void LBM2D::initialize_fields(std::function<void(glm::ivec2, FluidProperties&)> 
 	
 	generate_lattice(resolution);
 
+	std::shared_ptr<Buffer> density_field = nullptr;
+	std::shared_ptr<Buffer> velocity_field = nullptr;
+
 	_initialize_fields_default_pass(
-		initialization_lambda
+		initialization_lambda,
+		density_field,
+		velocity_field
 	);
 
 	_initialize_fields_boundries_pass(
@@ -192,21 +197,26 @@ void LBM2D::initialize_fields(std::function<void(glm::ivec2, FluidProperties&)> 
 		initialization_lambda
 	);
 
-	_initialize_fields_themral_pass(
-		initialization_lambda
+	_initialize_fields_thermal_pass(
+		initialization_lambda,
+		velocity_field
 	);
 }
 
-void LBM2D::_initialize_fields_default_pass(std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda)
-{
-	Buffer velocity_buffer(resolution.x * resolution.y * sizeof(glm::vec4));
-	Buffer density_buffer(resolution.x * resolution.y * sizeof(float));
+void LBM2D::_initialize_fields_default_pass(
+	std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
+	std::shared_ptr<Buffer>& out_density_field,
+	std::shared_ptr<Buffer>& out_velocity_field
+) {
 
-	velocity_buffer.map(Buffer::MapInfo(Buffer::MapInfo::Upload, Buffer::MapInfo::Temporary));
-	density_buffer.map(Buffer::MapInfo(Buffer::MapInfo::Upload, Buffer::MapInfo::Temporary));
+	std::shared_ptr<Buffer> velocity_buffer = std::make_shared<Buffer>(resolution.x * resolution.y * sizeof(glm::vec4));
+	std::shared_ptr<Buffer> density_buffer = std::make_shared<Buffer>(resolution.x * resolution.y * sizeof(float));
 
-	glm::vec4* velocity_buffer_data = (glm::vec4*)velocity_buffer.get_mapped_pointer();
-	float* density_buffer_data = (float*)density_buffer.get_mapped_pointer();
+	velocity_buffer->map(Buffer::MapInfo(Buffer::MapInfo::Upload, Buffer::MapInfo::Temporary));
+	density_buffer->map(Buffer::MapInfo(Buffer::MapInfo::Upload, Buffer::MapInfo::Temporary));
+
+	glm::vec4* velocity_buffer_data = (glm::vec4*)velocity_buffer->get_mapped_pointer();
+	float* density_buffer_data = (float*)density_buffer->get_mapped_pointer();
 
 	FluidProperties temp_properties;
 	initialization_lambda(glm::ivec2(0, 0), temp_properties);
@@ -241,8 +251,8 @@ void LBM2D::_initialize_fields_default_pass(std::function<void(glm::ivec2, Fluid
 	set_is_forcing_scheme(!(is_force_field_constant && constant_force == glm::vec3(0)));
 
 	// compute equilibrium and non-equilibrium populations according to chapter 5.
-	velocity_buffer.unmap();
-	density_buffer.unmap();
+	velocity_buffer->unmap();
+	density_buffer->unmap();
 
 	velocity_buffer_data = nullptr;
 	density_buffer_data = nullptr;
@@ -273,13 +283,16 @@ void LBM2D::_initialize_fields_default_pass(std::function<void(glm::ivec2, Fluid
 	int32_t relaxation_iteration_count = 1;
 	std::cout << "[LBM Info] _initialize_fields_default_pass() initialization of particle population distributions from given veloicty and density fields is initiated" << std::endl;
 
-	_set_populations_to_equilibrium(density_buffer, velocity_buffer);
+	_set_populations_to_equilibrium(*density_buffer, *velocity_buffer);
 
 	for (int32_t i = 0; i < relaxation_iteration_count; i++) {
-		_collide_with_precomputed_velocities(velocity_buffer);
+		_collide_with_precomputed_velocities(*velocity_buffer);
 		//_apply_boundry_conditions(); //the book doesn't specitfy whether or not to enforce boundry conditions in initialization algorithm
 		_stream();
 	}
+
+	out_density_field = density_buffer;
+	out_velocity_field = velocity_buffer;
 
 	std::cout << "[LBM Info] _initialize_fields_default_pass() fields initialization scheme completed with relaxation_iteration_count(" << relaxation_iteration_count << ")" << std::endl;
 	std::cout << "[LBM Info] _initialize_fields_default_pass() completed" << std::endl;
@@ -381,8 +394,7 @@ void LBM2D::_initialize_fields_boundries_pass(std::function<void(glm::ivec2, Flu
 	std::cout << "[LBM Info] _initialize_fields_boundries_pass() completed" << std::endl;
 }
 
-void LBM2D::_initialize_fields_force_pass(std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda)
-{
+void LBM2D::_initialize_fields_force_pass(std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda) {
 	if (is_force_field_constant)
 		this->forces = nullptr;
 	else {
@@ -406,13 +418,24 @@ void LBM2D::_initialize_fields_force_pass(std::function<void(glm::ivec2, FluidPr
 	std::cout << "[LBM Info] _initialize_fields_force_pass() completed" << std::endl;
 }
 
-void LBM2D::_initialize_fields_themral_pass(std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda)
-{
+void LBM2D::_initialize_fields_thermal_pass(
+	std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
+	std::shared_ptr<Buffer> in_velocity_field
+) {
 	if (!is_flow_thermal) {
 		this->thermal_lattice0 = nullptr;
 		this->thermal_lattice1 = nullptr;
 	}
 	else {
+
+		thermal_lattice_velocity_set_buffer = std::make_unique<UniformBuffer>();
+		thermal_lattice_velocity_set_buffer->push_variable_array(get_SimplifiedVelocitySet_vector_count(thermal_lattice_velocity_set)); // a vec4 for every velocity direction
+
+		auto thermal_lattice_velocities_vector = get_velosity_vectors(thermal_lattice_velocity_set);
+
+		thermal_lattice_velocity_set_buffer->set_data(0, 0, thermal_lattice_velocities_vector.size() * sizeof(glm::vec4), thermal_lattice_velocities_vector.data());
+		thermal_lattice_velocity_set_buffer->upload_data();
+
 		int32_t lattice_vector_count = get_SimplifiedVelocitySet_vector_count(thermal_lattice_velocity_set);
 		thermal_lattice0 = std::make_shared<Buffer>(sizeof(float) * lattice_vector_count * resolution.x * resolution.y);
 		thermal_lattice1 = std::make_shared<Buffer>(sizeof(float) * lattice_vector_count * resolution.x * resolution.y);
@@ -434,6 +457,7 @@ void LBM2D::_initialize_fields_themral_pass(std::function<void(glm::ivec2, Fluid
 		temperature_field_buffer_data = nullptr;
 
 		// INIT THERMAL_LATTICE
+		_set_populations_to_equilibrium_thermal(temperature_field, *in_velocity_field);
 	}
 
 	std::cout << "[LBM Info] _initialize_fields_themral_pass() completed" << std::endl;
@@ -446,7 +470,7 @@ void LBM2D::copy_to_texture_population(Texture2D& target_texture, int32_t popula
 		ASSERT(false);
 	}
 
-	if (boundries == nullptr) {
+	if ((boundries == nullptr || objects == nullptr) && bits_per_boundry) {
 		std::cout << "[LBM Error] LBM2D::copy_to_texture_population() is called but boundries wasn't generated" << std::endl;
 		ASSERT(false);
 	}
@@ -470,7 +494,10 @@ void LBM2D::copy_to_texture_population(Texture2D& target_texture, int32_t popula
 
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 	kernel.update_uniform_as_storage_buffer("lattice_buffer", lattice, 0);
-	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+	if (bits_per_boundry != 0) {
+		kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+		kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
+	}
 	kernel.update_uniform_as_image("target_texture", target_texture, 0);
 	kernel.update_uniform("lattice_resolution", resolution);
 	kernel.update_uniform("texture_resolution", target_texture.get_size());
@@ -486,7 +513,7 @@ void LBM2D::copy_to_texture_density(Texture2D& target_texture)
 		ASSERT(false);
 	}
 
-	if (boundries == nullptr) {
+	if ((boundries == nullptr || objects == nullptr) && bits_per_boundry) {
 		std::cout << "[LBM Error] LBM2D::copy_to_texture_density() is called but boundries wasn't generated" << std::endl;
 		ASSERT(false);
 	}
@@ -504,7 +531,10 @@ void LBM2D::copy_to_texture_density(Texture2D& target_texture)
 
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 	kernel.update_uniform_as_storage_buffer("lattice_buffer", lattice, 0);
-	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+	if (bits_per_boundry != 0) {
+		kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+		kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
+	}
 	kernel.update_uniform_as_image("target_texture", target_texture, 0);
 	kernel.update_uniform("lattice_resolution", resolution);
 	kernel.update_uniform("texture_resolution", target_texture.get_size());
@@ -519,7 +549,7 @@ void LBM2D::copy_to_texture_velocity_vector(Texture2D& target_texture)
 		ASSERT(false);
 	}
 
-	if (boundries == nullptr) {
+	if ((boundries == nullptr || objects == nullptr) && bits_per_boundry) {
 		std::cout << "[LBM Error] LBM2D::copy_to_texture_velocity_vector() is called but boundries wasn't generated" << std::endl;
 		ASSERT(false);
 	}
@@ -537,7 +567,10 @@ void LBM2D::copy_to_texture_velocity_vector(Texture2D& target_texture)
 
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 	kernel.update_uniform_as_storage_buffer("lattice_buffer", lattice, 0);
-	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+	if (bits_per_boundry != 0) {
+		kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+		kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
+	}
 	kernel.update_uniform_as_image("target_texture", target_texture, 0);
 	kernel.update_uniform("lattice_resolution", resolution);
 	kernel.update_uniform("texture_resolution", target_texture.get_size());
@@ -551,7 +584,7 @@ void LBM2D::copy_to_texture_velocity_magnetude(Texture2D& target_texture) {
 		ASSERT(false);
 	}
 
-	if (boundries == nullptr) {
+	if ((boundries == nullptr || objects == nullptr) && bits_per_boundry) {
 		std::cout << "[LBM Error] LBM2D::copy_to_texture_velocity_magnetude() is called but boundries wasn't generated" << std::endl;
 		ASSERT(false);
 	}
@@ -569,7 +602,10 @@ void LBM2D::copy_to_texture_velocity_magnetude(Texture2D& target_texture) {
 
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 	kernel.update_uniform_as_storage_buffer("lattice_buffer", lattice, 0);
-	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+	if (bits_per_boundry != 0) {
+		kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+		kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
+	}
 	kernel.update_uniform_as_image("target_texture", target_texture, 0);
 	kernel.update_uniform("lattice_resolution", resolution);
 	kernel.update_uniform("texture_resolution", target_texture.get_size());
@@ -579,12 +615,17 @@ void LBM2D::copy_to_texture_velocity_magnetude(Texture2D& target_texture) {
 
 void LBM2D::copy_to_texture_boundries(Texture2D& target_texture)
 {
+	if (bits_per_boundry == 0) {
+		target_texture.clear(glm::vec4(0));
+		return;
+	}
+
 	if (_get_lattice_source() == nullptr) {
 		std::cout << "[LBM Error] LBM2D::copy_to_texture_boundries() is called but lattice wasn't generated" << std::endl;
 		ASSERT(false);
 	}
 
-	if (boundries == nullptr) {
+	if ((boundries == nullptr || objects == nullptr) && bits_per_boundry) {
 		std::cout << "[LBM Error] LBM2D::copy_to_texture_boundries() is called but boundries wasn't generated" << std::endl;
 		ASSERT(false);
 	}
@@ -602,8 +643,10 @@ void LBM2D::copy_to_texture_boundries(Texture2D& target_texture)
 
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 	kernel.update_uniform_as_storage_buffer("lattice_buffer", lattice, 0);
-	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
-	kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
+	if (bits_per_boundry != 0) {
+		kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+		kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
+	}
 	kernel.update_uniform_as_image("target_texture", target_texture, 0);
 	kernel.update_uniform("lattice_resolution", resolution);
 	kernel.update_uniform("texture_resolution", target_texture.get_size());
@@ -613,13 +656,23 @@ void LBM2D::copy_to_texture_boundries(Texture2D& target_texture)
 
 void LBM2D::copy_to_texture_force_vector(Texture2D& target_texture)
 {
-	if (_get_lattice_source() == nullptr) {
-		std::cout << "[LBM Error] LBM2D::copy_to_texture_force_vector() is called but lattice wasn't generated" << std::endl;
+	if (!is_forcing_scheme) {
+		target_texture.clear(glm::vec4(0));
+		return;
+	}
+	
+	if (is_forcing_scheme && is_force_field_constant) {
+		target_texture.clear(glm::vec4(constant_force, 1));
+		return;
+	}
+
+	if (is_forcing_scheme && !is_force_field_constant && forces == nullptr) {
+		std::cout << "[LBM Error] LBM2D::copy_to_texture_force_vector() is called but forces wasn't generated" << std::endl;
 		ASSERT(false);
 	}
 
-	if (forces == nullptr) {
-		std::cout << "[LBM Error] LBM2D::copy_to_texture_force_vector() is called but forces wasn't generated" << std::endl;
+	if (_get_lattice_source() == nullptr) {
+		std::cout << "[LBM Error] LBM2D::copy_to_texture_force_vector() is called but lattice wasn't generated" << std::endl;
 		ASSERT(false);
 	}
 
@@ -636,8 +689,10 @@ void LBM2D::copy_to_texture_force_vector(Texture2D& target_texture)
 
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 	kernel.update_uniform_as_storage_buffer("lattice_buffer", lattice, 0);
-	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
-	kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
+	if (bits_per_boundry != 0) {
+		kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+		kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
+	}
 	kernel.update_uniform_as_storage_buffer("forces_buffer", *forces, 0);
 	kernel.update_uniform_as_image("target_texture", target_texture, 0);
 	kernel.update_uniform("lattice_resolution", resolution);
@@ -648,12 +703,17 @@ void LBM2D::copy_to_texture_force_vector(Texture2D& target_texture)
 
 void LBM2D::copy_to_texture_temperature(Texture2D& target_texture)
 {
+	if (!is_flow_thermal) {
+		target_texture.clear(glm::vec4(referance_temperature));
+		return;
+	}
+
 	if (_get_thermal_lattice_source() == nullptr) {
 		std::cout << "[LBM Error] LBM2D::copy_to_texture_temperature() is called but thermal_lattice wasn't generated" << std::endl;
 		ASSERT(false);
 	}
 
-	if (boundries == nullptr) {
+	if ((boundries == nullptr || objects == nullptr) && bits_per_boundry) {
 		std::cout << "[LBM Error] LBM2D::copy_to_texture_temperature() is called but boundries wasn't generated" << std::endl;
 		ASSERT(false);
 	}
@@ -671,7 +731,10 @@ void LBM2D::copy_to_texture_temperature(Texture2D& target_texture)
 
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 	kernel.update_uniform_as_storage_buffer("lattice_buffer", thermal_lattice, 0);
-	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+	if (bits_per_boundry != 0) {
+		kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+		kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
+	}
 	kernel.update_uniform_as_image("target_texture", target_texture, 0);
 	kernel.update_uniform("lattice_resolution", resolution);
 	kernel.update_uniform("texture_resolution", target_texture.get_size());
@@ -1042,7 +1105,7 @@ void LBM2D::_set_populations_to_equilibrium_thermal(Buffer& temperature_field, B
 	kernel.update_uniform_as_storage_buffer("lattice_buffer", lattice_thermal, 0);
 	kernel.update_uniform_as_storage_buffer("temperature_buffer", temperature_field, 0);
 	kernel.update_uniform_as_storage_buffer("velocity_buffer", velocity_field, 0);
-	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
+	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *thermal_lattice_velocity_set_buffer, 0);
 	kernel.update_uniform("lattice_resolution", resolution);
 	kernel.update_uniform("lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3))); // is thermal speed of sound heat conductivity?
 	kernel.update_uniform("relaxation_time", thermal_relaxation_time);

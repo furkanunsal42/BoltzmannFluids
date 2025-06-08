@@ -62,8 +62,9 @@ int main() {
 	lbm2d_solver.initialize_fields(
 		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
 			
-			properties.force = glm::vec3(0, -4, 0) / 128000.0f;
+			properties.temperature = coordinate.y / 1024.0f;
 
+			properties.force = glm::vec3(0, -4, 0) / 128000.0f;
 			//properties.force = glm::vec3(0);
 			//if (coordinate.x > 512)
 			//	properties.force += glm::vec3(0, -1, 0) / 128000.0f;

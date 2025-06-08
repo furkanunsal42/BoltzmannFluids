@@ -53,7 +53,7 @@
 layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
 layout(std140, binding = 0) uniform velocity_set_buffer {
-	vec4[velocity_count] lattice_velocity_set;
+	vec4[thermal_velocity_count] lattice_velocity_set;
 };
 
 layout(std430, binding = 1) buffer lattice_buffer {
@@ -72,7 +72,7 @@ layout(std430, binding = 3) buffer temperature_buffer {
 uniform ivec2 lattice_resolution;
 
 int get_inverse_lattice_population_id_index(int lattice_velocity_index){
-	if (lattice_velocity_index == 0 || lattice_velocity_index >= velocity_count)
+	if (lattice_velocity_index == 0 || lattice_velocity_index >= thermal_velocity_count)
 		return 0;
 
 	bool is_odd = lattice_velocity_index % 2 == 1;
@@ -80,11 +80,11 @@ int get_inverse_lattice_population_id_index(int lattice_velocity_index){
 }
 
 float get_lattice(ivec2 pixel_coord, int velocity_index){
-	return lattice[(pixel_coord.y * lattice_resolution.x + pixel_coord.x) * velocity_count + velocity_index];
+	return lattice[(pixel_coord.y * lattice_resolution.x + pixel_coord.x) * thermal_velocity_count + velocity_index];
 }
 
 void set_lattice(ivec2 pixel_coord, int velocity_index, float value){
-	lattice[(pixel_coord.y * lattice_resolution.x + pixel_coord.x) * velocity_count + velocity_index] = value;
+	lattice[(pixel_coord.y * lattice_resolution.x + pixel_coord.x) * thermal_velocity_count + velocity_index] = value;
 }
 
 vec3 get_velocity_field(ivec2 pixel_coord){
