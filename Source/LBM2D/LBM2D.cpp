@@ -13,6 +13,7 @@ void LBM2D::compile_shaders()
 	lbm2d_collide								= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "collide.comp"), definitions);
 	lbm2d_collide_thermal						= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "collide_thermal.comp"), definitions);
 	lbm2d_boundry_condition						= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "boundry_condition.comp"), definitions);
+	lbm2d_boundry_condition_thermal				= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "boundry_condition_thermal.comp"), definitions);
 	lbm2d_collide_with_precomputed_velocity		= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "collide_with_precomputed_velocity.comp"), definitions);
 	lbm2d_set_equilibrium_populations			= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "set_equilibrium_populations.comp"), definitions);
 	lbm2d_set_equilibrium_populations_thermal	= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "set_equilibrium_populations_thermal.comp"), definitions);
@@ -49,6 +50,7 @@ void LBM2D::iterate_time(std::chrono::duration<double, std::milli> deltatime)
 			if (is_flow_thermal) {
 				_stream_thermal();
 				_collide_thermal();
+				_apply_boundry_conditions_thermal();
 			}
 
 			_stream();
@@ -335,7 +337,7 @@ void LBM2D::_initialize_fields_boundries_pass(std::function<void(glm::ivec2, Flu
 	
 	for (uint32_t i = 0; i < objects_cpu.size(); i++) {
 		_object_desc& desc = objects_cpu[i];
-		objects_mapped_buffer[3*i + 0] = glm::vec4(desc.velocity_translational, 0);
+		objects_mapped_buffer[3*i + 0] = glm::vec4(desc.velocity_translational, desc.temperature);
 		objects_mapped_buffer[3*i + 1] = glm::vec4(desc.velocity_angular, 0);
 		objects_mapped_buffer[3*i + 2] = glm::vec4(desc.center_of_mass, 0);
 	}
@@ -1162,6 +1164,32 @@ void LBM2D::_collide_thermal()
 	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
 
 	_swap_thermal_lattice_buffers();
+}
+
+void LBM2D::_apply_boundry_conditions_thermal()
+{
+	if (bits_per_boundry == 0)
+		return;
+
+	compile_shaders();
+
+	if (objects == nullptr || boundries == nullptr) {
+		std::cout << "[LBM2D Error] LBM2D::_apply_boundry_conditions_thermal() is called and bits_per_boundry is non-zero but objects or boundries is nullptr" << std::endl;
+		ASSERT(false);
+	}
+
+	ComputeProgram& kernel = *lbm2d_boundry_condition_thermal;
+
+	Buffer& thermal_lattice = *_get_thermal_lattice_source();
+
+	kernel.update_uniform_as_storage_buffer("thermal_lattice_buffer", thermal_lattice, 0);
+	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+	kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
+	kernel.update_uniform_as_uniform_buffer("thermal_velocity_set_buffer", *thermal_lattice_velocity_set_buffer, 0);
+	kernel.update_uniform("lattice_resolution", resolution);
+
+	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
+
 }
 
 void LBM2D::_set_populations_to_equilibrium_thermal(Buffer& temperature_field, Buffer& velocity_field)

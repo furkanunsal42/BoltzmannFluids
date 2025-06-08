@@ -172,7 +172,7 @@ void main(){
 	float temperature = compute_temperature(pixel_coord);
 	vec4 write_value;
 
-	write_value.xyz = int(temperature != 0) * vec3(abs(temperature));
+	write_value.xyz = int(temperature != 0) * vec3(abs(temperature)) / 16.0;
 	//write_value.xyz += int(temperature == 0) * 1;
 	write_value.a = 1;
 

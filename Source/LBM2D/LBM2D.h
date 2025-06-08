@@ -219,6 +219,7 @@ private:
 	// thermal flow physics
 	void _stream_thermal();
 	void _collide_thermal();
+	void _apply_boundry_conditions_thermal();
 	void _set_populations_to_equilibrium_thermal(Buffer& temperature_field, Buffer& velocity_field);
 
 	// device buffers
@@ -248,6 +249,7 @@ private:
 	std::shared_ptr<ComputeProgram> lbm2d_collide = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_collide_thermal = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_boundry_condition = nullptr;
+	std::shared_ptr<ComputeProgram> lbm2d_boundry_condition_thermal = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_collide_with_precomputed_velocity = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_set_equilibrium_populations = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_set_equilibrium_populations_thermal = nullptr;
