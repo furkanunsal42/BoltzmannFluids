@@ -1,0 +1,121 @@
+#<compute shader>
+
+#version 460 core
+
+#define D2Q9 0
+#define D3Q15 1
+#define D3Q19 2
+#define D3Q27 3
+
+#define fp16 0
+#define fp32 1
+
+#define periodic_x 1
+#define periodic_y 1
+
+#define floating_point_accuracy fp32
+#define velocity_set D2Q9
+
+#if velocity_set == D2Q9
+	#define volume_dimentionality 2
+	#define velocity_count 9
+#elif velocity_set == D3Q15
+	#define volume_dimentionality 3
+	#define velocity_count 15
+#elif velocity_set == D3Q19
+	#define volume_dimentionality 3
+	#define velocity_count 19
+#elif velocity_set == D3Q27
+	#define volume_dimentionality 3
+	#define velocity_count 27
+#else
+	#error "velocity set is not supported"
+#endif
+
+#if floating_point_accuracy == fp32
+#else
+	#error "other floating point systems than fp32 aren't supported"
+#endif
+
+#define D2Q5 4
+#define D3Q7 5
+
+#define thermal_flow 1
+#define velocity_set_thermal D2Q5
+
+#if velocity_set_thermal == D2Q5
+	#define thermal_velocity_count 5
+#elif velocity_set_thermal == D3Q7
+	#define thermal_velocity_count 7
+#else
+	#error "thermal_velocity_set is not supported"
+#endif
+
+#define id gl_GlobalInvocationID
+
+layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+layout(std140, binding = 0) uniform thermal_velocity_set_buffer {
+	vec4[thermal_velocity_count] thermal_lattice_velocity_set;
+};
+
+layout(std430, binding = 1) buffer thermal_lattice_buffer_source {
+	float[] thermal_lattice_source;
+};
+
+layout(std430, binding = 2) buffer thermal_lattice_buffer_target {
+	float[] thermal_lattice_target;
+};
+
+uniform ivec2 lattice_resolution;
+
+int get_inverse_lattice_population_id_index_thermal(int thermal_lattice_velocity_index){
+	if (thermal_lattice_velocity_index == 0 || thermal_lattice_velocity_index >= thermal_velocity_count)
+		return 0;
+
+	bool is_odd = thermal_lattice_velocity_index % 2 == 1;
+	return is_odd ? thermal_lattice_velocity_index + 1 : thermal_lattice_velocity_index - 1;
+}
+
+
+ivec2 positive_modulo(ivec2 i, ivec2 n){
+	return ivec2(mod((mod(i, n) + n), n));
+}
+
+int positive_modulo(int i, int n){
+	return int(mod((mod(i, n) + n), n));
+}
+
+void main(){
+	if (int(id.x) >= lattice_resolution.x * lattice_resolution.y * velocity_count)
+		return;
+
+	int pixel_id = int(id.x) / thermal_velocity_count;
+	int velocity_id = int(id.x) % thermal_velocity_count;
+	ivec2 pixel_coord = ivec2(pixel_id.x % lattice_resolution.x, pixel_id.x / lattice_resolution.x);
+	
+	ivec2 source_pixel_coord = pixel_coord - ivec2(thermal_lattice_velocity_set[velocity_id].xy);
+	
+	#if periodic_x == 1
+	source_pixel_coord.x = positive_modulo(source_pixel_coord.x, lattice_resolution.x);
+	#else
+	if (source_pixel_coord.x < 0 || source_pixel_coord.x >= lattice_resolution.x) return;
+	#endif
+	
+	#if periodic_y == 1
+	source_pixel_coord.y = positive_modulo(source_pixel_coord.y, lattice_resolution.y);
+	#else
+	if (source_pixel_coord.y < 0 || source_pixel_coord.y >= lattice_resolution.y) return;
+	#endif
+
+	int source_pixel_id = source_pixel_coord.y * lattice_resolution.x + source_pixel_coord.x;
+
+	//// for debug
+	//int inv_velocity_id = get_inverse_lattice_direction_index(velocity_id);
+	//if (pixel_coord == ivec2(95, 300) && velocity_id == 1){
+	//	lattice_target[id.x] = 32;
+	//	return;
+	//}
+	
+	thermal_lattice_target[id.x] = thermal_lattice_source[source_pixel_id * thermal_velocity_count + velocity_id];
+}

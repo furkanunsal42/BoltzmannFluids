@@ -142,7 +142,6 @@ private:
 	// initialization functions
 	void _collide_with_precomputed_velocities(Buffer& velocity_field);
 	void _set_populations_to_equilibrium(Buffer& density_field, Buffer& velocity_field);
-	void _set_populations_to_equilibrium_thermal(Buffer& temperature_field, Buffer& velocity_field);
 
 	void _initialize_fields_default_pass(
 		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
@@ -209,12 +208,18 @@ private:
 	bool is_flow_thermal = false;
 	SimplifiedVelocitySet thermal_lattice_velocity_set = SimplifiedVelocitySet::D2Q5;
 	float thermal_relaxation_time = 0.53;
+	float thermal_expension_coeficient = 0.5f;
 
 	void _set_is_flow_thermal(bool value);
 	bool _get_is_flow_thermal();
 
 	void _set_thermal_lattice_velocity_set(SimplifiedVelocitySet set);
 	SimplifiedVelocitySet _get_thermal_lattice_velocity_set();
+	
+	// thermal flow physics
+	void _stream_thermal();
+	void _collide_thermal();
+	void _set_populations_to_equilibrium_thermal(Buffer& temperature_field, Buffer& velocity_field);
 
 	// device buffers
 	std::shared_ptr<Buffer> lattice0 = nullptr;
@@ -239,7 +244,9 @@ private:
 	// kernels
 	bool is_programs_compiled = false;
 	std::shared_ptr<ComputeProgram> lbm2d_stream = nullptr;
+	std::shared_ptr<ComputeProgram> lbm2d_stream_thermal = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_collide = nullptr;
+	std::shared_ptr<ComputeProgram> lbm2d_collide_thermal = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_boundry_condition = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_collide_with_precomputed_velocity = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_set_equilibrium_populations = nullptr;
@@ -256,5 +263,4 @@ private:
 
 	std::unique_ptr<UniformBuffer> lattice_velocity_set_buffer = nullptr;
 	std::unique_ptr<UniformBuffer> thermal_lattice_velocity_set_buffer = nullptr;
-
 };

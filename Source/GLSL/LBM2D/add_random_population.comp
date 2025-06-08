@@ -47,7 +47,7 @@
 #else
 	#error "thermal_velocity_set is not supported"
 #endif
-
+	
 #define id gl_GlobalInvocationID
 
 layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;

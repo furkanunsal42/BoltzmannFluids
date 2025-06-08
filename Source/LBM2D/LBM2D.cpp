@@ -9,7 +9,9 @@ void LBM2D::compile_shaders()
 	auto definitions = _generate_shader_macros();
 
 	lbm2d_stream								= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "stream.comp"), definitions);
+	lbm2d_stream_thermal						= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "stream_thermal.comp"), definitions);
 	lbm2d_collide								= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "collide.comp"), definitions);
+	lbm2d_collide_thermal						= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "collide_thermal.comp"), definitions);
 	lbm2d_boundry_condition						= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "boundry_condition.comp"), definitions);
 	lbm2d_collide_with_precomputed_velocity		= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "collide_with_precomputed_velocity.comp"), definitions);
 	lbm2d_set_equilibrium_populations			= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "set_equilibrium_populations.comp"), definitions);
@@ -44,6 +46,11 @@ void LBM2D::iterate_time(std::chrono::duration<double, std::milli> deltatime)
 	for (int32_t i = 0; i < 3; i++) {
 		if (deltatime_overflow >= step_deltatime) {
 		
+			if (is_flow_thermal) {
+				_stream_thermal();
+				_collide_thermal();
+			}
+
 			_stream();
 			_collide();
 			_apply_boundry_conditions();
@@ -1092,6 +1099,69 @@ void LBM2D::_set_populations_to_equilibrium(Buffer& density_field, Buffer& veloc
 	kernel.update_uniform("relaxation_time", relaxation_time);
 
 	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
+}
+
+void LBM2D::_stream_thermal()
+{
+	compile_shaders();
+
+	ComputeProgram& kernel = *lbm2d_stream_thermal;
+
+	Buffer& thermal_lattice_source = *_get_thermal_lattice_source();
+	Buffer& thermal_lattice_target = *_get_thermal_lattice_target();
+
+	// add forces implementation
+	kernel.update_uniform_as_storage_buffer("thermal_lattice_buffer_source", thermal_lattice_source, 0);
+	kernel.update_uniform_as_storage_buffer("thermal_lattice_buffer_target", thermal_lattice_target, 0);
+	kernel.update_uniform_as_uniform_buffer("thermal_velocity_set_buffer", *thermal_lattice_velocity_set_buffer, 0);
+	kernel.update_uniform("lattice_resolution", resolution);
+
+	kernel.dispatch_thread(resolution.x * resolution.y * get_SimplifiedVelocitySet_vector_count(thermal_lattice_velocity_set), 1, 1);
+
+	_swap_thermal_lattice_buffers();
+}
+
+void LBM2D::_collide_thermal()
+{
+	compile_shaders();
+
+	ComputeProgram& kernel = *lbm2d_collide_thermal;
+
+	Buffer& lattice_source = *_get_lattice_source();
+	Buffer& lattice_target = *_get_lattice_target();
+
+	Buffer& thermal_lattice_source = *_get_thermal_lattice_source();
+	Buffer& thermal_lattice_target = *_get_thermal_lattice_target();
+
+	kernel.update_uniform_as_storage_buffer("lattice_buffer_source", lattice_source, 0);
+	kernel.update_uniform_as_storage_buffer("lattice_buffer_target", lattice_target, 0);
+
+	kernel.update_uniform_as_storage_buffer("thermal_lattice_buffer_source", thermal_lattice_source, 0);
+	kernel.update_uniform_as_storage_buffer("thermal_lattice_buffer_target", thermal_lattice_target, 0);
+
+	if (bits_per_boundry != 0) {
+		kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+		kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
+	}
+
+	if (is_forcing_scheme && !is_force_field_constant)
+		kernel.update_uniform_as_storage_buffer("forces_buffer", *forces, 0);
+	if (is_forcing_scheme && is_force_field_constant)
+		kernel.update_uniform("force_constant", constant_force);
+
+	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
+	kernel.update_uniform_as_uniform_buffer("thermal_velocity_set_buffer", *thermal_lattice_velocity_set_buffer, 0);
+
+	kernel.update_uniform("lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3)));
+	kernel.update_uniform("relaxation_time", relaxation_time);
+
+	kernel.update_uniform("thermal_lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3)));
+	kernel.update_uniform("thermal_relaxation_time", thermal_relaxation_time);
+
+	kernel.update_uniform("lattice_resolution", resolution);
+	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
+
+	_swap_thermal_lattice_buffers();
 }
 
 void LBM2D::_set_populations_to_equilibrium_thermal(Buffer& temperature_field, Buffer& velocity_field)
