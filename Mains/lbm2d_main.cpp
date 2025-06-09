@@ -265,8 +265,6 @@ void init_multiphase_droplet(LBM2D& solver) {
 	);
 }
 
-using namespace std::chrono_literals;
-
 int main() {
 
 	WindowDescription desc;
@@ -275,6 +273,17 @@ int main() {
 	desc.f_swap_interval = 0;
 	desc.w_resolution = glm::ivec2(1);
 	Window window(desc);
+
+	LBM2D lbm2d_solver;
+	init_multiphase_droplet(lbm2d_solver);
+	window.set_window_resolution(lbm2d_solver.get_resolution());
+
+	Texture2D texture_1c(window.get_window_resolution().x, window.get_window_resolution().y, Texture2D::ColorTextureFormat::R32F, 1, 0, 0);
+	Texture2D texture_4c(window.get_window_resolution().x, window.get_window_resolution().y, Texture2D::ColorTextureFormat::RGBA32F, 1, 0, 0);
+
+	Framebuffer fb;
+	fb.attach_color(0, texture_1c, 0);
+	fb.activate_draw_buffer(0);
 
 	uint32_t display_mode = 3;
 
@@ -310,42 +319,25 @@ int main() {
 		exit(0);
 		});
 
-	//window.newsletters->on_window_refresh_events.subscribe([&]() {
-	//	//std::cout << "here" << std::endl;
-	//	//primitive_renderer::set_viewport_size(window.get_framebuffer_resolution());
-	//	});
+	auto update_function = [&](double deltatime) {
+		lbm2d_solver.iterate_time(std::chrono::duration<double, std::milli>(deltatime / 100));
 
-	LBM2D lbm2d_solver;
-	init_multiphase_droplet(lbm2d_solver);
-	window.set_window_resolution(lbm2d_solver.get_resolution());
-
-	Texture2D texture_1c(window.get_window_resolution().x, window.get_window_resolution().y, Texture2D::ColorTextureFormat::R32F, 1, 0, 0);
-	Texture2D texture_4c(window.get_window_resolution().x, window.get_window_resolution().y, Texture2D::ColorTextureFormat::RGBA32F, 1, 0, 0);
-
-	Framebuffer fb;
-	fb.attach_color(0, texture_1c, 0);
-	fb.activate_draw_buffer(0);
-
-	while (true) {
-		double deltatime = window.handle_events(true);
-		lbm2d_solver.iterate_time(std::chrono::duration<double, std::milli>(deltatime/100));
-		
 		if (display_mode == 1) {
 			Texture2D& texture_target = texture_1c;
 			lbm2d_solver.copy_to_texture_density(texture_target);
 			fb.attach_color(0, texture_target, 0);
 		}
-		else if (display_mode == 2){
+		else if (display_mode == 2) {
 			Texture2D& texture_target = texture_1c;
 			lbm2d_solver.copy_to_texture_velocity_magnetude(texture_target);
 			fb.attach_color(0, texture_target, 0);
 		}
-		else if (display_mode == 3){
+		else if (display_mode == 3) {
 			Texture2D& texture_target = texture_4c;
 			lbm2d_solver.copy_to_texture_velocity_vector(texture_target);
 			fb.attach_color(0, texture_target, 0);
 		}
-		else if (display_mode == 4){
+		else if (display_mode == 4) {
 			Texture2D& texture_target = texture_4c;
 			lbm2d_solver.copy_to_texture_boundries(texture_target);
 			fb.attach_color(0, texture_target, 0);
@@ -362,8 +354,16 @@ int main() {
 		}
 
 		fb.blit_to_screen(window.get_window_resolution(), window.get_framebuffer_resolution(), Framebuffer::Channel::COLOR, Framebuffer::Filter::NEAREST);
-
 		window.swap_buffers();
-	}
+		};
 
+	window.newsletters->on_window_refresh_events.subscribe([&]() {
+		double deltatime = window.get_and_reset_deltatime();
+		update_function(deltatime);
+		});
+
+	while (true) {
+		double deltatime = window.handle_events(true);
+		update_function(deltatime);
+	}
 }
