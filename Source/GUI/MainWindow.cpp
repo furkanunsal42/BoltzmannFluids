@@ -10,7 +10,7 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QFrame>
-
+#include <QSplitter>
 #include <QScrollArea>
 
 #include "InitialConditionsBox.h"
@@ -97,33 +97,16 @@ MainWindow::MainWindow(QWidget *parent)
     main_layout->setContentsMargins(0, 0, 0, 0);
     main_layout->setSpacing(0);
 
+
     // --- Left Layout ---
     auto left_vertical_layout = new QVBoxLayout();
     main_layout->addLayout(left_vertical_layout);
     {
-        // Rendering Box with Frame
-        auto render_box_frame = new QFrame(central_widget);
-        render_box_frame->setFrameStyle(QFrame::StyledPanel);
-        render_box_frame->setLineWidth(2);
-        render_box_frame->setContentsMargins(0, 0, 0, 0);
-
-        auto render_box_layout = new QVBoxLayout(render_box_frame);
-        render_box_layout->setContentsMargins(0, 0, 0, 0);
-        render_box_layout->setSpacing(0);
-
-        auto render_box = new QOpenGLWidget(render_box_frame);
+        // Rendering Box
+        auto render_box = new QOpenGLWidget(central_widget);
         render_box->setMinimumSize(100, 100);
-        render_box_layout->addWidget(render_box);
-
-        left_vertical_layout->addWidget(render_box_frame);
-
-        /* //HERE
-        qss_text += "QFrame {"
-                    "border: 2px solid rgb(75, 76, 77); "
-                    "}";
-        */
+        left_vertical_layout->addWidget(render_box);
     }
-
     {
         // Application Output
         auto application_output = new QTextEdit(central_widget);
@@ -140,7 +123,6 @@ MainWindow::MainWindow(QWidget *parent)
                     "border: 2px solid rgb(75, 76, 77); "
                     "}";
     }
-
 
     // --- Right Layout ---
     {
@@ -185,11 +167,15 @@ MainWindow::MainWindow(QWidget *parent)
                     "QDoubleSpinBox {"
                         "border: 2px solid rgb(75, 76, 77); "
                     "}"
-                    //"QCheckBox::indicator:checked {"
-                    //    "image: url(:/icons/checkbox_checked.png);"
-                    //"}"
+                    "QCheckBox::indicator {"
+                        "width: 12px;"
+                        "height: 12px;"
+                    "}"
+                    "QCheckBox::indicator:checked {"
+                        "image: url(:/qt_icons/checkbox_checked3.png);"
+                    "}"
                     "QCheckBox::indicator:unchecked {"
-                        "image: url(:/icons/checkbox_unchecked.png);"
+                        "image: url(:/qt_icons/checkbox_unchecked2.png);"
                     "}";
 
             ;
