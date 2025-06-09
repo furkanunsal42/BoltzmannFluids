@@ -57,6 +57,8 @@ public:
 		float effective_density = referance_boundry_density
 	);
 
+	void clear_boundry_properties();
+
 	struct FluidProperties {
 		glm::vec3 velocity = glm::vec3(0);
 		glm::vec3 force = glm::vec3(0);
