@@ -312,7 +312,7 @@ void LBM2D::_initialize_fields_default_pass(
 
 	compile_shaders();
 
-	int32_t relaxation_iteration_count = 0;
+	int32_t relaxation_iteration_count = 1;
 	std::cout << "[LBM Info] _initialize_fields_default_pass() initialization of particle population distributions from given veloicty and density fields is initiated" << std::endl;
 
 	_set_populations_to_equilibrium(*density_buffer, *velocity_buffer);

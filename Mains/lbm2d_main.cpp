@@ -65,8 +65,8 @@ int main() {
 			//properties.temperature = 1 + coordinate.y / 1024.0f;
 			
 			properties.density = 1;
-			//if (coordinate.y > 512)
-			//	properties.density = 0;
+			if (coordinate.y > 512)
+				properties.density = 0;
 
 			properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
 
@@ -122,7 +122,7 @@ int main() {
 
 	while (true) {
 		double deltatime = window.handle_events(true);
-		lbm2d_solver.iterate_time(std::chrono::duration<double, std::milli>(deltatime/100));
+		lbm2d_solver.iterate_time(std::chrono::duration<double, std::milli>(deltatime/10));
 		
 		if (display_mode == 1) {
 			Texture2D& texture_target = texture_1c;
