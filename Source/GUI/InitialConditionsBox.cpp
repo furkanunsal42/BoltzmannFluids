@@ -11,14 +11,24 @@
 #include <QPixmap>
 #include <QFrame>
 
+#include <QScrollBar>
+
 InitialConditionsBox::InitialConditionsBox(QWidget* parent)
     : QWidget(parent)
 {
     setStyleSheet("background-color: rgb(45, 45, 45); color: rgb(225, 226, 227);");
 
-    mainLayout = new QVBoxLayout(this);
-    mainLayout->setAlignment(Qt::AlignTop);
-    mainLayout->addWidget(createInitialConditionsGroup());
+    main_layout = new QVBoxLayout(this);
+    main_layout->setAlignment(Qt::AlignTop);
+    main_layout->addWidget(createInitialConditionsGroup());
+
+
+    /**/
+ //   auto scroll_bar = new QScrollBar();
+ //   main_layout->addWidget(scroll_bar);
+
+
+    /**/
 
 }
 
@@ -51,7 +61,6 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
         auto gravity_X_box = new QDoubleSpinBox();
         gravity_X_box->setRange(GRAVITY_MIN, GRAVITY_MAX);
         gravity_X_box->setSingleStep(0.01);
-        gravity_X_box->setFixedSize(59,22);
         gravity_layout->addWidget(gravity_X_box);
 
         // Y

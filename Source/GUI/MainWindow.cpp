@@ -11,6 +11,8 @@
 #include <QVBoxLayout>
 #include <QFrame>
 
+#include <QScrollArea>
+
 #include "InitialConditionsBox.h"
 #include "CollabsibleBox.h"
 
@@ -128,7 +130,7 @@ MainWindow::MainWindow(QWidget *parent)
         application_output->setReadOnly(true);
         application_output->setText("asd\nThat is good!");
         application_output->setFrameStyle(QFrame::StyledPanel | QFrame::Raised);
-        application_output->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        application_output->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
 
         left_vertical_layout->addWidget(application_output);
 
@@ -142,11 +144,55 @@ MainWindow::MainWindow(QWidget *parent)
 
     // --- Right Layout ---
     {
-        auto right_side_panel = new CollapsibleBox("Initial Conditions");
-        right_side_panel->addWidget(new InitialConditionsBox());
-        right_side_panel->addWidget(new InitialConditionsBox());
+        auto scroll_area = new QScrollArea(central_widget);
+        scroll_area->setWidgetResizable(true); // Makes inner widget resize properly
+        scroll_area->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
+        //scroll_area->setMinimumWidth(300);
 
-        main_layout->addWidget(right_side_panel);
+        auto scroll_content = new QWidget();
+        auto scroll_layout = new QVBoxLayout(scroll_content);
+        scroll_layout->setContentsMargins(0, 0, 0, 0);
+        scroll_layout->setSpacing(0);
+
+        auto box1 = new CollapsibleBox("Initial Conditions - 1");
+        box1->addWidget(new InitialConditionsBox());
+        scroll_layout->addWidget(box1);
+
+        auto box2 = new CollapsibleBox("Initial Conditions - 2");
+        box2->addWidget(new InitialConditionsBox());
+        box2->addWidget(new InitialConditionsBox());
+        scroll_layout->addWidget(box2);
+
+        auto box3 = new CollapsibleBox("Initial Conditions - 3");
+        box3->addWidget(new InitialConditionsBox());
+        box3->addWidget(new InitialConditionsBox());
+        box3->addWidget(new InitialConditionsBox());
+        scroll_layout->addWidget(box3);
+
+
+        scroll_layout->addStretch();
+        scroll_content->setLayout(scroll_layout);
+        scroll_area->setWidget(scroll_content);
+        main_layout->addWidget(scroll_area);
+
+        qss_text += "QWidget { "
+                        "background-color: rgb(45, 46, 47); "
+                        "color: rgb(180, 181, 182); "
+                    "}"
+                    "QScrollArea {"
+                        "border: 2px solid rgb(75, 76, 77); "
+                    "}"
+                    "QDoubleSpinBox {"
+                        "border: 2px solid rgb(75, 76, 77); "
+                    "}"
+                    //"QCheckBox::indicator:checked {"
+                    //    "image: url(:/icons/checkbox_checked.png);"
+                    //"}"
+                    "QCheckBox::indicator:unchecked {"
+                        "image: url(:/icons/checkbox_unchecked.png);"
+                    "}";
+
+            ;
     }
 
 
@@ -156,8 +202,8 @@ MainWindow::MainWindow(QWidget *parent)
         setStatusBar(status_bar);
 
         qss_text += "QStatusBar { "
-                    "background-color: rgb(60, 61, 62); "
-                    "color: rgb(180, 181, 182); "
+                        "color: rgb(180, 181, 182); "
+                        "background-color: rgb(60, 61, 62); "
                     "}";
     }
 

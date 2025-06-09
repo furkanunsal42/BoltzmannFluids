@@ -15,7 +15,7 @@ public:
 
 private:
 
-    QVBoxLayout* mainLayout;
+    QVBoxLayout* main_layout;
 
     QGroupBox* createInitialConditionsGroup();
 
