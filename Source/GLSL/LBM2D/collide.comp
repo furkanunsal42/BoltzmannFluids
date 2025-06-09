@@ -308,8 +308,6 @@ vec3 compute_molecular_interaction_force(ivec2 pixel_coord){
 		ivec2 neighbour_coord = pixel_coord + ivec2(c.xy);
 		neighbour_coord = positive_modulo(neighbour_coord, lattice_resolution);
 
-		if (any(lessThan(neighbour_coord, ivec2(0) + 1)) && (any(greaterThanEqual(neighbour_coord, lattice_resolution - 1))))
-			continue;
 		float neighbour_density = compute_density(neighbour_coord);
 		float neighbour_psudopotantial = get_density_pseudopotential(neighbour_density);
 		

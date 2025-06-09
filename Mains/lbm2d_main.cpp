@@ -65,6 +65,7 @@ int main() {
 			//properties.temperature = 1 + coordinate.y / 1024.0f;
 			
 			properties.density = 0.056;
+			//properties.density = 2.659 / 1.1;
 
 			//properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
 
