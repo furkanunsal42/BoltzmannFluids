@@ -5,7 +5,7 @@ using namespace std::chrono_literals;
 
 int main() {
 
-	glm::ivec2 simulation_resolution(2048, 110);
+	glm::ivec2 simulation_resolution(512, 1024);
 
 	WindowDescription desc;
 	desc.w_scale_framebuffer_size = false;
@@ -55,14 +55,17 @@ int main() {
 
 	LBM2D lbm2d_solver;
 
-	lbm2d_solver.set_boundry_properties(1, glm::vec3(0, 0, 0) / 16.0f, 4);
+	lbm2d_solver.set_boundry_properties(1, glm::vec3(0, 0, 0) / 16.0f, 1.5);
+	lbm2d_solver.set_boundry_properties(2, glm::vec3(0, 0, 0) / 16.0f, 0.5);
 
 	lbm2d_solver.initialize_fields(
 		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
 			
 			properties.temperature = 1 + coordinate.y / 1024.0f;
 
-			//properties.force = glm::vec3(0, -4, 0) / 128000.0f;
+			//properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
+
+			properties.force = glm::vec3(0, -1, 0) / 128000.0f;
 			//properties.force = glm::vec3(0);
 			//if (coordinate.x > 512)
 			//	properties.force += glm::vec3(0, -1, 0) / 128000.0f;
@@ -73,27 +76,27 @@ int main() {
 			//if (coordinate.y <= 512)
 			//	properties.force += glm::vec3(-1, 0, 0) / 128000.0f;
 			properties.boundry_id = false;
-			if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1 / 4.0, simulation_resolution.y / 2)) < 32) {
-				properties.boundry_id = 1;
-			}
+			//if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1 / 4.0, simulation_resolution.y / 2)) < 32) {
+			//	properties.boundry_id = 1;
+			//}			
 			
-			if (coordinate.x == 0)
-				properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
-			if (coordinate.x == lbm2d_solver.get_resolution().x-1)
-				properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
-			if (coordinate.y == 0)
-				properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
-			if (coordinate.y == lbm2d_solver.get_resolution().y - 1)
-				properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
-		
 			//if (coordinate.x == 0)
-			//	properties.boundry_id = 1;
-			//if (coordinate.x == lbm2d_solver.get_resolution().x - 1)
-			//	properties.boundry_id = 1;
+			//	properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
+			//if (coordinate.x == lbm2d_solver.get_resolution().x-1)
+			//	properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
+			//if (coordinate.y == 0)
+			//	properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
+			//if (coordinate.y == lbm2d_solver.get_resolution().y - 1)
+			//	properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
+		
+			if (coordinate.x == 0)
+				properties.boundry_id = 1;
+			if (coordinate.x == lbm2d_solver.get_resolution().x - 1)
+				properties.boundry_id = 2;
 			if (coordinate.y == 0)
 				properties.boundry_id = 1;
 			if (coordinate.y == lbm2d_solver.get_resolution().y - 1)
-				properties.boundry_id = 1;
+				properties.boundry_id = 2;
 
 		},
 		glm::ivec2(simulation_resolution),

@@ -90,10 +90,33 @@ uniform vec3 force_constant;
 #endif	// constant_force 
 #endif	// forcing_scheme
 
+#if thermal_flow == 1
+layout(std140, binding = 6) uniform thermal_velocity_set_buffer {
+	vec4[thermal_velocity_count] thermal_lattice_velocity_set;
+};
+
+layout(std430, binding = 7) buffer thermal_lattice_buffer_source {
+	float[] thermal_lattice_source;
+};
+
+layout(std430, binding = 8) buffer thermal_lattice_buffer_target {
+	float[] thermal_lattice_target;
+};
+#endif
+
 uniform ivec2 lattice_resolution;
 uniform float lattice_speed_of_sound;
 uniform float relaxation_time;
 uniform int object_count;
+
+#if thermal_flow == 1
+uniform float thermal_lattice_speed_of_sound;
+uniform float thermal_relaxation_time;
+uniform float thermal_expension_coefficient;
+#endif
+
+//////////////////////////////////////////
+// momentum density lattice functions
 
 int get_inverse_lattice_population_id_index(int lattice_velocity_index){
 	if (lattice_velocity_index == 0 || lattice_velocity_index >= velocity_count)
@@ -127,6 +150,24 @@ float get_lattice_weight(int velocity_index){
 	return lattice_velocity_set[velocity_index].w;
 }
 
+float compute_density(ivec2 pixel_coord){
+	float density = 0;
+	for (int i = 0; i < velocity_count; i++)
+		density += get_lattice_source(pixel_coord, i);
+	return density;
+}
+
+vec3 compute_velocity(ivec2 pixel_coord, float density){
+	vec3 velocity = vec3(0);
+	for (int i = 0; i < velocity_count; i++){
+		velocity += get_lattice_source(pixel_coord, i) * get_lattice_velocity(i);
+	}
+	return velocity / density;
+}
+
+//////////////////////////////////////////
+// boundry subsystem
+
 uint get_boundry(ivec2 pixel_coord) {
 #if boundry_count > 1
 
@@ -147,7 +188,6 @@ uint get_boundry(ivec2 pixel_coord) {
 }
 
 struct object_info_s {
-	float temperature;
 	vec3 velocity;
 	vec3 center_of_mass;
 	vec3 velocity_angular;
@@ -156,14 +196,12 @@ struct object_info_s {
 object_info_s get_object_info(int object_id){
 #if boundry_count > 1
 	object_info_s result;
-	result.temperature		=	objects[object_id * 3 + 0].w;
 	result.velocity			=	objects[object_id * 3 + 0].xyz;
 	result.center_of_mass	=	objects[object_id * 3 + 1].xyz;
 	result.velocity_angular =	objects[object_id * 3 + 2].xyz;
 	return result;
 #else 
 	object_info_s result;
-	result.temperature		=	0;
 	result.velocity			=	vec3(0);
 	result.center_of_mass	=	vec3(0);
 	result.velocity_angular =	vec3(0);
@@ -171,6 +209,8 @@ object_info_s get_object_info(int object_id){
 #endif
 }
 
+//////////////////////////////////////////
+// force subsystem
 vec3 get_force(ivec2 pixel_coord){
 	#if forcing_scheme == 1
 		#if constant_force == 1
@@ -185,20 +225,53 @@ vec3 get_force(ivec2 pixel_coord){
 	#endif
 }
 
-float compute_density(ivec2 pixel_coord){
-	float density = 0;
-	for (int i = 0; i < velocity_count; i++)
-		density += get_lattice_source(pixel_coord, i);
-	return density;
+
+//////////////////////////////////////////
+// thermal flow subsystem
+
+#if thermal_flow == 1
+int get_inverse_lattice_population_id_index_thermal(int thermal_lattice_velocity_index){
+	if (thermal_lattice_velocity_index == 0 || thermal_lattice_velocity_index >= thermal_velocity_count)
+		return 0;
+
+	bool is_odd = thermal_lattice_velocity_index % 2 == 1;
+	return is_odd ? thermal_lattice_velocity_index + 1 : thermal_lattice_velocity_index - 1;
 }
 
-vec3 compute_velocity(ivec2 pixel_coord, float density){
-	vec3 velocity = vec3(0);
-	for (int i = 0; i < velocity_count; i++){
-		velocity += get_lattice_source(pixel_coord, i) * get_lattice_velocity(i);
-	}
-	return velocity / density;
+float get_lattice_source_thermal(ivec2 pixel_coord, int thermal_velocity_index){
+	return thermal_lattice_source[(pixel_coord.y * lattice_resolution.x + pixel_coord.x) * thermal_velocity_count + thermal_velocity_index];
 }
+
+void set_lattice_source_thermal(ivec2 pixel_coord, int thermal_velocity_index, float value){
+	thermal_lattice_source[(pixel_coord.y * lattice_resolution.x + pixel_coord.x) * thermal_velocity_count + thermal_velocity_index] = value;
+}
+
+float get_lattice_target_thermal(ivec2 pixel_coord, int thermal_velocity_index){
+	return thermal_lattice_target[(pixel_coord.y * lattice_resolution.x + pixel_coord.x) * thermal_velocity_count + thermal_velocity_index];
+}
+
+void set_lattice_target_thermal(ivec2 pixel_coord, int thermal_velocity_index, float value){
+	thermal_lattice_target[(pixel_coord.y * lattice_resolution.x + pixel_coord.x) * thermal_velocity_count + thermal_velocity_index] = value;
+}
+
+vec3 get_lattice_velocity_thermal(int thermal_velocity_index){
+	return thermal_lattice_velocity_set[thermal_velocity_index].xyz;
+}
+
+float get_lattice_weight_thermal(int thermal_velocity_index){
+	return thermal_lattice_velocity_set[thermal_velocity_index].w;
+}
+
+float compute_temperature(ivec2 pixel_coord){
+	float temperature = 0;
+	for (int i = 0; i < thermal_velocity_count; i++)
+		temperature += get_lattice_source_thermal(pixel_coord, i);
+	return temperature;
+}
+#endif
+
+//////////////////////////////////////////
+// collision physics
 
 float compute_equilibrium(float density, vec3 velocity, int population_id){
 	float p = density;
@@ -242,6 +315,50 @@ float compute_bgk_collision_term(float current_velocity, float equilibrium){
 	return - (current_velocity - equilibrium) / relaxation_time;
 }
 
+//////////////////////////////////////////
+// collision physics thermal
+
+float compute_equilibrium_thermal(float temperature, vec3 velocity, int thermal_population_id){
+	float t = temperature;
+	vec3 u = velocity;
+	float w = get_lattice_weight_thermal(thermal_population_id);
+	vec3 ci = get_lattice_velocity_thermal(thermal_population_id);
+	float cs = thermal_lattice_speed_of_sound;
+
+	float ci_dot_u = dot(ci, u);
+	float ci_dot_u2 = pow(ci_dot_u, 2);
+	float u_dot_u = dot(u, u);
+	float cs2 = pow(cs, 2);
+	float cs4 = pow(cs, 4);
+
+	float equilibrium = w*t*(
+		1 + ci_dot_u/cs2 + ci_dot_u2/2.0/cs4 - u_dot_u/2.0/cs2
+	); 
+	return equilibrium;
+}
+
+//float compute_source_term_thermal(int thermal_lattice_velocity_index, vec3 force, vec3 velocity){
+//#if forcing_scheme == 1
+//	float tau = thermal_relaxation_time;
+//	float dt = 1;
+//	float w = get_lattice_weight_thermal(thermal_lattice_velocity_index);
+//	vec3 c = get_lattice_velocity_thermal(thermal_lattice_velocity_index);
+//	float cs = thermal_lattice_speed_of_sound;
+//	float cs2 = pow(thermal_lattice_speed_of_sound, 2);
+//	vec3 f = force;
+//	vec3 u = velocity;
+//
+//	return (1 - dt/(2*tau))*w*(dot(f, c)*3 + (dot(f, c)*dot(c,u)*9 + dot(f, u)*3));
+//
+//#else
+//	return 0;
+//#endif
+//}
+
+float compute_bgk_collision_term_thermal(float current_velocity, float thermal_equilibrium){
+	return - (current_velocity - thermal_equilibrium) / (thermal_relaxation_time * 10);
+}
+
 void main(){
 	
 	if (int(id.x) >= lattice_resolution.x * lattice_resolution.y)
@@ -260,7 +377,16 @@ void main(){
 	//if (density == 0)
 	//	return;
 
-	vec3 force = get_force(pixel_coord); 
+	vec3 force = get_force(pixel_coord);
+	
+	#if thermal_flow == 1
+	float temperature = compute_temperature(pixel_coord);
+	float referance_density = 1;
+	float referance_temperature = 1;
+	vec3 buoyancy_force = -thermal_expension_coefficient * referance_density * (temperature - referance_temperature) * force;
+	force += buoyancy_force;
+	#endif
+
 	vec3 velocity = compute_velocity(pixel_coord, density) + force/(2*density);
 
 	for (int population_id = 0; population_id < velocity_count; population_id++){
