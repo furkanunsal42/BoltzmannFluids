@@ -69,10 +69,11 @@ public:
 		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
 		glm::ivec2 resolution,
 		float relaxation_time,
-		bool periodic_x =  true,
+		bool periodic_x = true,
 		bool periodic_y = true,
-		VelocitySet velocity_set = VelocitySet::D2Q9, 
-		FloatingPointAccuracy fp_accuracy = FloatingPointAccuracy::fp32
+		VelocitySet velocity_set = VelocitySet::D2Q9,
+		FloatingPointAccuracy fp_accuracy = FloatingPointAccuracy::fp32,
+		bool is_flow_multiphase = false
 	);
 	
 	// visualization
@@ -111,6 +112,9 @@ public:
 
 	void set_constant_force(glm::vec3 constant_force);
 	glm::vec3 get_constant_force();
+
+	void set_is_flow_multiphase(bool value);
+	bool get_is_flow_multiphase();
 
 	void set_population(glm::ivec2 voxel_coordinate, int32_t population_index, float value);
 	void set_population(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_coordinate_end, int32_t population_index, float value);
@@ -215,6 +219,11 @@ private:
 	void _collide_thermal();
 	void _apply_boundry_conditions_thermal();
 	void _set_populations_to_equilibrium_thermal(Buffer& temperature_field, Buffer& velocity_field);
+
+	// multiphase flow control flags
+	bool is_flow_multiphase = false;
+	float intermolecular_interaction_strength = 1.0f;
+
 
 	// device buffers
 	std::shared_ptr<Buffer> lattice0 = nullptr;

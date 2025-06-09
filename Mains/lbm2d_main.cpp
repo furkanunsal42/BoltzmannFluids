@@ -5,7 +5,7 @@ using namespace std::chrono_literals;
 
 int main() {
 
-	glm::ivec2 simulation_resolution(1024, 256);
+	glm::ivec2 simulation_resolution(1024, 1024);
 
 	WindowDescription desc;
 	desc.w_scale_framebuffer_size = false;
@@ -62,11 +62,15 @@ int main() {
 	lbm2d_solver.initialize_fields(
 		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
 			
-			properties.temperature = 1 + coordinate.y / 1024.0f;
+			//properties.temperature = 1 + coordinate.y / 1024.0f;
+			
+			properties.density = 1;
+			//if (coordinate.y > 512)
+			//	properties.density = 0;
 
-			//properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
+			properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
 
-			properties.force = glm::vec3(0, -2, 0) / 128000.0f;
+			//properties.force = glm::vec3(0, -2, 0) / 128000.0f;
 			//properties.force = glm::vec3(0);
 			//if (coordinate.x > 512)
 			//	properties.force += glm::vec3(0, -1, 0) / 128000.0f;
@@ -77,9 +81,9 @@ int main() {
 			//if (coordinate.y <= 512)
 			//	properties.force += glm::vec3(-1, 0, 0) / 128000.0f;
 			properties.boundry_id = false;
-			//if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1 / 4.0, simulation_resolution.y / 2)) < 32) {
-			//	properties.boundry_id = 1;
-			//}			
+			if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1 / 4.0, simulation_resolution.y / 2)) < 32) {
+				properties.boundry_id = 1;
+			}			
 			
 			//if (coordinate.x == 0)
 			//	properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
@@ -90,10 +94,10 @@ int main() {
 			//if (coordinate.y == lbm2d_solver.get_resolution().y - 1)
 			//	properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
 		
-			if (coordinate.x == 0)
-				properties.boundry_id = 3;
-			if (coordinate.x == lbm2d_solver.get_resolution().x - 1)
-				properties.boundry_id = 3;
+			//if (coordinate.x == 0)
+			//	properties.boundry_id = 3;
+			//if (coordinate.x == lbm2d_solver.get_resolution().x - 1)
+			//	properties.boundry_id = 3;
 			if (coordinate.y == 0)
 				properties.boundry_id = 1;
 			if (coordinate.y == lbm2d_solver.get_resolution().y - 1)
@@ -105,7 +109,8 @@ int main() {
 		true,
 		false,
 		VelocitySet::D2Q9,
-		FloatingPointAccuracy::fp32
+		FloatingPointAccuracy::fp32,
+		false
 	);
 
 	Texture2D texture_1c(simulation_resolution.x, simulation_resolution.y, Texture2D::ColorTextureFormat::R32F, 1, 0, 0);
@@ -117,7 +122,7 @@ int main() {
 
 	while (true) {
 		double deltatime = window.handle_events(true);
-		lbm2d_solver.iterate_time(std::chrono::duration<double, std::milli>(deltatime*100));
+		lbm2d_solver.iterate_time(std::chrono::duration<double, std::milli>(deltatime/100));
 		
 		if (display_mode == 1) {
 			Texture2D& texture_target = texture_1c;

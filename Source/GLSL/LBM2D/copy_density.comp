@@ -51,6 +51,8 @@
 	#error "thermal_velocity_set is not supported"
 #endif
 
+#define multiphase_flow 1
+
 #define id gl_GlobalInvocationID
 
 layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
@@ -175,8 +177,7 @@ void main(){
 	float density = compute_density(pixel_coord);
 	vec4 write_value;
 
-	write_value.x = int(density != 0) * abs(density);
-	write_value.xyz += int(density == 0) * 1;
+	write_value.x =  abs(density) / 2;
 	write_value.a = 1;
 
 	imageStore(target_texture, pixel_coord, write_value);

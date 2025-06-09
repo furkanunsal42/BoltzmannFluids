@@ -51,6 +51,8 @@
 	#error "thermal_velocity_set is not supported"
 #endif
 
+#define multiphase_flow 1
+
 #define id gl_GlobalInvocationID
 
 layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
@@ -129,10 +131,10 @@ object_info_s get_object_info(int object_id){
 	return result;
 #else 
 	object_info_s result;
-	result.temperature		=	0;
-	result.velocity			=	vec3(0);
-	result.center_of_mass	=	vec3(0);
-	result.velocity_angular =	vec3(0);
+	result.temperature		 =	0;
+	result.velocity			 =	vec3(0);
+	result.center_of_mass	 =	vec3(0);
+	result.velocity_angular  =	vec3(0);
 	result.effective_density =	0;
 	return result;
 #endif

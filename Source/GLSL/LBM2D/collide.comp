@@ -54,6 +54,8 @@
 	#error "thermal_velocity_set is not supported"
 #endif
 
+#define multiphase_flow 1
+
 #define id gl_GlobalInvocationID
 
 layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
@@ -113,6 +115,10 @@ uniform int object_count;
 uniform float thermal_lattice_speed_of_sound;
 uniform float thermal_relaxation_time;
 uniform float thermal_expension_coefficient;
+#endif
+
+#if multiphase_flow == 1
+uniform float intermolecular_interaction_strength;
 #endif
 
 //////////////////////////////////////////
@@ -278,6 +284,46 @@ float compute_temperature(ivec2 pixel_coord){
 #endif
 
 //////////////////////////////////////////
+// multiphase flow subsystem
+
+float get_density_pseudopotential(float density){
+	float rho0 = 1;
+	return rho0 * (1 - exp(-density/rho0));
+}
+
+vec3 compute_molecular_interaction_force(ivec2 pixel_coord){
+	#if multiphase_flow == 1
+
+	vec3 interaction_force = vec3(0);
+	for (int population_id = 1; population_id < velocity_count; population_id++){
+		
+		vec3 c = get_lattice_velocity(population_id);
+		float w = get_lattice_weight(population_id);
+
+		ivec2 neighbour_coord = pixel_coord + ivec2(c.xy);
+		if (any(lessThan(neighbour_coord, ivec2(0) + 1)) && (any(greaterThanEqual(neighbour_coord, lattice_resolution - 1))))
+			continue;
+		float neighbour_density = compute_density(neighbour_coord);
+		float neighbour_psudopotantial = get_density_pseudopotential(neighbour_density);
+		
+		float psi = neighbour_psudopotantial;
+
+		interaction_force += w * psi * c;
+	}
+
+	float self_density = compute_density(pixel_coord);
+	float self_psi = get_density_pseudopotential(self_density);
+	float G = intermolecular_interaction_strength;
+	
+	interaction_force *= -self_psi * G;
+
+	return interaction_force / 100;
+	#else
+	return vec3(0);
+	#endif
+}
+
+//////////////////////////////////////////
 // collision physics
 
 float compute_equilibrium(float density, vec3 velocity, int population_id){
@@ -324,7 +370,7 @@ float compute_bgk_collision_term(float current_velocity, float equilibrium){
 
 //////////////////////////////////////////
 // collision physics thermal
-
+#if thermal_flow == 1
 float compute_equilibrium_thermal(float temperature, vec3 velocity, int thermal_population_id){
 	float t = temperature;
 	vec3 u = velocity;
@@ -365,6 +411,7 @@ float compute_equilibrium_thermal(float temperature, vec3 velocity, int thermal_
 float compute_bgk_collision_term_thermal(float current_velocity, float thermal_equilibrium){
 	return - (current_velocity - thermal_equilibrium) / (thermal_relaxation_time * 10);
 }
+#endif
 
 void main(){
 	
@@ -392,6 +439,10 @@ void main(){
 	float referance_temperature = 1;
 	vec3 buoyancy_force = -thermal_expension_coefficient * referance_density * (temperature - referance_temperature) * force;
 	force += buoyancy_force;
+	#endif
+
+	#if multiphase_flow == 1
+	force += compute_molecular_interaction_force(pixel_coord);
 	#endif
 
 	vec3 velocity = compute_velocity(pixel_coord, density) + force/(2*density);

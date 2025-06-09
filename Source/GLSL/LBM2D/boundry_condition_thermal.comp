@@ -40,7 +40,7 @@
 #define D2Q5 4
 #define D3Q7 5
 
-#define thermal_flow 1
+#define thermal_flow 0
 #define velocity_set_thermal D2Q5
 
 #if velocity_set_thermal == D2Q5
@@ -50,6 +50,8 @@
 #else
 	#error "thermal_velocity_set is not supported"
 #endif
+
+#define multiphase_flow 1
 
 #define id gl_GlobalInvocationID
 
@@ -77,6 +79,7 @@ layout(std430, binding = 3) buffer objects_buffer {
 
 uniform ivec2 lattice_resolution;
 
+#if thermal_flow == 1
 int get_inverse_lattice_direction_index_thermal(int lattice_velocity_index){
 	if (lattice_velocity_index == 0 || lattice_velocity_index >= thermal_velocity_count)
 		return 0;
@@ -92,6 +95,7 @@ vec3 get_lattice_velocity_thermal(int velocity_index){
 float get_lattice_weight_thermal(int velocity_index){
 	return thermal_lattice_velocity_set[velocity_index].w;
 }
+#endif
 
 uint get_boundry(ivec2 pixel_coord) {
 #if boundry_count > 1
@@ -140,7 +144,7 @@ object_info_s get_object_info(int object_id){
 #endif
 }
 
-
+#if thermal_flow == 1
 float dirichlet_boundry_correction_term(int lattice_velocity_index, float boundry_temperature){
 	vec3 c = get_lattice_velocity_thermal(lattice_velocity_index);
 	float w = get_lattice_weight_thermal(lattice_velocity_index);
@@ -150,6 +154,7 @@ float dirichlet_boundry_correction_term(int lattice_velocity_index, float boundr
 
 	return +2 * w * t; 
 }
+#endif
 
 void main(){
 	
@@ -167,6 +172,7 @@ void main(){
 	// include angular velocity term
 	float boundry_temperature = object.temperature;
 
+	#if thermal_flow == 1
 	for (int population_id = 1; population_id < thermal_velocity_count; population_id+=2)
 	{
 		int inv_population_id = get_inverse_lattice_direction_index_thermal(population_id);
@@ -177,4 +183,5 @@ void main(){
 		thermal_lattice[pixel_id * thermal_velocity_count + population_id]		= -value_b + dirichlet_boundry_correction_term(inv_population_id, boundry_temperature);
 		thermal_lattice[pixel_id * thermal_velocity_count + inv_population_id]	= -value_a + dirichlet_boundry_correction_term(population_id, boundry_temperature);
 	}
+	#endif
 }

@@ -172,8 +172,30 @@ glm::vec3 LBM2D::get_constant_force()
 	return constant_force;
 }
 
-void LBM2D::initialize_fields(std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda, glm::ivec2 resolution, float relaxation_time, bool periodic_x, bool periodic_y, VelocitySet velocity_set, FloatingPointAccuracy fp_accuracy)
+void LBM2D::set_is_flow_multiphase(bool value)
 {
+	if (is_flow_multiphase == value)
+		return;
+
+	is_flow_multiphase = value;
+	is_programs_compiled = false;
+}
+
+bool LBM2D::get_is_flow_multiphase()
+{
+	return is_flow_multiphase;
+}
+
+void LBM2D::initialize_fields(
+	std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda, 
+	glm::ivec2 resolution, 
+	float relaxation_time, 
+	bool periodic_x, 
+	bool periodic_y, 
+	VelocitySet velocity_set, 
+	FloatingPointAccuracy fp_accuracy,
+	bool is_flow_multiphase
+) {
 	is_programs_compiled = false;
 	objects_cpu[0] = _object_desc();
 
@@ -186,6 +208,7 @@ void LBM2D::initialize_fields(std::function<void(glm::ivec2, FluidProperties&)> 
 		get_VelocitySet_dimention(velocity_set) == 2 ? 
 		SimplifiedVelocitySet::D2Q5 : SimplifiedVelocitySet::D3Q7
 	);
+	set_is_flow_multiphase(is_flow_multiphase);
 	
 	generate_lattice(resolution);
 
@@ -289,7 +312,7 @@ void LBM2D::_initialize_fields_default_pass(
 
 	compile_shaders();
 
-	int32_t relaxation_iteration_count = 1;
+	int32_t relaxation_iteration_count = 0;
 	std::cout << "[LBM Info] _initialize_fields_default_pass() initialization of particle population distributions from given veloicty and density fields is initiated" << std::endl;
 
 	_set_populations_to_equilibrium(*density_buffer, *velocity_buffer);
@@ -995,6 +1018,7 @@ std::vector<std::pair<std::string, std::string>> LBM2D::_generate_shader_macros(
 		{"constant_force",			is_force_field_constant ? "1" : "0"},
 		{"thermal_flow",			is_flow_thermal			? "1" : "0"},
 		{"velocity_set_thermal",	get_SimplifiedVelocitySet_to_macro(thermal_lattice_velocity_set)},
+		{"multiphase_flow",			is_flow_multiphase		? "1" : "0"},
 	};
 
 	return definitions;
@@ -1026,18 +1050,15 @@ void LBM2D::_collide()
 
 	ComputeProgram& kernel = *lbm2d_collide;
 
-
 	Buffer& lattice_source = *_get_lattice_source();
 	Buffer& lattice_target = *_get_lattice_target();
-
-	Buffer& thermal_lattice_source = *_get_thermal_lattice_source();
-	Buffer& thermal_lattice_target = *_get_thermal_lattice_target();
-
 	kernel.update_uniform_as_storage_buffer("lattice_buffer_source", lattice_source, 0);
 	kernel.update_uniform_as_storage_buffer("lattice_buffer_target", lattice_target, 0);
+	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 
-	kernel.update_uniform_as_storage_buffer("thermal_lattice_buffer_source", thermal_lattice_source, 0);
-	kernel.update_uniform_as_storage_buffer("thermal_lattice_buffer_target", thermal_lattice_target, 0);
+	kernel.update_uniform("lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3)));
+	kernel.update_uniform("relaxation_time", relaxation_time);
+	kernel.update_uniform("lattice_resolution", resolution);
 
 	if (bits_per_boundry != 0) {
 		kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
@@ -1048,19 +1069,23 @@ void LBM2D::_collide()
 		kernel.update_uniform_as_storage_buffer("forces_buffer", *forces, 0);
 	if (is_forcing_scheme && is_force_field_constant)
 		kernel.update_uniform("force_constant", constant_force);
+
+	if (is_flow_thermal) {
+		Buffer& thermal_lattice_source = *_get_thermal_lattice_source();
+		Buffer& thermal_lattice_target = *_get_thermal_lattice_target();
+		kernel.update_uniform_as_storage_buffer("thermal_lattice_buffer_source", thermal_lattice_source, 0);
+		kernel.update_uniform_as_storage_buffer("thermal_lattice_buffer_target", thermal_lattice_target, 0);
+		kernel.update_uniform_as_uniform_buffer("thermal_velocity_set_buffer", *thermal_lattice_velocity_set_buffer, 0);
+
+		kernel.update_uniform("thermal_lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3)));
+		kernel.update_uniform("thermal_relaxation_time", thermal_relaxation_time);
+		kernel.update_uniform("thermal_expension_coefficient", thermal_expension_coeficient);
+	}
 	
-	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
-	kernel.update_uniform_as_uniform_buffer("thermal_velocity_set_buffer", *thermal_lattice_velocity_set_buffer, 0);
+	if (is_flow_multiphase) {
+		kernel.update_uniform("intermolecular_interaction_strength", intermolecular_interaction_strength);
+	}
 
-
-	kernel.update_uniform("lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3)));
-	kernel.update_uniform("relaxation_time", relaxation_time);
-
-	kernel.update_uniform("thermal_lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3)));
-	kernel.update_uniform("thermal_relaxation_time", thermal_relaxation_time);
-	kernel.update_uniform("thermal_expension_coefficient", thermal_expension_coeficient);
-
-	kernel.update_uniform("lattice_resolution", resolution);
 	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
 
 	_swap_lattice_buffers();
@@ -1144,15 +1169,13 @@ void LBM2D::_collide_thermal()
 
 	Buffer& lattice_source = *_get_lattice_source();
 	Buffer& lattice_target = *_get_lattice_target();
-
-	Buffer& thermal_lattice_source = *_get_thermal_lattice_source();
-	Buffer& thermal_lattice_target = *_get_thermal_lattice_target();
-
 	kernel.update_uniform_as_storage_buffer("lattice_buffer_source", lattice_source, 0);
 	kernel.update_uniform_as_storage_buffer("lattice_buffer_target", lattice_target, 0);
+	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 
-	kernel.update_uniform_as_storage_buffer("thermal_lattice_buffer_source", thermal_lattice_source, 0);
-	kernel.update_uniform_as_storage_buffer("thermal_lattice_buffer_target", thermal_lattice_target, 0);
+	kernel.update_uniform("lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3)));
+	kernel.update_uniform("relaxation_time", relaxation_time);
+	kernel.update_uniform("lattice_resolution", resolution);
 
 	if (bits_per_boundry != 0) {
 		kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
@@ -1164,17 +1187,18 @@ void LBM2D::_collide_thermal()
 	if (is_forcing_scheme && is_force_field_constant)
 		kernel.update_uniform("force_constant", constant_force);
 
-	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
-	kernel.update_uniform_as_uniform_buffer("thermal_velocity_set_buffer", *thermal_lattice_velocity_set_buffer, 0);
+	if (is_flow_thermal) {
+		Buffer& thermal_lattice_source = *_get_thermal_lattice_source();
+		Buffer& thermal_lattice_target = *_get_thermal_lattice_target();
+		kernel.update_uniform_as_storage_buffer("thermal_lattice_buffer_source", thermal_lattice_source, 0);
+		kernel.update_uniform_as_storage_buffer("thermal_lattice_buffer_target", thermal_lattice_target, 0);
+		kernel.update_uniform_as_uniform_buffer("thermal_velocity_set_buffer", *thermal_lattice_velocity_set_buffer, 0);
 
-	kernel.update_uniform("lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3)));
-	kernel.update_uniform("relaxation_time", relaxation_time);
+		kernel.update_uniform("thermal_lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3)));
+		kernel.update_uniform("thermal_relaxation_time", thermal_relaxation_time);
+		kernel.update_uniform("thermal_expension_coefficient", thermal_expension_coeficient);
+	}
 
-	kernel.update_uniform("thermal_lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3)));
-	kernel.update_uniform("thermal_relaxation_time", thermal_relaxation_time);
-	kernel.update_uniform("thermal_expension_coefficient", thermal_expension_coeficient);
-
-	kernel.update_uniform("lattice_resolution", resolution);
 	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
 
 	_swap_thermal_lattice_buffers();

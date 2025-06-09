@@ -43,7 +43,7 @@
 #define D2Q5 4
 #define D3Q7 5
 
-#define thermal_flow 1
+#define thermal_flow 0
 #define velocity_set_thermal D2Q5
 
 #if velocity_set_thermal == D2Q5
@@ -53,6 +53,8 @@
 #else
 	#error "thermal_velocity_set is not supported"
 #endif
+
+#define multiphase_flow 1
 
 #define id gl_GlobalInvocationID
 
@@ -323,7 +325,7 @@ float compute_bgk_collision_term(float current_velocity, float equilibrium){
 
 //////////////////////////////////////////
 // collision physics thermal
-
+#if thermal_flow == 1
 float compute_equilibrium_thermal(float temperature, vec3 velocity, int thermal_population_id){
 	float t = temperature;
 	vec3 u = velocity;
@@ -364,6 +366,7 @@ float compute_equilibrium_thermal(float temperature, vec3 velocity, int thermal_
 float compute_bgk_collision_term_thermal(float current_velocity, float thermal_equilibrium){
 	return - (current_velocity - thermal_equilibrium) / (thermal_relaxation_time * 10);
 }
+#endif
 
 void main(){
 	
@@ -385,7 +388,8 @@ void main(){
 
 	vec3 force = get_force(pixel_coord); 
 	vec3 velocity = compute_velocity(pixel_coord, density); + force/(2*density);
-
+	
+	#if thermal_flow == 1
 	float temperature = compute_temperature(pixel_coord);
 
 	for (int population_id = 0; population_id < thermal_velocity_count; population_id++){
@@ -397,4 +401,5 @@ void main(){
 			compute_bgk_collision_term_thermal(get_lattice_source_thermal(pixel_coord, population_id), equilibrium_temperature);// + 
 			//compute_source_term(population_id, force, velocity);
 	}
+	#endif
 }
