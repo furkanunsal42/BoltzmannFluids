@@ -21,8 +21,9 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-
     QString qss_text;
+
+    this->resize(1280, 720);
 
     // *** Menu Bar ***
     auto menu_bar = menuBar();
@@ -97,26 +98,33 @@ MainWindow::MainWindow(QWidget *parent)
     main_layout->setContentsMargins(0, 0, 0, 0);
     main_layout->setSpacing(0);
 
+    auto main_splitter = new QSplitter(Qt::Horizontal, central_widget);
+    main_layout->addWidget(main_splitter);
 
-    // --- Left Layout ---
-    auto left_vertical_layout = new QVBoxLayout();
-    main_layout->addLayout(left_vertical_layout);
+    // --- Middle Panel ---
+    auto middle_panel = new QWidget(central_widget);
+    auto middle_vertical_layout = new QVBoxLayout(middle_panel);
+    middle_vertical_layout->setContentsMargins(0, 0, 0, 0);
+    middle_vertical_layout->setSpacing(0);
+    main_splitter->addWidget(middle_panel);
     {
         // Rendering Box
-        auto render_box = new QOpenGLWidget(central_widget);
+        auto render_box = new QOpenGLWidget(middle_panel);
         render_box->setMinimumSize(100, 100);
-        left_vertical_layout->addWidget(render_box);
+
+        middle_vertical_layout->addWidget(render_box);
     }
     {
         // Application Output
-        auto application_output = new QTextEdit(central_widget);
+        auto application_output = new QTextEdit(middle_panel);
         application_output->setReadOnly(true);
         application_output->setText("asd\nThat is good!");
         application_output->setFrameStyle(QFrame::StyledPanel | QFrame::Raised);
         application_output->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
 
-        left_vertical_layout->addWidget(application_output);
+        middle_vertical_layout->addWidget(application_output);
 
+        // Application Output
         qss_text += "QTextEdit {"
                     "background-color: rgb(51, 52, 53); "
                     "color: rgb(180, 181, 182); "
@@ -124,12 +132,13 @@ MainWindow::MainWindow(QWidget *parent)
                     "}";
     }
 
+
     // --- Right Layout ---
     {
-        auto scroll_area = new QScrollArea(central_widget);
-        scroll_area->setWidgetResizable(true); // Makes inner widget resize properly
-        scroll_area->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
-        //scroll_area->setMinimumWidth(300);
+        auto right_scroll_area = new QScrollArea(central_widget);
+        right_scroll_area->setWidgetResizable(true); // Makes inner widget resize properly
+        right_scroll_area->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+        //right_scroll_area->setMinimumWidth(120);
 
         auto scroll_content = new QWidget();
         auto scroll_layout = new QVBoxLayout(scroll_content);
@@ -151,35 +160,35 @@ MainWindow::MainWindow(QWidget *parent)
         box3->addWidget(new InitialConditionsBox());
         scroll_layout->addWidget(box3);
 
-
         scroll_layout->addStretch();
         scroll_content->setLayout(scroll_layout);
-        scroll_area->setWidget(scroll_content);
-        main_layout->addWidget(scroll_area);
+        right_scroll_area->setWidget(scroll_content);
+        main_splitter->addWidget(right_scroll_area);
 
         qss_text += "QWidget { "
-                        "background-color: rgb(45, 46, 47); "
-                        "color: rgb(180, 181, 182); "
+                    "background-color: rgb(45, 46, 47); "
+                    "color: rgb(180, 181, 182); "
                     "}"
                     "QScrollArea {"
-                        "border: 2px solid rgb(75, 76, 77); "
+                    "border: 2px solid rgb(75, 76, 77); "
                     "}"
                     "QDoubleSpinBox {"
-                        "border: 2px solid rgb(75, 76, 77); "
+                    "border: 2px solid rgb(75, 76, 77); "
                     "}"
                     "QCheckBox::indicator {"
-                        "width: 12px;"
-                        "height: 12px;"
+                    "width: 12px;"
+                    "height: 12px;"
                     "}"
                     "QCheckBox::indicator:checked {"
-                        "image: url(:/qt_icons/checkbox_checked3.png);"
+                    "image: url(:/qt_icons/checkbox_checked3.png);"
                     "}"
                     "QCheckBox::indicator:unchecked {"
-                        "image: url(:/qt_icons/checkbox_unchecked2.png);"
+                    "image: url(:/qt_icons/checkbox_unchecked2.png);"
                     "}";
 
-            ;
+        ;
     }
+
 
 
     // --- Status Bar ---
