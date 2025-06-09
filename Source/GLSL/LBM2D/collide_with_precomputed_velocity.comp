@@ -458,18 +458,18 @@ void main(){
 	//if (density == 0)
 	//	return;
 
-	//vec3 force = get_force(pixel_coord);
+	vec3 force = get_force(pixel_coord);
 	
 	#if thermal_flow == 1
 	float temperature = compute_temperature(pixel_coord);
 	float referance_density = 1;
 	float referance_temperature = 1;
-	//vec3 buoyancy_force = -thermal_expension_coefficient * referance_density * (temperature - referance_temperature) * force;
-	//force += buoyancy_force;
+	vec3 buoyancy_force = -thermal_expension_coefficient * referance_density * (temperature - referance_temperature) * force;
+	force += buoyancy_force;
 	#endif
 
 	#if multiphase_flow == 1
-	//force += compute_molecular_interaction_force(pixel_coord);
+	force += compute_molecular_interaction_force(pixel_coord);
 	#endif
 
 	vec3 velocity = get_velocity_field(pixel_coord);// + force/(2*density);
@@ -479,7 +479,7 @@ void main(){
 		float equilibrium_velocity = compute_equilibrium(density, velocity, population_id);
 		lattice_target[pixel_id * velocity_count + population_id] = 
 			get_lattice_source(pixel_coord, population_id) + 
-			compute_bgk_collision_term(get_lattice_source(pixel_coord, population_id), equilibrium_velocity);// + 
-			//compute_source_term(population_id, force, velocity);
+			compute_bgk_collision_term(get_lattice_source(pixel_coord, population_id), equilibrium_velocity) + 
+			compute_source_term(population_id, force, velocity);
 	}
 }

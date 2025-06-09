@@ -236,6 +236,20 @@ void LBM2D::initialize_fields(
 		initialization_lambda,
 		velocity_field
 	);
+
+	int32_t relaxation_iteration_count = 1024;
+	std::cout << "[LBM Info] _initialize_fields_default_pass() initialization of particle population distributions from given veloicty and density fields is initiated" << std::endl;
+
+	_set_populations_to_equilibrium(*density_field, *velocity_field);
+
+	for (int32_t i = 0; i < relaxation_iteration_count; i++) {
+		_collide_with_precomputed_velocities(*velocity_field);
+		//_apply_boundry_conditions(); //the book doesn't specitfy whether or not to enforce boundry conditions in initialization algorithm
+		_stream();
+	}
+
+	std::cout << "[LBM Info] _initialize_fields_default_pass() fields initialization scheme completed with relaxation_iteration_count(" << relaxation_iteration_count << ")" << std::endl;
+
 }
 
 void LBM2D::_initialize_fields_default_pass(
@@ -317,21 +331,9 @@ void LBM2D::_initialize_fields_default_pass(
 
 	compile_shaders();
 
-	int32_t relaxation_iteration_count = 8;
-	std::cout << "[LBM Info] _initialize_fields_default_pass() initialization of particle population distributions from given veloicty and density fields is initiated" << std::endl;
-
-	_set_populations_to_equilibrium(*density_buffer, *velocity_buffer);
-
-	for (int32_t i = 0; i < relaxation_iteration_count; i++) {
-		_collide_with_precomputed_velocities(*velocity_buffer);
-		//_apply_boundry_conditions(); //the book doesn't specitfy whether or not to enforce boundry conditions in initialization algorithm
-		_stream();
-	}
-
 	out_density_field = density_buffer;
 	out_velocity_field = velocity_buffer;
 
-	std::cout << "[LBM Info] _initialize_fields_default_pass() fields initialization scheme completed with relaxation_iteration_count(" << relaxation_iteration_count << ")" << std::endl;
 	std::cout << "[LBM Info] _initialize_fields_default_pass() completed" << std::endl;
 }
 
@@ -1144,31 +1146,31 @@ void LBM2D::_collide_with_precomputed_velocities(Buffer& velocity_field)
 
 	kernel.update_uniform_as_storage_buffer("velocity_buffer", velocity_field, 0);
 
-	//if (bits_per_boundry != 0) {
-	//	kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
-	//	kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
-	//}
+	if (bits_per_boundry != 0) {
+		kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+		kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
+	}
 
-	//if (is_forcing_scheme && !is_force_field_constant)
-	//	kernel.update_uniform_as_storage_buffer("forces_buffer", *forces, 0);
-	//if (is_forcing_scheme && is_force_field_constant)
-	//	kernel.update_uniform("force_constant", constant_force);
+	if (is_forcing_scheme && !is_force_field_constant)
+		kernel.update_uniform_as_storage_buffer("forces_buffer", *forces, 0);
+	if (is_forcing_scheme && is_force_field_constant)
+		kernel.update_uniform("force_constant", constant_force);
 
-	//if (is_flow_thermal) {
-	//	Buffer& thermal_lattice_source = *_get_thermal_lattice_source();
-	//	Buffer& thermal_lattice_target = *_get_thermal_lattice_target();
-	//	kernel.update_uniform_as_storage_buffer("thermal_lattice_buffer_source", thermal_lattice_source, 0);
-	//	kernel.update_uniform_as_storage_buffer("thermal_lattice_buffer_target", thermal_lattice_target, 0);
-	//	kernel.update_uniform_as_uniform_buffer("thermal_velocity_set_buffer", *thermal_lattice_velocity_set_buffer, 0);
-	//
-	//	kernel.update_uniform("thermal_lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3)));
-	//	kernel.update_uniform("thermal_relaxation_time", thermal_relaxation_time);
-	//	kernel.update_uniform("thermal_expension_coefficient", thermal_expension_coeficient);
-	//}
-	//
-	//if (is_flow_multiphase) {
-	//	kernel.update_uniform("intermolecular_interaction_strength", intermolecular_interaction_strength);
-	//}
+	if (is_flow_thermal) {
+		Buffer& thermal_lattice_source = *_get_thermal_lattice_source();
+		Buffer& thermal_lattice_target = *_get_thermal_lattice_target();
+		kernel.update_uniform_as_storage_buffer("thermal_lattice_buffer_source", thermal_lattice_source, 0);
+		kernel.update_uniform_as_storage_buffer("thermal_lattice_buffer_target", thermal_lattice_target, 0);
+		kernel.update_uniform_as_uniform_buffer("thermal_velocity_set_buffer", *thermal_lattice_velocity_set_buffer, 0);
+	
+		kernel.update_uniform("thermal_lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3)));
+		kernel.update_uniform("thermal_relaxation_time", thermal_relaxation_time);
+		kernel.update_uniform("thermal_expension_coefficient", thermal_expension_coeficient);
+	}
+	
+	if (is_flow_multiphase) {
+		kernel.update_uniform("intermolecular_interaction_strength", intermolecular_interaction_strength);
+	}
 
 	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
 }

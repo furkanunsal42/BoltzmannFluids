@@ -224,7 +224,7 @@ private:
 
 	// multiphase flow control flags
 	bool is_flow_multiphase = false;
-	float intermolecular_interaction_strength = -6.0f;
+	float intermolecular_interaction_strength = -5.0f;
 
 
 	// device buffers

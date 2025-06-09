@@ -158,7 +158,7 @@ void init_rayleigh_benard_convection(LBM2D& solver) {
 	solver.initialize_fields(
 		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
 
-			properties.force = glm::vec3(0, -2, 0) / 128000.0f;
+			properties.force = glm::vec3(0, -4, 0) / 128000.0f;
 
 			if (coordinate.x == 0)
 				properties.boundry_id = 3;
@@ -248,15 +248,14 @@ void init_multiphase_droplet(LBM2D& solver) {
 	solver.initialize_fields(
 		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
 
-			properties.density = 0.056;
-			//properties.density = 2.659 / 1.1;
+			properties.density = 2.059;
 
 			if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1 / 4.0, simulation_resolution.y / 2)) < 128) {
-				properties.density = 2.659;
+				properties.density = 0.106;
 			}
 		},
 		glm::ivec2(simulation_resolution),
-		0.60f,
+		4,
 		true,
 		true,
 		VelocitySet::D2Q9,
@@ -286,6 +285,7 @@ int main() {
 	fb.activate_draw_buffer(0);
 
 	uint32_t display_mode = 3;
+	bool pause = true;
 
 	window.newsletters->on_key_events.subscribe([&](const Window::KeyPressResult& key_press) {
 		if (key_press.action == Window::PressAction::PRESS) {
@@ -311,6 +311,9 @@ int main() {
 			case Window::Key::ESCAPE:
 				exit(0);
 				break;
+			case Window::Key::SPACE:
+				pause = !pause;
+				break;
 			}
 		}
 		});
@@ -320,7 +323,8 @@ int main() {
 		});
 
 	auto update_function = [&](double deltatime) {
-		lbm2d_solver.iterate_time(std::chrono::duration<double, std::milli>(deltatime / 100));
+		if(!pause)
+			lbm2d_solver.iterate_time(std::chrono::duration<double, std::milli>(deltatime * 1));
 
 		if (display_mode == 1) {
 			Texture2D& texture_target = texture_1c;
