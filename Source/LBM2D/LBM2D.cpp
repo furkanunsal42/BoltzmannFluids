@@ -327,7 +327,7 @@ void LBM2D::_initialize_fields_boundries_pass(std::function<void(glm::ivec2, Flu
 	}
 	compile_shaders();
 
-	// objects initialization	   a=temperature	   a=scalar
+	// objects initialization	   a=temperature	   a=scalar			   a=boundry_effective_density
 	//							   rgb=trans_vel	   rgb=angular_vel	   rgb=center_of_mass
 	size_t object_size_on_device = sizeof(glm::vec4) + sizeof(glm::vec4) + sizeof(glm::vec4);
 	objects = std::make_shared<Buffer>(object_size_on_device * object_count);
@@ -339,7 +339,7 @@ void LBM2D::_initialize_fields_boundries_pass(std::function<void(glm::ivec2, Flu
 		_object_desc& desc = objects_cpu[i];
 		objects_mapped_buffer[3*i + 0] = glm::vec4(desc.velocity_translational, desc.temperature);
 		objects_mapped_buffer[3*i + 1] = glm::vec4(desc.velocity_angular, 0);
-		objects_mapped_buffer[3*i + 2] = glm::vec4(desc.center_of_mass, 0);
+		objects_mapped_buffer[3*i + 2] = glm::vec4(desc.center_of_mass, desc.effective_density);
 	}
 
 	objects->unmap();
@@ -863,8 +863,15 @@ int32_t LBM2D::get_velocity_set_vector_count()
 	return get_VelocitySet_vector_count(velocity_set);
 }
 
-void LBM2D::set_boundry_properties(uint32_t boundry_id, glm::vec3 velocity_translational, glm::vec3 velocity_angular, glm::vec3 center_of_mass, float temperature)
-{
+void LBM2D::set_boundry_properties(
+	uint32_t boundry_id, 
+	glm::vec3 velocity_translational, 
+	glm::vec3 velocity_angular, 
+	glm::vec3 center_of_mass, 
+	float temperature,
+	float effective_density
+
+){
 	if (boundry_id > max_boundry_count) {
 		std::cout << "[LBM Error] LBM2D::set_boundry_properties() is called but boundry_id(" << boundry_id << ") is greater than maximum(" << max_boundry_count << ")" << std::endl;
 		ASSERT(false);
@@ -877,50 +884,34 @@ void LBM2D::set_boundry_properties(uint32_t boundry_id, glm::vec3 velocity_trans
 
 	if (boundry_id >= objects_cpu.size())
 		objects_cpu.resize(boundry_id + 1);
-	objects_cpu[boundry_id] = _object_desc(velocity_translational, velocity_angular, center_of_mass, temperature);
+	objects_cpu[boundry_id] = _object_desc(velocity_translational, velocity_angular, center_of_mass, temperature, effective_density);
 }
 
-void LBM2D::set_boundry_properties(uint32_t boundry_id, glm::vec3 velocity_translational, glm::vec3 velocity_angular, glm::vec3 center_of_mass)
-{
-	set_boundry_properties(
-		boundry_id,
-		velocity_translational,
-		velocity_angular,
-		center_of_mass,
-		referance_temperature
-	);
-}
-
-void LBM2D::set_boundry_properties(uint32_t boundry_id, glm::vec3 velocity_translational, float temperature)
-{
+void LBM2D::set_boundry_properties(
+	uint32_t boundry_id, 
+	glm::vec3 velocity_translational, 
+	float temperature, 
+	float effective_density
+) {
 	set_boundry_properties(
 		boundry_id,
 		velocity_translational,
 		glm::vec3(0),
 		glm::vec3(0),
-		temperature
+		temperature,
+		effective_density
 	);
 }
 
-void LBM2D::set_boundry_properties(uint32_t boundry_id, glm::vec3 velocity_translational)
-{
-	set_boundry_properties(
-		boundry_id, 
-		velocity_translational, 
-		glm::vec3(0), 
-		glm::vec3(0), 
-		referance_temperature
-	);
-}
-
-void LBM2D::set_boundry_properties(uint32_t boundry_id, float temperature)
+void LBM2D::set_boundry_properties(uint32_t boundry_id, float temperature, float effective_density)
 {
 	set_boundry_properties(
 		boundry_id,
 		glm::vec3(0),
 		glm::vec3(0),
 		glm::vec3(0),
-		temperature
+		temperature,
+		effective_density
 	);
 }
 
@@ -1234,8 +1225,18 @@ void LBM2D::_set_populations_to_equilibrium_thermal(Buffer& temperature_field, B
 	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
 }
 
-LBM2D::_object_desc::_object_desc(glm::vec3 velocity_translational, glm::vec3 velocity_angular, glm::vec3 center_of_mass, float temperature) :
-	velocity_translational(velocity_translational), velocity_angular(velocity_angular), center_of_mass(center_of_mass), temperature(temperature)
+LBM2D::_object_desc::_object_desc(
+	glm::vec3 velocity_translational, 
+	glm::vec3 velocity_angular, 
+	glm::vec3 center_of_mass, 
+	float temperature,
+	float effective_density
+) : 
+	velocity_translational(velocity_translational), 
+	velocity_angular(velocity_angular), 
+	center_of_mass(center_of_mass), 
+	temperature(temperature),
+	effective_density(effective_density)
 {
 
 }

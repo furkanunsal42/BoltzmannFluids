@@ -117,23 +117,30 @@ struct object_info_s {
 	vec3 velocity;
 	vec3 center_of_mass;
 	vec3 velocity_angular;
+	float temperature;
+	float effective_density;
 };
 
 object_info_s get_object_info(int object_id){
 #if boundry_count > 1
 	object_info_s result;
-	result.velocity			=	objects[object_id * 3 + 0].xyz;
-	result.center_of_mass	=	objects[object_id * 3 + 1].xyz;
-	result.velocity_angular =	objects[object_id * 3 + 2].xyz;
+	result.temperature		 =	objects[object_id * 3 + 0].w;
+	result.velocity			 =	objects[object_id * 3 + 0].xyz;
+	result.center_of_mass	 =	objects[object_id * 3 + 1].xyz;
+	result.velocity_angular  =	objects[object_id * 3 + 2].xyz;
+	result.effective_density =	objects[object_id * 3 + 2].w;
 	return result;
 #else 
 	object_info_s result;
-	result.velocity			=	vec3(0);
-	result.center_of_mass	=	vec3(0);
-	result.velocity_angular =	vec3(0);
+	result.temperature		 =	0;
+	result.velocity			 =	vec3(0);
+	result.center_of_mass	 =	vec3(0);
+	result.velocity_angular  =	vec3(0);
+	result.effective_density =	0;
 	return result;
 #endif
 }
+
 
 void main(){
 	

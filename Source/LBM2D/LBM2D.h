@@ -25,6 +25,7 @@ public:
 	constexpr static uint32_t not_a_boundry = 0;
 	constexpr static uint32_t max_boundry_count = 255;
 	constexpr static float referance_temperature = 1.0;
+	constexpr static float referance_boundry_density = 2.0;
 
 	// simulation controls
 	void iterate_time(std::chrono::duration<double, std::milli> deltatime);
@@ -39,30 +40,21 @@ public:
 		glm::vec3 velocity_translational,
 		glm::vec3 velocity_angular,
 		glm::vec3 center_of_mass,
-		float temperature
+		float temperature = referance_temperature,
+		float effective_density = referance_boundry_density
 	);
 	
 	void set_boundry_properties(
 		uint32_t boundry_id,
-		glm::vec3 velocity_translational, 
-		glm::vec3 velocity_angular,
-		glm::vec3 center_of_mass
-	);
-
-	void set_boundry_properties(
-		uint32_t boundry_id,
 		glm::vec3 velocity_translational,
-		float temperature
+		float temperature = referance_temperature,
+		float effective_density = referance_boundry_density
 	);
 
 	void set_boundry_properties(
 		uint32_t boundry_id,
-		glm::vec3 velocity_translational
-	);
-
-	void set_boundry_properties(
-		uint32_t boundry_id,
-		float temperature
+		float temperature,
+		float effective_density = referance_boundry_density
 	);
 
 	struct FluidProperties {
@@ -186,13 +178,15 @@ private:
 			glm::vec3 velocity_translational = glm::vec3(0),
 			glm::vec3 velocity_angular = glm::vec3(0),
 			glm::vec3 center_of_mass = glm::vec3(0),
-			float temperature = referance_temperature
+			float temperature = referance_temperature,
+			float effective_density = referance_boundry_density
 		);
 
 		glm::vec3 velocity_translational;
 		glm::vec3 velocity_angular;
 		glm::vec3 center_of_mass;
 		float temperature;
+		float effective_density;
 	};
 
 	// boundries buffer holds the id of the object it is a part of (0 means not_a_boundry)
