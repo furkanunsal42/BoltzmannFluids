@@ -436,7 +436,7 @@ float compute_equilibrium_thermal(float temperature, vec3 velocity, int thermal_
 //}
 
 float compute_bgk_collision_term_thermal(float current_velocity, float thermal_equilibrium){
-	return - (current_velocity - thermal_equilibrium) / (thermal_relaxation_time * 10);
+	return - (current_velocity - thermal_equilibrium) / (thermal_relaxation_time);
 }
 #endif
 
@@ -472,7 +472,7 @@ void main(){
 	force += compute_molecular_interaction_force(pixel_coord);
 	#endif
 
-	vec3 velocity = get_velocity_field(pixel_coord);// + force/(2*density);
+	vec3 velocity = get_velocity_field(pixel_coord) + force/(2*density);
 
 	for (int population_id = 0; population_id < velocity_count; population_id++){
 		float weight = get_lattice_weight(population_id);

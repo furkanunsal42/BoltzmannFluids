@@ -414,7 +414,7 @@ float compute_equilibrium_thermal(float temperature, vec3 velocity, int thermal_
 //}
 
 float compute_bgk_collision_term_thermal(float current_velocity, float thermal_equilibrium){
-	return - (current_velocity - thermal_equilibrium) / (thermal_relaxation_time * 10);
+	return - (current_velocity - thermal_equilibrium) / (thermal_relaxation_time);
 }
 #endif
 
