@@ -1056,7 +1056,7 @@ void LBM2D::_collide()
 	kernel.update_uniform_as_storage_buffer("lattice_buffer_target", lattice_target, 0);
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 
-	kernel.update_uniform("lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3)));
+	kernel.update_uniform("lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3.0)));
 	kernel.update_uniform("relaxation_time", relaxation_time);
 	kernel.update_uniform("lattice_resolution", resolution);
 

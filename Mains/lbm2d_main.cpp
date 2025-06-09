@@ -122,7 +122,7 @@ int main() {
 
 	while (true) {
 		double deltatime = window.handle_events(true);
-		lbm2d_solver.iterate_time(std::chrono::duration<double, std::milli>(deltatime/10));
+		lbm2d_solver.iterate_time(std::chrono::duration<double, std::milli>(deltatime/100));
 		
 		if (display_mode == 1) {
 			Texture2D& texture_target = texture_1c;
