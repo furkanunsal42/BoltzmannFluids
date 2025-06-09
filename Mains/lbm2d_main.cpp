@@ -64,11 +64,9 @@ int main() {
 			
 			//properties.temperature = 1 + coordinate.y / 1024.0f;
 			
-			properties.density = 1;
-			if (coordinate.y > 512)
-				properties.density = 0;
+			properties.density = 0.056;
 
-			properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
+			//properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
 
 			//properties.force = glm::vec3(0, -2, 0) / 128000.0f;
 			//properties.force = glm::vec3(0);
@@ -80,9 +78,11 @@ int main() {
 			//	properties.force += glm::vec3(1, 0, 0) / 128000.0f;
 			//if (coordinate.y <= 512)
 			//	properties.force += glm::vec3(-1, 0, 0) / 128000.0f;
+
 			properties.boundry_id = false;
-			if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1 / 4.0, simulation_resolution.y / 2)) < 32) {
-				properties.boundry_id = 1;
+			if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1 / 4.0, simulation_resolution.y / 2)) < 128) {
+				//properties.boundry_id = 1;
+				properties.density = 2.659;
 			}			
 			
 			//if (coordinate.x == 0)
@@ -98,19 +98,19 @@ int main() {
 			//	properties.boundry_id = 3;
 			//if (coordinate.x == lbm2d_solver.get_resolution().x - 1)
 			//	properties.boundry_id = 3;
-			if (coordinate.y == 0)
-				properties.boundry_id = 1;
-			if (coordinate.y == lbm2d_solver.get_resolution().y - 1)
-				properties.boundry_id = 2;
+			//if (coordinate.y == 0)
+			//	properties.boundry_id = 1;
+			//if (coordinate.y == lbm2d_solver.get_resolution().y - 1)
+			//	properties.boundry_id = 2;
 
 		},
 		glm::ivec2(simulation_resolution),
-		0.51f,
+		0.60f,
 		true,
-		false,
+		true,
 		VelocitySet::D2Q9,
 		FloatingPointAccuracy::fp32,
-		false
+		true
 	);
 
 	Texture2D texture_1c(simulation_resolution.x, simulation_resolution.y, Texture2D::ColorTextureFormat::R32F, 1, 0, 0);

@@ -288,7 +288,12 @@ float compute_temperature(ivec2 pixel_coord){
 
 float get_density_pseudopotential(float density){
 	float rho0 = 1;
+	//return density;
 	return rho0 * (1 - exp(-density/rho0));
+}
+
+ivec2 positive_modulo(ivec2 i, ivec2 n){
+	return ivec2(mod((mod(i, n) + n), n));
 }
 
 vec3 compute_molecular_interaction_force(ivec2 pixel_coord){
@@ -301,6 +306,8 @@ vec3 compute_molecular_interaction_force(ivec2 pixel_coord){
 		float w = get_lattice_weight(population_id);
 
 		ivec2 neighbour_coord = pixel_coord + ivec2(c.xy);
+		neighbour_coord = positive_modulo(neighbour_coord, lattice_resolution);
+
 		if (any(lessThan(neighbour_coord, ivec2(0) + 1)) && (any(greaterThanEqual(neighbour_coord, lattice_resolution - 1))))
 			continue;
 		float neighbour_density = compute_density(neighbour_coord);
@@ -317,7 +324,7 @@ vec3 compute_molecular_interaction_force(ivec2 pixel_coord){
 	
 	interaction_force *= -self_psi * G;
 
-	return interaction_force / 100;
+	return interaction_force;
 	#else
 	return vec3(0);
 	#endif
@@ -346,22 +353,22 @@ float compute_equilibrium(float density, vec3 velocity, int population_id){
 }
 
 float compute_source_term(int lattice_velocity_index, vec3 force, vec3 velocity){
-#if forcing_scheme == 1
+#if forcing_scheme == 1 || multiphase_flow == 1 || thermal_flow == 1
 	float tau = relaxation_time;
 	float dt = 1;
 	float w = get_lattice_weight(lattice_velocity_index);
 	vec3 c = get_lattice_velocity(lattice_velocity_index);
 	float cs = lattice_speed_of_sound;
-	float cs2 = pow(lattice_speed_of_sound, 2);
+	float cs2 = cs*cs;
+	float cs4 = cs2*cs2;
 	vec3 f = force;
 	vec3 u = velocity;
 
-	return (1 - dt/(2*tau))*w*(dot(f, c)*3 + (dot(f, c)*dot(c,u)*9 + dot(f, u)*3));
+	return (1 - dt/(2*tau))*w*(dot(f, c)/cs2 + (dot(f,c)*dot(u,c)/cs4 - dot(f, u)/cs4));
 
 #else
 	return 0;
 #endif
-	
 }
 
 float compute_bgk_collision_term(float current_velocity, float equilibrium){
