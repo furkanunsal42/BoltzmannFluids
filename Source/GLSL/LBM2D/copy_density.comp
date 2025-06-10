@@ -177,7 +177,7 @@ void main(){
 	float density = compute_density(pixel_coord);
 	vec4 write_value;
 
-	write_value.x =  abs(density) / 2;
+	write_value.x =  abs(density) / 4;
 	write_value.a = 1;
 
 	imageStore(target_texture, pixel_coord, write_value);

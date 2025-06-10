@@ -58,7 +58,7 @@ void init_von_karman_street_set_velocity(LBM2D& solver) {
 }
 
 void init_von_karman_street_periodic(LBM2D& solver) {
-	glm::ivec2 simulation_resolution(1024, 1024);
+	glm::ivec2 simulation_resolution(512, 512);
 	solver.clear_boundry_properties();
 	solver.set_boundry_properties(1, glm::vec3(0, 0, 0) / 16.0f);
 
@@ -248,6 +248,7 @@ void init_thermal_convection_square(LBM2D& solver) {
 		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
 
 			properties.force = glm::vec3(0, -2, 0) / 128000.0f;
+			properties.density = 1.4;
 
 			if (coordinate.x == 0)
 				properties.boundry_id = 3;
@@ -264,7 +265,7 @@ void init_thermal_convection_square(LBM2D& solver) {
 		false,
 		VelocitySet::D2Q9,
 		FloatingPointAccuracy::fp32,
-		false
+		true
 	);
 }
 
@@ -275,15 +276,27 @@ void init_multiphase_droplet(LBM2D& solver) {
 	solver.initialize_fields(
 		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
 
-			//properties.density = 0.05;
-			properties.density = 0.20;
+			properties.force = glm::vec3(0, -1, 0) / 128000.0f;
 
-			if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1 / 4.0, simulation_resolution.y / 2)) < 32 ) {
-				//properties.density = 1.85;
-				properties.density = 1.89;
-				//properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
-			}
+			//properties.density = 0.056;
+			properties.density = 0.156;
+			//properties.density = 0.20;
 
+			//if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1 / 4.0, simulation_resolution.y / 2)) < 32 ) {
+			//	properties.density = 2.659;
+			//	//properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
+			//}
+
+			//if (coordinate.x == 0)
+			//	properties.boundry_id = 1;
+			//if (coordinate.x == solver.get_resolution().x - 1)
+			//	properties.boundry_id = 1;
+			//if (coordinate.y == 0)
+			//	properties.boundry_id = 1;
+			//if (coordinate.y == solver.get_resolution().y - 1)
+			//	properties.boundry_id = 1;
+			if (coordinate.y == 0 && glm::abs(coordinate.x - 512) < 300)
+				properties.boundry_id = 1;
 			//if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 2.1 / 4.0, simulation_resolution.y / 2)) < 16) {
 			//	//properties.density = 1.85;
 			//	properties.density = 1.89;
@@ -291,7 +304,7 @@ void init_multiphase_droplet(LBM2D& solver) {
 			//}
 		},
 		glm::ivec2(simulation_resolution),
-		8,
+		0.9,
 		true,
 		true,
 		VelocitySet::D2Q9,
@@ -360,7 +373,7 @@ int main() {
 
 	auto update_function = [&](double deltatime) {
 		if(!pause)
-			lbm2d_solver.iterate_time(std::chrono::duration<double, std::milli>(deltatime * 1));
+			lbm2d_solver.iterate_time(std::chrono::duration<double, std::milli>(deltatime * 100));
 
 		if (display_mode == 1) {
 			Texture2D& texture_target = texture_1c;

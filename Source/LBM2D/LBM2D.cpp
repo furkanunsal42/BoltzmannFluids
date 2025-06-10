@@ -44,7 +44,7 @@ void LBM2D::iterate_time(std::chrono::duration<double, std::milli> deltatime)
 {
 	deltatime_overflow += deltatime;
 	
-	for (int32_t i = 0; i < 3; i++) {
+	for (int32_t i = 0; i < 1; i++) {
 		if (deltatime_overflow >= step_deltatime) {
 		
 			if (is_flow_thermal) {
