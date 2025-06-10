@@ -1,6 +1,33 @@
 #include "GraphicsCortex.h"
 #include "LBM2D/LBM2D.h"
 
+void init_poiseuille_flow(LBM2D& solver) {
+	glm::ivec2 simulation_resolution(1024, 128);
+	solver.clear_boundry_properties();
+	solver.set_boundry_properties(1, glm::vec3(1, 0, 0) / 16.0f);
+	solver.set_boundry_properties(2, glm::vec3(0, 0, 0) / 16.0f);
+
+	solver.initialize_fields(
+		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
+
+			properties.boundry_id = false;
+
+			if (coordinate.y == 10 && coordinate.x > 10 && coordinate.x < solver.get_resolution().x - 10)
+				properties.boundry_id = 2;
+			if (coordinate.y == solver.get_resolution().y - 11 && coordinate.x > 10 && coordinate.x < solver.get_resolution().x - 10)
+				properties.boundry_id = 1;
+
+		},
+		simulation_resolution,
+		0.53f,
+		false,
+		true,
+		VelocitySet::D2Q9,
+		FloatingPointAccuracy::fp32,
+		false
+	);
+}
+
 void init_von_karman_street_set_velocity(LBM2D& solver) {
 	glm::ivec2 simulation_resolution(1024, 1024);
 	solver.clear_boundry_properties();
@@ -75,7 +102,7 @@ void init_von_karman_street_inlet_boundry(LBM2D& solver) {
 				properties.boundry_id = 2;
 		},
 		simulation_resolution,
-		0.51f,
+		0.60f,
 		false,
 		true,
 		VelocitySet::D2Q9,
@@ -93,7 +120,7 @@ void init_von_karman_street_thin_jet(LBM2D& solver) {
 		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
 
 			properties.boundry_id = false;
-			if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1 / 4.0, simulation_resolution.y / 2)) < 32) {
+			if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1 / 4.0, simulation_resolution.y / 2)) < 38) {
 				properties.boundry_id = 1;
 			}
 
@@ -248,12 +275,12 @@ void init_multiphase_droplet(LBM2D& solver) {
 	solver.initialize_fields(
 		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
 
-			properties.density = 0.05;
-			//properties.density = 0.10;
+			//properties.density = 0.05;
+			properties.density = 0.10;
 
 			if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1 / 4.0, simulation_resolution.y / 2)) < 32 ) {
-				properties.density = 1.85;
-				//properties.density = 1.89;
+				//properties.density = 1.85;
+				properties.density = 1.89;
 				//properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
 			}
 

@@ -433,6 +433,7 @@ void main(){
 	#endif
 
 	float density = compute_density(pixel_coord);
+	//density = max(density, 0.1);
 	//if (density == 0)
 	//	return;
 
@@ -451,13 +452,24 @@ void main(){
 	#endif
 
 	vec3 velocity = compute_velocity(pixel_coord, density) + force/(2*density);
+	bool velocity_out_of_limit = false;
+	velocity.xy = !velocity_out_of_limit ? velocity.xy : normalize(velocity.xy)*0.6;
 
 	for (int population_id = 0; population_id < velocity_count; population_id++){
 		float weight = get_lattice_weight(population_id);
 		float equilibrium_velocity = compute_equilibrium(density, velocity, population_id);
-		lattice_target[pixel_id * velocity_count + population_id] = 
-			get_lattice_source(pixel_coord, population_id) + 
-			compute_bgk_collision_term(get_lattice_source(pixel_coord, population_id), equilibrium_velocity) + 
+		
+		float old_population = get_lattice_source(pixel_coord, population_id);
+		float update_value = 
+			old_population + 
+			compute_bgk_collision_term(old_population, equilibrium_velocity) + 
 			compute_source_term(population_id, force, velocity);
+		
+		float stability_enforced_value = 
+			equilibrium_velocity; 
+
+		set_lattice_target(pixel_coord, population_id, 
+			velocity_out_of_limit ? update_value : stability_enforced_value
+		);
 	}
 }

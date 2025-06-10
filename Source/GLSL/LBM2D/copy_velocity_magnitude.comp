@@ -145,8 +145,8 @@ object_info_s get_object_info(int object_id){
 
 
 float compute_density(ivec2 pixel_coord){
-	if(get_boundry(pixel_coord) != 0)
-		return 0;
+	//if(get_boundry(pixel_coord) != 0)
+	//	return 0;
 	float density = 0;
 	for (int i = 0; i < velocity_count; i++)
 		density += get_lattice_population(pixel_coord, i);
