@@ -276,7 +276,7 @@ void init_multiphase_droplet(LBM2D& solver) {
 		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
 
 			//properties.density = 0.05;
-			properties.density = 0.10;
+			properties.density = 0.20;
 
 			if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1 / 4.0, simulation_resolution.y / 2)) < 32 ) {
 				//properties.density = 1.85;

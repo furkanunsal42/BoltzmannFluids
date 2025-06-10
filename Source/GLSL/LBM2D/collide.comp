@@ -452,8 +452,8 @@ void main(){
 	#endif
 
 	vec3 velocity = compute_velocity(pixel_coord, density) + force/(2*density);
-	bool velocity_out_of_limit = false;
-	velocity.xy = !velocity_out_of_limit ? velocity.xy : normalize(velocity.xy)*0.6;
+	bool velocity_out_of_limit = length(velocity.xy) > 0.3;
+	velocity.xy = !velocity_out_of_limit ? velocity.xy : normalize(velocity.xy)*0.3;
 
 	for (int population_id = 0; population_id < velocity_count; population_id++){
 		float weight = get_lattice_weight(population_id);
@@ -469,7 +469,7 @@ void main(){
 			equilibrium_velocity; 
 
 		set_lattice_target(pixel_coord, population_id, 
-			velocity_out_of_limit ? update_value : stability_enforced_value
+			!velocity_out_of_limit ? update_value : stability_enforced_value
 		);
 	}
 }
