@@ -248,14 +248,23 @@ void init_multiphase_droplet(LBM2D& solver) {
 	solver.initialize_fields(
 		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
 
-			properties.density = 2.059;
+			properties.density = 0.05;
+			//properties.density = 0.10;
 
-			if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1 / 4.0, simulation_resolution.y / 2)) < 128) {
-				properties.density = 0.106;
+			if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1 / 4.0, simulation_resolution.y / 2)) < 32 ) {
+				properties.density = 1.85;
+				//properties.density = 1.89;
+				//properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
 			}
+
+			//if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 2.1 / 4.0, simulation_resolution.y / 2)) < 16) {
+			//	//properties.density = 1.85;
+			//	properties.density = 1.89;
+			//	properties.velocity = glm::vec3(-1, 0, 0) / 16.0f;
+			//}
 		},
 		glm::ivec2(simulation_resolution),
-		4,
+		8,
 		true,
 		true,
 		VelocitySet::D2Q9,
