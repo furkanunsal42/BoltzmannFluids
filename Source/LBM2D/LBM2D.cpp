@@ -48,9 +48,9 @@ void LBM2D::iterate_time(std::chrono::duration<double, std::milli> deltatime)
 		if (deltatime_overflow >= step_deltatime) {
 		
 			if (is_flow_thermal) {
-				_stream_thermal();
 				_collide_thermal();
-				_apply_boundry_conditions_thermal();
+				_stream_thermal();
+				//_apply_boundry_conditions_thermal();
 			}
 
 			_collide();
@@ -211,6 +211,7 @@ void LBM2D::initialize_fields(
 		get_VelocitySet_dimention(velocity_set) == 2 ? 
 		SimplifiedVelocitySet::D2Q5 : SimplifiedVelocitySet::D3Q7
 	);
+	thermal_relaxation_time = 2;
 	set_is_flow_multiphase(is_flow_multiphase);
 	
 	generate_lattice(resolution);

@@ -25,7 +25,7 @@ public:
 	constexpr static uint32_t not_a_boundry = 0;
 	constexpr static uint32_t max_boundry_count = 255;
 	constexpr static float referance_temperature = 1.0;
-	constexpr static float referance_boundry_density = 2.0;
+	constexpr static float referance_boundry_density = 1.0;
 
 	// simulation controls
 	void iterate_time(std::chrono::duration<double, std::milli> deltatime);
@@ -208,7 +208,7 @@ private:
 	bool is_flow_thermal = false;
 	SimplifiedVelocitySet thermal_lattice_velocity_set = SimplifiedVelocitySet::D2Q5;
 	float thermal_relaxation_time = 0.53;
-	float thermal_expension_coeficient = 0.5f;
+	float thermal_expension_coeficient = 0.1f;
 
 	void _set_is_flow_thermal(bool value);
 	bool _get_is_flow_thermal();
