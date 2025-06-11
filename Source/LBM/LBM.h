@@ -21,7 +21,7 @@
 // u = "velocity"
 // rho = "density"
 
-class LBM2D {
+class LBM {
 public:
 	constexpr static uint32_t not_a_boundry = 0;
 	constexpr static uint32_t max_boundry_count = 255;

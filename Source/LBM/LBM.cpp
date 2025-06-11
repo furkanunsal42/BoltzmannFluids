@@ -1,9 +1,9 @@
-#include "LBM2D.h"
+#include "LBM.h"
 #include "Application/ProgramSourcePaths.h"
 #include "PrimitiveRenderer.h"
 #include "Camera.h"
 
-void LBM2D::_compile_shaders()
+void LBM::_compile_shaders()
 {
 	if (is_programs_compiled)
 		return;
@@ -60,10 +60,10 @@ void LBM2D::_compile_shaders()
 	plane_mesh->load_model(plane_model);
 }
 
-void LBM2D::_generate_lattice(glm::ivec3 resolution)
+void LBM::_generate_lattice(glm::ivec3 resolution)
 {
 	if (glm::any(glm::equal(resolution, glm::ivec3(0)))) {
-		std::cout << "[LBM Error] LBM2D::generate_lattice() is called with zero resolution" << std::endl;
+		std::cout << "[LBM Error] LBM::generate_lattice() is called with zero resolution" << std::endl;
 		ASSERT(false);
 	}
 
@@ -72,7 +72,7 @@ void LBM2D::_generate_lattice(glm::ivec3 resolution)
 	_generate_lattice_buffer();
 }
 
-void LBM2D::iterate_time(float target_tick_per_second)
+void LBM::iterate_time(float target_tick_per_second)
 {
 	if (first_iteration) {
 		simulation_begin = std::chrono::system_clock::now();
@@ -91,17 +91,17 @@ void LBM2D::iterate_time(float target_tick_per_second)
 	}
 }
 
-int32_t LBM2D::get_total_ticks_elapsed()
+int32_t LBM::get_total_ticks_elapsed()
 {
 	return total_ticks_elapsed;
 }
 
-std::chrono::duration<double, std::milli> LBM2D::get_total_time_elapsed()
+std::chrono::duration<double, std::milli> LBM::get_total_time_elapsed()
 {
 	return std::chrono::system_clock::now() - simulation_begin;
 }
 
-void LBM2D::_set_floating_point_accuracy(FloatingPointAccuracy floating_point_accuracy)
+void LBM::_set_floating_point_accuracy(FloatingPointAccuracy floating_point_accuracy)
 {
 	if (floating_point_accuracy == this->floating_point_accuracy)
 		return;
@@ -110,12 +110,12 @@ void LBM2D::_set_floating_point_accuracy(FloatingPointAccuracy floating_point_ac
 	is_programs_compiled = false;
 }
 
-FloatingPointAccuracy LBM2D::get_floating_point_accuracy()
+FloatingPointAccuracy LBM::get_floating_point_accuracy()
 {
 	return floating_point_accuracy;
 }
 
-void LBM2D::_set_velocity_set(VelocitySet velocity_set)
+void LBM::_set_velocity_set(VelocitySet velocity_set)
 {
 	if (velocity_set == this->velocity_set)
 		return;
@@ -124,22 +124,22 @@ void LBM2D::_set_velocity_set(VelocitySet velocity_set)
 	is_programs_compiled = false;
 }
 
-VelocitySet LBM2D::get_velocity_set()
+VelocitySet LBM::get_velocity_set()
 {
 	return velocity_set;
 }
 
-void LBM2D::set_relaxation_time(float relaxation_time)
+void LBM::set_relaxation_time(float relaxation_time)
 {
 	this->relaxation_time = relaxation_time;
 }
 
-float LBM2D::get_relaxation_time()
+float LBM::get_relaxation_time()
 {
 	return relaxation_time;
 }
 
-void LBM2D::_set_periodic_boundry_x(bool value)
+void LBM::_set_periodic_boundry_x(bool value)
 {
 	if (periodic_x == value)
 		return;
@@ -148,12 +148,12 @@ void LBM2D::_set_periodic_boundry_x(bool value)
 	is_programs_compiled = false;
 }
 
-bool LBM2D::get_periodic_boundry_x()
+bool LBM::get_periodic_boundry_x()
 {
 	return periodic_x;
 }
 
-void LBM2D::_set_periodic_boundry_y(bool value)
+void LBM::_set_periodic_boundry_y(bool value)
 {
 	if (periodic_y == value)
 		return;
@@ -162,12 +162,12 @@ void LBM2D::_set_periodic_boundry_y(bool value)
 	is_programs_compiled = false;
 }
 
-bool LBM2D::get_periodic_boundry_y()
+bool LBM::get_periodic_boundry_y()
 {
 	return periodic_y;
 }
 
-void LBM2D::_set_is_forcing_scheme(bool value)
+void LBM::_set_is_forcing_scheme(bool value)
 {
 	if (is_forcing_scheme == value)
 		return;
@@ -176,12 +176,12 @@ void LBM2D::_set_is_forcing_scheme(bool value)
 	is_programs_compiled = false;
 }
 
-bool LBM2D::get_is_forcing_scheme()
+bool LBM::get_is_forcing_scheme()
 {
 	return is_forcing_scheme;
 }
 
-void LBM2D::_set_is_force_field_constant(bool value)
+void LBM::_set_is_force_field_constant(bool value)
 {
 	if (is_force_field_constant == value)
 		return;
@@ -190,32 +190,32 @@ void LBM2D::_set_is_force_field_constant(bool value)
 	is_programs_compiled = false;
 }
 
-bool LBM2D::get_is_force_field_constant()
+bool LBM::get_is_force_field_constant()
 {
 	return is_force_field_constant;
 }
 
-void LBM2D::set_constant_force(glm::vec3 constant_force)
+void LBM::set_constant_force(glm::vec3 constant_force)
 {
 	this->constant_force = constant_force;
 }
 
-void LBM2D::set_intermolecular_interaction_strength(float value)
+void LBM::set_intermolecular_interaction_strength(float value)
 {
 	intermolecular_interaction_strength = value;
 }
 
-glm::vec3 LBM2D::get_constant_force()
+glm::vec3 LBM::get_constant_force()
 {
 	return constant_force;
 }
 
-float LBM2D::get_intermolecular_interaction_strength()
+float LBM::get_intermolecular_interaction_strength()
 {
 	return intermolecular_interaction_strength;
 }
 
-void LBM2D::_set_is_flow_multiphase(bool value)
+void LBM::_set_is_flow_multiphase(bool value)
 {
 	if (is_flow_multiphase == value)
 		return;
@@ -224,12 +224,12 @@ void LBM2D::_set_is_flow_multiphase(bool value)
 	is_programs_compiled = false;
 }
 
-bool LBM2D::get_is_flow_multiphase()
+bool LBM::get_is_flow_multiphase()
 {
 	return is_flow_multiphase;
 }
 
-void LBM2D::initialize_fields(
+void LBM::initialize_fields(
 	std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda, 
 	glm::ivec3 resolution, 
 	float relaxation_time, 
@@ -296,7 +296,7 @@ void LBM2D::initialize_fields(
 
 }
 
-void LBM2D::_initialize_fields_default_pass(
+void LBM::_initialize_fields_default_pass(
 	std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
 	std::shared_ptr<Buffer>& out_density_field,
 	std::shared_ptr<Buffer>& out_velocity_field
@@ -381,7 +381,7 @@ void LBM2D::_initialize_fields_default_pass(
 	std::cout << "[LBM Info] _initialize_fields_default_pass() completed" << std::endl;
 }
 
-void LBM2D::_initialize_fields_boundries_pass(std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda)
+void LBM::_initialize_fields_boundries_pass(std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda)
 {
 	uint32_t object_count = objects_cpu.size();
 
@@ -477,7 +477,7 @@ void LBM2D::_initialize_fields_boundries_pass(std::function<void(glm::ivec2, Flu
 	std::cout << "[LBM Info] _initialize_fields_boundries_pass() completed" << std::endl;
 }
 
-void LBM2D::_initialize_fields_force_pass(std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda) {
+void LBM::_initialize_fields_force_pass(std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda) {
 	if (is_force_field_constant)
 		this->forces = nullptr;
 	else {
@@ -501,7 +501,7 @@ void LBM2D::_initialize_fields_force_pass(std::function<void(glm::ivec2, FluidPr
 	std::cout << "[LBM Info] _initialize_fields_force_pass() completed" << std::endl;
 }
 
-void LBM2D::_initialize_fields_thermal_pass(
+void LBM::_initialize_fields_thermal_pass(
 	std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
 	std::shared_ptr<Buffer> in_velocity_field
 ) {
@@ -545,25 +545,25 @@ void LBM2D::_initialize_fields_thermal_pass(
 	std::cout << "[LBM Info] _initialize_fields_themral_pass() completed" << std::endl;
 }
 
-void LBM2D::copy_to_texture_population(Texture2D& target_texture, int32_t population_index)
+void LBM::copy_to_texture_population(Texture2D& target_texture, int32_t population_index)
 {
 	if (_get_lattice_source() == nullptr) {
-		std::cout << "[LBM Error] LBM2D::copy_to_texture_population() is called but lattice wasn't generated" << std::endl;
+		std::cout << "[LBM Error] LBM::copy_to_texture_population() is called but lattice wasn't generated" << std::endl;
 		ASSERT(false);
 	}
 
 	if ((boundries == nullptr || objects == nullptr) && bits_per_boundry != 0) {
-		std::cout << "[LBM Error] LBM2D::copy_to_texture_population() is called with boundries activated but boundries buffer wasn't generated" << std::endl;
+		std::cout << "[LBM Error] LBM::copy_to_texture_population() is called with boundries activated but boundries buffer wasn't generated" << std::endl;
 		ASSERT(false);
 	}
 
 	if (target_texture.get_internal_format_color() != Texture2D::ColorTextureFormat::R32F) {
-		std::cout << "[LBM Error] LBM2D::copy_to_texture_population() is called but target_texture's format wasn't compatible" << std::endl;
+		std::cout << "[LBM Error] LBM::copy_to_texture_population() is called but target_texture's format wasn't compatible" << std::endl;
 		ASSERT(false);
 	}
 
 	if (population_index < 0 || population_index >= get_velocity_set_vector_count()) {
-		std::cout << "[LBM Error] LBM2D::copy_to_texture_population() is called but population_index is out of bounds" << std::endl;
+		std::cout << "[LBM Error] LBM::copy_to_texture_population() is called but population_index is out of bounds" << std::endl;
 		ASSERT(false);
 	}
 
@@ -588,7 +588,7 @@ void LBM2D::copy_to_texture_population(Texture2D& target_texture, int32_t popula
 	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
 }
 
-void LBM2D::_generate_lattice_buffer()
+void LBM::_generate_lattice_buffer()
 {
 	size_t voxel_count = resolution.x * resolution.y;
 	size_t total_buffer_size_in_bytes =
@@ -615,7 +615,7 @@ void LBM2D::_generate_lattice_buffer()
 	lattice_velocity_set_buffer->upload_data();
 }
 
-void LBM2D::_set_bits_per_boundry(int32_t value)
+void LBM::_set_bits_per_boundry(int32_t value)
 {
 	if (value == bits_per_boundry)
 		return;
@@ -624,12 +624,12 @@ void LBM2D::_set_bits_per_boundry(int32_t value)
 	is_programs_compiled = false;
 }
 
-int32_t LBM2D::_get_bits_per_boundry(int32_t value)
+int32_t LBM::_get_bits_per_boundry(int32_t value)
 {
 	return bits_per_boundry;
 }
 
-void LBM2D::_set_is_flow_thermal(bool value) {
+void LBM::_set_is_flow_thermal(bool value) {
 	if (is_flow_thermal == value)
 		return;
 
@@ -637,11 +637,11 @@ void LBM2D::_set_is_flow_thermal(bool value) {
 	is_programs_compiled = false;
 }
 
-bool LBM2D::_get_is_flow_thermal() {
+bool LBM::_get_is_flow_thermal() {
 	return is_flow_thermal;
 }
 
-void LBM2D::_set_thermal_lattice_velocity_set(SimplifiedVelocitySet set) {
+void LBM::_set_thermal_lattice_velocity_set(SimplifiedVelocitySet set) {
 	if (thermal_lattice_velocity_set == set)
 		return;
 
@@ -649,42 +649,42 @@ void LBM2D::_set_thermal_lattice_velocity_set(SimplifiedVelocitySet set) {
 	is_programs_compiled = false;
 }
 
-SimplifiedVelocitySet LBM2D::_get_thermal_lattice_velocity_set() {
+SimplifiedVelocitySet LBM::_get_thermal_lattice_velocity_set() {
 	return thermal_lattice_velocity_set;
 }
 
 
-std::shared_ptr<Buffer> LBM2D::_get_lattice_source()
+std::shared_ptr<Buffer> LBM::_get_lattice_source()
 {
 	return is_lattice_0_is_source ? lattice0 : lattice1;
 }
 
-std::shared_ptr<Buffer> LBM2D::_get_lattice_target()
+std::shared_ptr<Buffer> LBM::_get_lattice_target()
 {
 	return is_lattice_0_is_source ? lattice1 : lattice0;
 }
 
-void LBM2D::_swap_lattice_buffers()
+void LBM::_swap_lattice_buffers()
 {
 	is_lattice_0_is_source = !is_lattice_0_is_source;
 }
 
-std::shared_ptr<Buffer> LBM2D::_get_thermal_lattice_source()
+std::shared_ptr<Buffer> LBM::_get_thermal_lattice_source()
 {
 	return is_thermal_lattice_0_is_source ? thermal_lattice0 : thermal_lattice1;
 }
 
-std::shared_ptr<Buffer> LBM2D::_get_thermal_lattice_target()
+std::shared_ptr<Buffer> LBM::_get_thermal_lattice_target()
 {
 	return is_thermal_lattice_0_is_source ? thermal_lattice1 : thermal_lattice0;
 }
 
-void LBM2D::_swap_thermal_lattice_buffers()
+void LBM::_swap_thermal_lattice_buffers()
 {
 	is_thermal_lattice_0_is_source = !is_thermal_lattice_0_is_source;
 }
 
-void LBM2D::_generate_macroscopic_textures()
+void LBM::_generate_macroscopic_textures()
 {
 	bool velocity_densty_needs_init = velocity_density_texture == nullptr || velocity_density_texture->get_size() != resolution;
 	if (velocity_densty_needs_init) {
@@ -725,17 +725,17 @@ void LBM2D::_generate_macroscopic_textures()
 	}
 }
 
-glm::ivec2 LBM2D::get_resolution()
+glm::ivec2 LBM::get_resolution()
 {
 	return resolution;
 }
 
-int32_t LBM2D::get_velocity_set_vector_count()
+int32_t LBM::get_velocity_set_vector_count()
 {
 	return get_VelocitySet_vector_count(velocity_set);
 }
 
-void LBM2D::set_boundry_properties(
+void LBM::set_boundry_properties(
 	uint32_t boundry_id,
 	glm::vec3 velocity_translational,
 	glm::vec3 velocity_angular,
@@ -745,12 +745,12 @@ void LBM2D::set_boundry_properties(
 
 ) {
 	if (boundry_id > max_boundry_count) {
-		std::cout << "[LBM Error] LBM2D::set_boundry_properties() is called but boundry_id(" << boundry_id << ") is greater than maximum(" << max_boundry_count << ")" << std::endl;
+		std::cout << "[LBM Error] LBM::set_boundry_properties() is called but boundry_id(" << boundry_id << ") is greater than maximum(" << max_boundry_count << ")" << std::endl;
 		ASSERT(false);
 	}
 
 	if (boundry_id == 0) {
-		std::cout << "[LBM Error] LBM2D::set_boundry_properties() is called but boundry_id(0) is defined to be fluid, it cannot be treated as an object" << std::endl;
+		std::cout << "[LBM Error] LBM::set_boundry_properties() is called but boundry_id(0) is defined to be fluid, it cannot be treated as an object" << std::endl;
 		ASSERT(false);
 	}
 
@@ -759,7 +759,7 @@ void LBM2D::set_boundry_properties(
 	objects_cpu[boundry_id] = _object_desc(velocity_translational, velocity_angular, center_of_mass, temperature, effective_density);
 }
 
-void LBM2D::set_boundry_properties(
+void LBM::set_boundry_properties(
 	uint32_t boundry_id,
 	glm::vec3 velocity_translational,
 	float temperature,
@@ -775,7 +775,7 @@ void LBM2D::set_boundry_properties(
 	);
 }
 
-void LBM2D::set_boundry_properties(uint32_t boundry_id, float temperature, float effective_density)
+void LBM::set_boundry_properties(uint32_t boundry_id, float temperature, float effective_density)
 {
 	set_boundry_properties(
 		boundry_id,
@@ -787,12 +787,12 @@ void LBM2D::set_boundry_properties(uint32_t boundry_id, float temperature, float
 	);
 }
 
-void LBM2D::clear_boundry_properties()
+void LBM::clear_boundry_properties()
 {
 	objects_cpu.clear();
 }
 
-void LBM2D::render2d_density()
+void LBM::render2d_density()
 {
 	_compile_shaders();
 
@@ -817,7 +817,7 @@ void LBM2D::render2d_density()
 	);
 }
 
-void LBM2D::render2d_velocity()
+void LBM::render2d_velocity()
 {
 	_compile_shaders();
 
@@ -842,7 +842,7 @@ void LBM2D::render2d_velocity()
 	);
 }
 
-void LBM2D::render2d_boundries()
+void LBM::render2d_boundries()
 {
 	_compile_shaders();
 
@@ -867,7 +867,7 @@ void LBM2D::render2d_boundries()
 	);
 }
 
-void LBM2D::render2d_forces()
+void LBM::render2d_forces()
 {
 	_compile_shaders();
 
@@ -892,7 +892,7 @@ void LBM2D::render2d_forces()
 	);
 }
 
-void LBM2D::render2d_temperature()
+void LBM::render2d_temperature()
 {
 	_compile_shaders();
 
@@ -917,7 +917,7 @@ void LBM2D::render2d_temperature()
 	);
 }
 
-void LBM2D::set_population(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_coordinate_end, int32_t population_index, float value)
+void LBM::set_population(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_coordinate_end, int32_t population_index, float value)
 {
 	_compile_shaders();
 
@@ -935,23 +935,23 @@ void LBM2D::set_population(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_c
 	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
 }
 
-void LBM2D::set_population(glm::ivec2 voxel_coordinate, int32_t population_index, float value)
+void LBM::set_population(glm::ivec2 voxel_coordinate, int32_t population_index, float value)
 {
 	set_population(voxel_coordinate, voxel_coordinate + glm::ivec2(1), population_index, value);
 }
 
-void LBM2D::set_population(int32_t population_index, float value)
+void LBM::set_population(int32_t population_index, float value)
 {
 	set_population(glm::ivec2(0), resolution, population_index, value);
 }
 
-void LBM2D::set_population(float value)
+void LBM::set_population(float value)
 {
 	for (int index = 0; index < get_velocity_set_vector_count(); index++)
 		set_population(glm::ivec2(0), resolution, index, value);
 }
 
-void LBM2D::add_random_population(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_coordinate_end, int32_t population_index, float amplitude)
+void LBM::add_random_population(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_coordinate_end, int32_t population_index, float amplitude)
 {
 	_compile_shaders();
 
@@ -969,37 +969,37 @@ void LBM2D::add_random_population(glm::ivec2 voxel_coordinate_begin, glm::ivec2 
 	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
 }
 
-void LBM2D::add_random_population(glm::ivec2 voxel_coordinate, int32_t population_index, float value) {
+void LBM::add_random_population(glm::ivec2 voxel_coordinate, int32_t population_index, float value) {
 	add_random_population(voxel_coordinate, voxel_coordinate + glm::ivec2(1), population_index, value);
 }
 
-void LBM2D::add_random_population(int32_t population_index, float amplitude) {
+void LBM::add_random_population(int32_t population_index, float amplitude) {
 	add_random_population(glm::ivec2(0), resolution, population_index, amplitude);
 
 }
 
-void LBM2D::add_random_population(float amplitude) {
+void LBM::add_random_population(float amplitude) {
 	for (int index = 0; index < get_velocity_set_vector_count(); index++)
 		add_random_population(glm::ivec2(0), resolution, index, amplitude);
 }
 
-std::shared_ptr<Texture3D> LBM2D::get_velocity_density_texture()
+std::shared_ptr<Texture3D> LBM::get_velocity_density_texture()
 {
 	return velocity_density_texture;
 }
 
-std::shared_ptr<Texture3D> LBM2D::get_boundry_texture()
+std::shared_ptr<Texture3D> LBM::get_boundry_texture()
 {
 	return boundry_texture;
 }
 
-std::shared_ptr<Texture3D> LBM2D::get_force_temperature_texture()
+std::shared_ptr<Texture3D> LBM::get_force_temperature_texture()
 {
 	return force_temperature_texture;
 }
 
 
-std::vector<std::pair<std::string, std::string>> LBM2D::_generate_shader_macros()
+std::vector<std::pair<std::string, std::string>> LBM::_generate_shader_macros()
 {
 	std::vector<std::pair<std::string, std::string>> definitions{
 		{"floating_point_accuracy", get_FloatingPointAccuracy_to_macro(floating_point_accuracy)},
@@ -1018,7 +1018,7 @@ std::vector<std::pair<std::string, std::string>> LBM2D::_generate_shader_macros(
 	return definitions;
 }
 
-void LBM2D::_stream()
+void LBM::_stream()
 {
 	_compile_shaders();
 
@@ -1066,7 +1066,7 @@ void LBM2D::_stream()
 	_swap_lattice_buffers();
 }
 
-void LBM2D::_collide(bool save_macrsoscopic_results)
+void LBM::_collide(bool save_macrsoscopic_results)
 {
 	_compile_shaders();
 
@@ -1124,7 +1124,7 @@ void LBM2D::_collide(bool save_macrsoscopic_results)
 	_swap_thermal_lattice_buffers();
 }
 
-void LBM2D::_collide_with_precomputed_velocities(Buffer& velocity_field)
+void LBM::_collide_with_precomputed_velocities(Buffer& velocity_field)
 {
 	_compile_shaders();
 
@@ -1171,7 +1171,7 @@ void LBM2D::_collide_with_precomputed_velocities(Buffer& velocity_field)
 	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
 }
 
-void LBM2D::_set_populations_to_equilibrium(Buffer& density_field, Buffer& velocity_field)
+void LBM::_set_populations_to_equilibrium(Buffer& density_field, Buffer& velocity_field)
 {
 	_compile_shaders();
 
@@ -1190,7 +1190,7 @@ void LBM2D::_set_populations_to_equilibrium(Buffer& density_field, Buffer& veloc
 	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
 }
 
-void LBM2D::_stream_thermal()
+void LBM::_stream_thermal()
 {
 	_compile_shaders();
 
@@ -1210,7 +1210,7 @@ void LBM2D::_stream_thermal()
 	_swap_thermal_lattice_buffers();
 }
 
-void LBM2D::_set_populations_to_equilibrium_thermal(Buffer& temperature_field, Buffer& velocity_field)
+void LBM::_set_populations_to_equilibrium_thermal(Buffer& temperature_field, Buffer& velocity_field)
 {
 	_compile_shaders();
 
@@ -1229,7 +1229,7 @@ void LBM2D::_set_populations_to_equilibrium_thermal(Buffer& temperature_field, B
 	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
 }
 
-LBM2D::_object_desc::_object_desc(
+LBM::_object_desc::_object_desc(
 	glm::vec3 velocity_translational, 
 	glm::vec3 velocity_angular, 
 	glm::vec3 center_of_mass, 

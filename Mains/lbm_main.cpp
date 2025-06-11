@@ -1,14 +1,14 @@
 #include "GraphicsCortex.h"
-#include "LBM2D/LBM2D.h"
+#include "LBM/LBM.h"
 
-void init_poiseuille_flow(LBM2D& solver) {
+void init_poiseuille_flow(LBM& solver) {
 	glm::ivec3 simulation_resolution(1024, 128, 1);
 	solver.clear_boundry_properties();
 	solver.set_boundry_properties(1, glm::vec3(1, 0, 0) / 16.0f);
 	solver.set_boundry_properties(2, glm::vec3(0, 0, 0) / 16.0f);
 
 	solver.initialize_fields(
-		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
+		[&](glm::ivec2 coordinate, LBM::FluidProperties& properties) {
 
 			properties.boundry_id = false;
 
@@ -28,13 +28,13 @@ void init_poiseuille_flow(LBM2D& solver) {
 	);
 }
 
-void init_von_karman_street_set_velocity(LBM2D& solver) {
+void init_von_karman_street_set_velocity(LBM& solver) {
 	glm::ivec3 simulation_resolution(1024, 1024, 1);
 	solver.clear_boundry_properties();
 	solver.set_boundry_properties(1, glm::vec3(0, 0, 0) / 16.0f);
 
 	solver.initialize_fields(
-		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
+		[&](glm::ivec2 coordinate, LBM::FluidProperties& properties) {
 
 			properties.boundry_id = false;
 			if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1 / 4.0, simulation_resolution.y / 2)) < 32) {
@@ -57,13 +57,13 @@ void init_von_karman_street_set_velocity(LBM2D& solver) {
 	);
 }
 
-void init_von_karman_street_periodic(LBM2D& solver) {
+void init_von_karman_street_periodic(LBM& solver) {
 	glm::ivec3 simulation_resolution(512, 512, 1);
 	solver.clear_boundry_properties();
 	solver.set_boundry_properties(1, glm::vec3(0, 0, 0) / 16.0f);
 
 	solver.initialize_fields(
-		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
+		[&](glm::ivec2 coordinate, LBM::FluidProperties& properties) {
 
 			properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
 
@@ -82,14 +82,14 @@ void init_von_karman_street_periodic(LBM2D& solver) {
 	);
 }
 
-void init_von_karman_street_inlet_boundry(LBM2D& solver) {
+void init_von_karman_street_inlet_boundry(LBM& solver) {
 	glm::ivec3 simulation_resolution(1024, 1024, 1);
 	solver.clear_boundry_properties();
 	solver.set_boundry_properties(1, glm::vec3(0, 0, 0) / 16.0f);
 	solver.set_boundry_properties(2, glm::vec3(1, 0, 0) / 16.0f);
 
 	solver.initialize_fields(
-		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
+		[&](glm::ivec2 coordinate, LBM::FluidProperties& properties) {
 
 			properties.boundry_id = false;
 			if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1 / 4.0, simulation_resolution.y / 2)) < 32) {
@@ -111,13 +111,13 @@ void init_von_karman_street_inlet_boundry(LBM2D& solver) {
 	);
 }
 
-void init_von_karman_street_thin_jet(LBM2D& solver) {
+void init_von_karman_street_thin_jet(LBM& solver) {
 	glm::ivec3 simulation_resolution(1024, 128, 1);
 	solver.clear_boundry_properties();
 	solver.set_boundry_properties(1, glm::vec3(0, 0, 0) / 16.0f);
 
 	solver.initialize_fields(
-		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
+		[&](glm::ivec2 coordinate, LBM::FluidProperties& properties) {
 
 			properties.boundry_id = false;
 			if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1 / 4.0, simulation_resolution.y / 2)) < 38) {
@@ -144,13 +144,13 @@ void init_von_karman_street_thin_jet(LBM2D& solver) {
 	);
 }
 
-void init_von_karman_street_set_velocity_with_gravity(LBM2D& solver) {
+void init_von_karman_street_set_velocity_with_gravity(LBM& solver) {
 	glm::ivec3 simulation_resolution(1024, 1024, 1);
 	solver.clear_boundry_properties();
 	solver.set_boundry_properties(1, glm::vec3(0, 0, 0) / 16.0f);
 
 	solver.initialize_fields(
-		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
+		[&](glm::ivec2 coordinate, LBM::FluidProperties& properties) {
 
 			properties.force = glm::vec3(0, -2, 0) / 128000.0f;
 
@@ -175,7 +175,7 @@ void init_von_karman_street_set_velocity_with_gravity(LBM2D& solver) {
 	);
 }
 
-void init_rayleigh_benard_convection(LBM2D& solver) {
+void init_rayleigh_benard_convection(LBM& solver) {
 	glm::ivec3 simulation_resolution(1024, 128, 1);
 	solver.clear_boundry_properties();
 	solver.set_boundry_properties(1, 1.75);
@@ -183,7 +183,7 @@ void init_rayleigh_benard_convection(LBM2D& solver) {
 	solver.set_boundry_properties(3, 1.0f);
 
 	solver.initialize_fields(
-		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
+		[&](glm::ivec2 coordinate, LBM::FluidProperties& properties) {
 
 			properties.force = glm::vec3(0, -8, 0) / 128000.0f;
 
@@ -206,7 +206,7 @@ void init_rayleigh_benard_convection(LBM2D& solver) {
 	);
 }
 
-void init_thermal_convection_tall(LBM2D& solver) {
+void init_thermal_convection_tall(LBM& solver) {
 	glm::ivec3 simulation_resolution(512, 1024, 1);
 	solver.clear_boundry_properties();
 	solver.set_boundry_properties(1, 1.75);
@@ -214,7 +214,7 @@ void init_thermal_convection_tall(LBM2D& solver) {
 	solver.set_boundry_properties(3, 0.6f);
 
 	solver.initialize_fields(
-		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
+		[&](glm::ivec2 coordinate, LBM::FluidProperties& properties) {
 
 			properties.force = glm::vec3(0, -2, 0) / 128000.0f;
 
@@ -237,7 +237,7 @@ void init_thermal_convection_tall(LBM2D& solver) {
 	);
 }
 
-void init_thermal_convection_square(LBM2D& solver) {
+void init_thermal_convection_square(LBM& solver) {
 	glm::ivec3 simulation_resolution(512, 512, 1);
 	solver.clear_boundry_properties();
 	//solver.set_boundry_properties(1, 4, 1);
@@ -245,7 +245,7 @@ void init_thermal_convection_square(LBM2D& solver) {
 	//solver.set_boundry_properties(3, 1, 1);
 
 	solver.initialize_fields(
-		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
+		[&](glm::ivec2 coordinate, LBM::FluidProperties& properties) {
 
 			properties.force = glm::vec3(0, -1, 0) / 128000.0f;
 			
@@ -277,14 +277,14 @@ void init_thermal_convection_square(LBM2D& solver) {
 	);
 }
 
-void init_multiphase_humid_platform(LBM2D& solver) {
+void init_multiphase_humid_platform(LBM& solver) {
 	glm::ivec3 simulation_resolution(1024, 1024, 1);
 	solver.clear_boundry_properties();
 
-	solver.set_boundry_properties(1, LBM2D::referance_temperature, 4);
+	solver.set_boundry_properties(1, LBM::referance_temperature, 4);
 
 	solver.initialize_fields(
-		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
+		[&](glm::ivec2 coordinate, LBM::FluidProperties& properties) {
 
 			properties.force = glm::vec3(0, -8, 0) / 128000.0f;
 
@@ -304,12 +304,12 @@ void init_multiphase_humid_platform(LBM2D& solver) {
 	);
 }
 
-void init_multiphase_droplet_collision(LBM2D& solver) {
+void init_multiphase_droplet_collision(LBM& solver) {
 	glm::ivec3 simulation_resolution(1024, 1024, 1);
 	solver.clear_boundry_properties();
 
 	solver.initialize_fields(
-		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
+		[&](glm::ivec2 coordinate, LBM::FluidProperties& properties) {
 
 			properties.density = 0.056;
 
@@ -343,21 +343,15 @@ int main() {
 	desc.w_resolution = glm::ivec2(1);
 	Window window(desc);
 
-	LBM2D lbm2d_solver;
-	init_multiphase_humid_platform(lbm2d_solver);
-	window.set_window_resolution(lbm2d_solver.get_resolution());
-	primitive_renderer::set_viewport_size(lbm2d_solver.get_resolution());
+	LBM solver;
+	init_multiphase_humid_platform(solver);
+	window.set_window_resolution(solver.get_resolution());
+	primitive_renderer::set_viewport_size(solver.get_resolution());
 
-	Texture2D texture_4c(window.get_window_resolution().x, window.get_window_resolution().y, Texture2D::ColorTextureFormat::RGBA32F, 1, 0, 0);
-
-	Framebuffer fb;
-	fb.attach_color(0, texture_4c, 0);
-	fb.activate_draw_buffer(0);
-	fb.bind_draw();
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
 
-	uint32_t display_mode = 3;
+	uint32_t display_mode = 1;
 	bool pause = true;
 
 	window.newsletters->on_key_events.subscribe([&](const Window::KeyPressResult& key_press) {
@@ -398,33 +392,32 @@ int main() {
 	auto last_ticks_print = std::chrono::system_clock::now();
 	auto update_function = [&](double deltatime) {
 		if (!pause) {
-			lbm2d_solver.iterate_time(0);
+			solver.iterate_time(0);
 
 			if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - last_ticks_print).count() >= 1000) {
 				last_ticks_print = std::chrono::system_clock::now();
-				std::cout << "[LBM Info] total ticks elapsed : " << lbm2d_solver.get_total_ticks_elapsed() << std::endl;
+				std::cout << "[LBM Info] total ticks elapsed : " << solver.get_total_ticks_elapsed() << std::endl;
 			}
 		}
 
 		primitive_renderer::clear(0, 0, 0, 0);
 
 		if (display_mode == 1) {
-			lbm2d_solver.render2d_density();
+			solver.render2d_density();
 		}
 		else if (display_mode == 2) {
-			lbm2d_solver.render2d_boundries();
+			solver.render2d_boundries();
 		}
 		else if (display_mode == 3) {
-			lbm2d_solver.render2d_velocity();
+			solver.render2d_velocity();
 		}
 		else if (display_mode == 4) {
-			lbm2d_solver.render2d_forces();
+			solver.render2d_forces();
 		}
 		else if (display_mode == 5) {
-			lbm2d_solver.render2d_temperature();
+			solver.render2d_temperature();
 		}
 		
-		fb.blit_to_screen(window.get_window_resolution(), window.get_framebuffer_resolution(), Framebuffer::Channel::COLOR, Framebuffer::Filter::NEAREST);
 		window.swap_buffers();
 		};
 
