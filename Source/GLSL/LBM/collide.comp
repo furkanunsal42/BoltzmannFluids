@@ -120,7 +120,7 @@ layout(std430, binding = 8) buffer thermal_lattice_buffer_target {
 	#if boundry_count > 1
 	layout(r8,		binding = 1) uniform image3D boundry_texture;
 	#endif
-	#if forcing_scheme == 1 || thermal_flow == 1
+	#if forcing_scheme == 1 || thermal_flow == 1 || multiphase_flow == 1
 	layout(rgba32f, binding = 2) uniform image3D force_temperature_texture;
 	#endif
 #endif
@@ -535,7 +535,7 @@ void main(){
 		#if boundry_count > 1
 		imageStore(boundry_texture, ivec3(pixel_coord, 0), vec4(boundry_id));
 		#endif
-		#if forcing_scheme == 1 || thermal_flow == 1
+		#if forcing_scheme == 1 || thermal_flow == 1 || multiphase_flow == 1
 		imageStore(force_temperature_texture, ivec3(pixel_coord, 0), vec4(force, temperature));
 		#endif
 	#endif

@@ -712,7 +712,7 @@ void LBM::_generate_macroscopic_textures()
 	}
 
 	bool force_temperature_needs_init = force_temperature_texture == nullptr || force_temperature_texture->get_size() != resolution;
-	bool force_temperature_activated = is_forcing_scheme || is_flow_thermal;
+	bool force_temperature_activated = is_forcing_scheme || is_flow_thermal || is_flow_multiphase;
 	if (force_temperature_activated && force_temperature_needs_init) {
 		force_temperature_texture = std::make_shared<Texture3D>(
 			resolution.x,
@@ -1114,7 +1114,7 @@ void LBM::_collide(bool save_macrsoscopic_results)
 		kernel.update_uniform_as_image("velocity_density_texture", *velocity_density_texture, 0);
 		if (bits_per_boundry != 0)
 			kernel.update_uniform_as_image("boundry_texture", *boundry_texture, 0);
-		if (is_forcing_scheme || is_flow_thermal)
+		if (is_forcing_scheme || is_flow_thermal || is_flow_multiphase)
 			kernel.update_uniform_as_image("force_temperature_texture", *force_temperature_texture, 0);
 	}
 

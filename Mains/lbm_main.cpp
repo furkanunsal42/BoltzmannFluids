@@ -344,7 +344,7 @@ int main() {
 	Window window(desc);
 
 	LBM solver;
-	init_rayleigh_benard_convection(solver);
+	init_multiphase_humid_platform(solver);
 	window.set_window_resolution(solver.get_resolution());
 	primitive_renderer::set_viewport_size(solver.get_resolution());
 

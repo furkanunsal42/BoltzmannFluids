@@ -12,5 +12,5 @@ uniform int render_depth;
 
 void main(){
     vec3 force = texture(source_texture, vec3(v_texcoord, render_depth / texture_resolution.z + 0.5 / texture_resolution.z)).rgb;
-    frag_color = vec4(abs(force) * 12800, 1);
+    frag_color = vec4(abs(force) * 8, 1);
 }
