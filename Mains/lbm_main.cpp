@@ -346,7 +346,7 @@ int main() {
 	Window window(desc);
 
 	LBM solver;
-	init_thermal_convection_square(solver);
+	init_multiphase_droplet_collision(solver);
 	window.set_window_resolution(solver.get_resolution());
 	primitive_renderer::set_viewport_size(solver.get_resolution());
 
