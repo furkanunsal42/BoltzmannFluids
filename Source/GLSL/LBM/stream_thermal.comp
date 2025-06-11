@@ -451,6 +451,7 @@ float dirichlet_boundry_correction_term_thermal(int lattice_velocity_index, floa
 #endif
 
 void main(){
+	#if thermal_flow == 1
 
 	if (int(id.x) >= lattice_resolution.x * lattice_resolution.y * thermal_velocity_count)
 		return;
@@ -493,7 +494,6 @@ void main(){
 
 	//lattice[pixel_id * velocity_count + population_id]		= value_b + dirichlet_boundry_correction_term(inv_population_id, 1.0, boundry_velocity);
 	//lattice[pixel_id * velocity_count + inv_population_id]	= value_a + dirichlet_boundry_correction_term(population_id, 1.0, boundry_velocity);
-	#if thermal_flow == 1
 	if (source_boundry != 0)
 		thermal_lattice_target[id.x] = -thermal_lattice_source[pixel_id * thermal_velocity_count + inv_velocity_id] +
 										dirichlet_boundry_correction_term_thermal(inv_velocity_id, source_boundry_temperature);

@@ -57,7 +57,7 @@ void main(){
 	float current_depth = 0;
 
 	while(current_depth < ray_info.y) {
-		float density = texture(volume, current_position + 0.5).x;
+		float density = texture(volume, current_position + 0.5).a * 4;
 		total_density += density * step_length;
 		current_depth += step_length;
 		current_position += object_space_direction * step_length;

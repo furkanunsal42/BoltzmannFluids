@@ -8,6 +8,8 @@ void LBM::_compile_shaders()
 	if (is_programs_compiled)
 		return;
 
+	is_programs_compiled = true;
+
 	// simulation kernels
 
 	auto definitions = _generate_shader_macros();
@@ -24,7 +26,6 @@ void LBM::_compile_shaders()
 	lbm2d_set_population						= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "set_population.comp"), definitions);
 	lbm2d_copy_population						= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "copy_population.comp"), definitions);
 	lbm2d_add_random_population					= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "add_random_population.comp"), definitions);
-	is_programs_compiled = true;
 
 	std::cout << "[LBM Info] kernels are compiled with configuration : " << std::endl;
 	for (auto& definition : definitions)
@@ -37,6 +38,8 @@ void LBM::_compile_shaders()
 	program_render2d_boundries					= std::make_shared<Program>(Shader(renderer2d_shader_directory / "basic.vert", renderer2d_shader_directory / "boundries_2d.frag"));;
 	program_render2d_forces						= std::make_shared<Program>(Shader(renderer2d_shader_directory / "basic.vert", renderer2d_shader_directory / "forces_2d.frag"));;
 	program_render2d_temperature				= std::make_shared<Program>(Shader(renderer2d_shader_directory / "basic.vert", renderer2d_shader_directory / "temperature_2d.frag"));;
+
+	program_render_volumetric_density			= std::make_shared<Program>(Shader(renderer3d_shader_directory / "basic.vert", renderer3d_shader_directory / "volumetric.frag"));
 
 	SingleModel plane_model;
 	plane_model.verticies = {
@@ -59,8 +62,116 @@ void LBM::_compile_shaders()
 	plane_mesh = std::make_shared<Mesh>();
 	plane_mesh->load_model(plane_model);
 
+	glm::vec3 scale(1);
 
+	SingleModel cube_model;
+	cube_model.verticies = {
+		glm::vec3(-0.5f * scale.x, -0.5f * scale.y,  0.5f * scale.z),//front
+		glm::vec3( 0.5f * scale.x, -0.5f * scale.y,  0.5f * scale.z),
+		glm::vec3( 0.5f * scale.x,  0.5f * scale.y,  0.5f * scale.z),
+		glm::vec3(-0.5f * scale.x,  0.5f * scale.y,  0.5f * scale.z),
+		
+		glm::vec3( 0.5f * scale.x, -0.5f * scale.y,  0.5f * scale.z),//right
+		glm::vec3( 0.5f * scale.x, -0.5f * scale.y, -0.5f * scale.z),
+		glm::vec3( 0.5f * scale.x,  0.5f * scale.y, -0.5f * scale.z),
+		glm::vec3( 0.5f * scale.x,  0.5f * scale.y,  0.5f * scale.z),
+		
+		glm::vec3(-0.5f * scale.x,  0.5f * scale.y, -0.5f * scale.z),//top
+		glm::vec3(-0.5f * scale.x,  0.5f * scale.y,  0.5f * scale.z),
+		glm::vec3( 0.5f * scale.x,  0.5f * scale.y,  0.5f * scale.z),
+		glm::vec3( 0.5f * scale.x,  0.5f * scale.y, -0.5f * scale.z),
+		
+		glm::vec3( 0.5f * scale.x, -0.5f * scale.y, -0.5f * scale.z),//back
+		glm::vec3(-0.5f * scale.x, -0.5f * scale.y, -0.5f * scale.z),
+		glm::vec3(-0.5f * scale.x,  0.5f * scale.y, -0.5f * scale.z),
+		glm::vec3( 0.5f * scale.x,  0.5f * scale.y, -0.5f * scale.z),
+		
+		glm::vec3(-0.5f * scale.x, -0.5f * scale.y, -0.5f * scale.z),//left
+		glm::vec3(-0.5f * scale.x, -0.5f * scale.y,  0.5f * scale.z),
+		glm::vec3(-0.5f * scale.x,  0.5f * scale.y,  0.5f * scale.z),
+		glm::vec3(-0.5f * scale.x,  0.5f * scale.y, -0.5f * scale.z),
+		
+		glm::vec3( 0.5f * scale.x,  -0.5f * scale.y,  0.5f * scale.z),//bottom
+		glm::vec3(-0.5f * scale.x,  -0.5f * scale.y,  0.5f * scale.z),
+		glm::vec3(-0.5f * scale.x,  -0.5f * scale.y, -0.5f * scale.z),
+		glm::vec3( 0.5f * scale.x,  -0.5f * scale.y, -0.5f * scale.z),
+	};
+
+	cube_model.texture_coordinates_0 = {
+		glm::vec2(0.0f, 0.0f),
+		glm::vec2(1.0f, 0.0f),
+		glm::vec2(1.0f, 1.0f),
+		glm::vec2(0.0f, 1.0f),
+
+		glm::vec2(0.0f, 0.0f),
+		glm::vec2(1.0f, 0.0f),
+		glm::vec2(1.0f, 1.0f),
+		glm::vec2(0.0f, 1.0f),
+
+		glm::vec2(0.0f, 0.0f),
+		glm::vec2(1.0f, 0.0f),
+		glm::vec2(1.0f, 1.0f),
+		glm::vec2(0.0f, 1.0f),
+
+		glm::vec2(0.0f, 0.0f),
+		glm::vec2(1.0f, 0.0f),
+		glm::vec2(1.0f, 1.0f),
+		glm::vec2(0.0f, 1.0f),
+
+		glm::vec2(0.0f, 0.0f),
+		glm::vec2(1.0f, 0.0f),
+		glm::vec2(1.0f, 1.0f),
+		glm::vec2(0.0f, 1.0f),
+
+		glm::vec2(0.0f, 0.0f),
+		glm::vec2(0.0f, 1.0f),
+		glm::vec2(1.0f, 1.0f),
+		glm::vec2(1.0f, 0.0f),
+	};
+
+	cube_model.vertex_normals = {
+		glm::vec3(0.0f, 0.0f, 1.0f),
+		glm::vec3(0.0f, 0.0f, 1.0f),
+		glm::vec3(0.0f, 0.0f, 1.0f),
+		glm::vec3(0.0f, 0.0f, 1.0f),
+	
+		glm::vec3(1.0f, 0.0f, 0.0f),
+		glm::vec3(1.0f, 0.0f, 0.0f),
+		glm::vec3(1.0f, 0.0f, 0.0f),
+		glm::vec3(1.0f, 0.0f, 0.0f),
+	
+		glm::vec3(0.0f, 1.0f, 0.0f),
+		glm::vec3(0.0f, 1.0f, 0.0f),
+		glm::vec3(0.0f, 1.0f, 0.0f),
+		glm::vec3(0.0f, 1.0f, 0.0f),
+	
+		glm::vec3(0.0f, 0.0f, -1.0f),
+		glm::vec3(0.0f, 0.0f, -1.0f),
+		glm::vec3(0.0f, 0.0f, -1.0f),
+		glm::vec3(0.0f, 0.0f, -1.0f),
+	
+		glm::vec3(-1.0f, 0.0f, 0.0f),
+		glm::vec3(-1.0f, 0.0f, 0.0f),
+		glm::vec3(-1.0f, 0.0f, 0.0f),
+		glm::vec3(-1.0f, 0.0f, 0.0f),
+	
+		glm::vec3(0.0f, -1.0f, 0.0f),
+		glm::vec3(0.0f, -1.0f, 0.0f),
+		glm::vec3(0.0f, -1.0f, 0.0f),
+		glm::vec3(0.0f, -1.0f, 0.0f),
+	};
+
+	cube_model.indicies = {
+			0, 1, 2, 0, 2, 3,
+			4, 5, 6, 4, 6, 7,
+			8, 9, 10, 8, 10, 11,
+			12, 13, 14, 12, 14, 15,
+			16, 17, 18, 16, 18, 19,
+			20, 21, 22, 20, 22, 23,
+	};
+	
 	plane_cube = std::make_shared<Mesh>();
+	plane_cube->load_model(cube_model);
 }
 
 void LBM::_generate_lattice(glm::ivec3 resolution)
@@ -922,9 +1033,32 @@ void LBM::render2d_temperature()
 	);
 }
 
-void LBM::render3d_density()
+void LBM::render3d_density(Camera& camera, int32_t sample_count)
 {
+	_compile_shaders();
 
+	if (velocity_density_texture == nullptr)
+		return;
+
+	Program& program = *program_render_volumetric_density;
+
+	camera.update_matrixes();
+	camera.update_default_uniforms(program);
+
+	program.update_uniform("model", glm::identity<glm::mat4>());
+	program.update_uniform("inverse_model", glm::identity<glm::mat4>());
+	program.update_uniform("inverse_view", glm::inverse(camera.view_matrix));
+	
+	program.update_uniform("sample_count", 1024);
+	program.update_uniform("volume", *velocity_density_texture);
+
+	primitive_renderer::render(
+		program,
+		*plane_cube->get_mesh(0),
+		RenderParameters(),
+		1,
+		0
+	);
 }
 
 void LBM::set_population(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_coordinate_end, int32_t population_index, float value)

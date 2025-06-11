@@ -10,6 +10,7 @@
 
 #include "ComputeProgram.h"
 #include "Mesh.h"
+#include "Camera.h"
 
 // naming scheme of lattice boltzmann terms in variables and functions 
 // 
@@ -86,11 +87,11 @@ public:
 	void render2d_forces();
 	void render2d_temperature();
 
-	void render3d_density();
-	void render3d_velocity();
-	void render3d_boundries();
-	void render3d_forces();
-	void render3d_temperature();
+	void render3d_density(Camera& camera, int32_t sample_count = 1024);
+	void render3d_velocity(Camera& camera, int32_t sample_count = 1024);
+	void render3d_boundries(Camera& camera, int32_t sample_count = 1024);
+	void render3d_forces(Camera& camera, int32_t sample_count = 1024);
+	void render3d_temperature(Camera& camera, int32_t sample_count = 1024);
 
 	std::shared_ptr<Texture3D> get_velocity_density_texture();
 	std::shared_ptr<Texture3D> get_boundry_texture();
@@ -282,6 +283,12 @@ private:
 	std::shared_ptr<Program> program_render2d_boundries = nullptr;
 	std::shared_ptr<Program> program_render2d_forces = nullptr;
 	std::shared_ptr<Program> program_render2d_temperature = nullptr;
+
+	std::shared_ptr<Program> program_render_volumetric_density = nullptr;
+	std::shared_ptr<Program> program_render_volumetric_velocity = nullptr;
+	std::shared_ptr<Program> program_render_volumetric_boundries = nullptr;
+	std::shared_ptr<Program> program_render_volumetric_forces = nullptr;
+	std::shared_ptr<Program> program_render_volumetric_temperature = nullptr;
 
 	std::shared_ptr<Mesh> plane_mesh = nullptr;
 	std::shared_ptr<Mesh> plane_cube = nullptr;
