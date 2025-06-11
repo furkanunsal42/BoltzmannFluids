@@ -92,11 +92,6 @@ public:
 
 	// low level visualization api
 	void copy_to_texture_population(Texture2D& target_texture, int32_t population_index);
-	void copy_to_texture_velocity_vector(Texture2D& target_texture);
-	void copy_to_texture_density(Texture2D& target_texture);
-	void copy_to_texture_boundries(Texture2D& target_texture);
-	void copy_to_texture_force_vector(Texture2D& target_texture);
-	void copy_to_texture_temperature(Texture2D& target_texture);
 
 	// low level field initialization api
 	float get_relaxation_time();
@@ -273,12 +268,7 @@ private:
 	std::shared_ptr<ComputeProgram> lbm2d_set_equilibrium_populations_thermal = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_set_population = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_add_random_population = nullptr;
-	std::shared_ptr<ComputeProgram> lbm2d_copy_boundries = nullptr;
-	std::shared_ptr<ComputeProgram> lbm2d_copy_density = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_copy_population = nullptr;
-	std::shared_ptr<ComputeProgram> lbm2d_copy_velocity_total = nullptr;
-	std::shared_ptr<ComputeProgram> lbm2d_copy_force_total = nullptr;
-	std::shared_ptr<ComputeProgram> lbm2d_copy_temperature = nullptr;
 	
 	// renderers
 	std::shared_ptr<Program> program_render2d_density = nullptr;
