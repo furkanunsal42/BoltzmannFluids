@@ -12,5 +12,5 @@ uniform int render_depth;
 
 void main(){
     float density = texture(source_texture, vec3(v_texcoord, render_depth / texture_resolution.z + 0.5 / texture_resolution.z)).a;
-    frag_color = vec4(vec3(density) / 4, 1);
+    frag_color = vec4(vec3(density) / 2, 1) * vec4(0.9, 0.4, 1, 1);
 }

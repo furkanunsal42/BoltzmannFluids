@@ -240,22 +240,24 @@ void init_thermal_convection_tall(LBM& solver) {
 void init_thermal_convection_square(LBM& solver) {
 	glm::ivec3 simulation_resolution(512, 512, 1);
 	solver.clear_boundry_properties();
-	//solver.set_boundry_properties(1, 4, 1);
-	//solver.set_boundry_properties(2, 1, 1);
-	//solver.set_boundry_properties(3, 1, 1);
-
+	
+	solver.set_boundry_properties(1, 1, 2.6);
+	solver.set_boundry_properties(2, 1, 2.6);
+	solver.set_boundry_properties(3, 1, 2.6);
+	solver.set_intermolecular_interaction_strength(-6);
 	solver.initialize_fields(
 		[&](glm::ivec2 coordinate, LBM::FluidProperties& properties) {
 
-			properties.force = glm::vec3(0, -1, 0) / 128000.0f;
+			properties.force = glm::vec3(0, -16, 0) / 128000.0f;
 			
 			//properties.temperature = 1;
 			//if (abs(coordinate.x - solver.get_resolution().x / 2) < 100 && abs(coordinate.y - solver.get_resolution().y / 2) < 100)
 			//	properties.density = 2.659;
 			properties.density = 0.056;
+			properties.temperature = 0.0056;
 			if (coordinate.y < 100) {
 				properties.density = 2.659;
-				//properties.temperature = 1;
+				properties.temperature = 0.2659;
 			}
 
 			if (coordinate.x == 0)
@@ -269,8 +271,8 @@ void init_thermal_convection_square(LBM& solver) {
 		},
 		simulation_resolution,
 		0.60,
-		true,
-		true,
+		false,
+		false,
 		VelocitySet::D2Q9,
 		FloatingPointAccuracy::fp32,
 		true
@@ -295,7 +297,7 @@ void init_multiphase_humid_platform(LBM& solver) {
 				properties.boundry_id = 1;
 		},
 		simulation_resolution,
-		0.55,
+		0.51,
 		true,
 		false,
 		VelocitySet::D2Q9,
@@ -307,26 +309,26 @@ void init_multiphase_humid_platform(LBM& solver) {
 void init_multiphase_droplet_collision(LBM& solver) {
 	glm::ivec3 simulation_resolution(1024, 1024, 1);
 	solver.clear_boundry_properties();
-
+	
 	solver.initialize_fields(
 		[&](glm::ivec2 coordinate, LBM::FluidProperties& properties) {
 
 			properties.density = 0.056;
 
-			if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1.7 / 4.0, simulation_resolution.y / 2)) < 32 ) {
+			if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1.5 / 4.0, simulation_resolution.y / 2)) < 32 ) {
 				properties.density = 2.659;
-				properties.velocity = glm::vec3(8, 0, 0) / 16.0f;
+				properties.velocity = glm::vec3(16, 0, 0) / 16.0f;
 			}
 
-			if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 2.3 / 4.0, simulation_resolution.y / 2)) < 32) {
+			if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 2.5 / 4.0, simulation_resolution.y / 2)) < 32) {
 				properties.density = 2.659;
-				properties.velocity = glm::vec3(-8, 0, 0) / 16.0f;
+				properties.velocity = glm::vec3(-16, 0, 0) / 16.0f;
 			}
 
 		},
 		simulation_resolution,
-		0.6,
-		false,
+		0.52,
+		true,
 		true,
 		VelocitySet::D2Q9,
 		FloatingPointAccuracy::fp32,
@@ -344,7 +346,7 @@ int main() {
 	Window window(desc);
 
 	LBM solver;
-	init_multiphase_humid_platform(solver);
+	init_thermal_convection_square(solver);
 	window.set_window_resolution(solver.get_resolution());
 	primitive_renderer::set_viewport_size(solver.get_resolution());
 

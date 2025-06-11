@@ -1024,7 +1024,6 @@ void LBM::_stream()
 
 	ComputeProgram& kernel = *lbm2d_stream;
 
-
 	Buffer& lattice_source = *_get_lattice_source();
 	Buffer& lattice_target = *_get_lattice_target();
 	kernel.update_uniform_as_storage_buffer("lattice_buffer_source", lattice_source, 0);
@@ -1196,14 +1195,41 @@ void LBM::_stream_thermal()
 
 	ComputeProgram& kernel = *lbm2d_stream_thermal;
 
-	Buffer& thermal_lattice_source = *_get_thermal_lattice_source();
-	Buffer& thermal_lattice_target = *_get_thermal_lattice_target();
+	Buffer& lattice_source = *_get_lattice_source();
+	Buffer& lattice_target = *_get_lattice_target();
+	kernel.update_uniform_as_storage_buffer("lattice_buffer_source", lattice_source, 0);
+	kernel.update_uniform_as_storage_buffer("lattice_buffer_target", lattice_target, 0);
+	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 
-	// add forces implementation
-	kernel.update_uniform_as_storage_buffer("thermal_lattice_buffer_source", thermal_lattice_source, 0);
-	kernel.update_uniform_as_storage_buffer("thermal_lattice_buffer_target", thermal_lattice_target, 0);
-	kernel.update_uniform_as_uniform_buffer("thermal_velocity_set_buffer", *thermal_lattice_velocity_set_buffer, 0);
+	kernel.update_uniform("lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3.0)));
+	kernel.update_uniform("relaxation_time", relaxation_time);
 	kernel.update_uniform("lattice_resolution", resolution);
+
+	if (bits_per_boundry != 0) {
+		kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+		kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
+	}
+
+	if (is_forcing_scheme && !is_force_field_constant)
+		kernel.update_uniform_as_storage_buffer("forces_buffer", *forces, 0);
+	if (is_forcing_scheme && is_force_field_constant)
+		kernel.update_uniform("force_constant", constant_force);
+
+	if (is_flow_thermal) {
+		Buffer& thermal_lattice_source = *_get_thermal_lattice_source();
+		Buffer& thermal_lattice_target = *_get_thermal_lattice_target();
+		kernel.update_uniform_as_storage_buffer("thermal_lattice_buffer_source", thermal_lattice_source, 0);
+		kernel.update_uniform_as_storage_buffer("thermal_lattice_buffer_target", thermal_lattice_target, 0);
+		kernel.update_uniform_as_uniform_buffer("thermal_velocity_set_buffer", *thermal_lattice_velocity_set_buffer, 0);
+
+		kernel.update_uniform("thermal_lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3)));
+		kernel.update_uniform("thermal_relaxation_time", thermal_relaxation_time);
+		kernel.update_uniform("thermal_expension_coefficient", thermal_expension_coeficient);
+	}
+
+	if (is_flow_multiphase) {
+		kernel.update_uniform("intermolecular_interaction_strength", intermolecular_interaction_strength);
+	}
 
 	kernel.dispatch_thread(resolution.x * resolution.y * get_SimplifiedVelocitySet_vector_count(thermal_lattice_velocity_set), 1, 1);
 

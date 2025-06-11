@@ -458,7 +458,7 @@ void main(){
 	source_pixel_coord.x = positive_modulo(source_pixel_coord.x, lattice_resolution.x);
 	#else
 	if (source_pixel_coord.x < 0 || source_pixel_coord.x >= lattice_resolution.x) {
-		lattice_target[id.x] = 0;
+		lattice_target[id.x] = 0.01;
 		return;
 	}
 	#endif
@@ -467,7 +467,7 @@ void main(){
 	source_pixel_coord.y = positive_modulo(source_pixel_coord.y, lattice_resolution.y);
 	#else
 	if (source_pixel_coord.y < 0 || source_pixel_coord.y >= lattice_resolution.y) {
-		lattice_target[id.x] = 0;
+		lattice_target[id.x] = 0.01;
 		return;
 	}
 	#endif

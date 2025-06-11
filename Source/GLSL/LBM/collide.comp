@@ -315,12 +315,12 @@ ivec2 positive_modulo(ivec2 i, ivec2 n){
 	return ivec2(mod((mod(i, n) + n), n));
 }
 
-vec3 compute_molecular_interaction_force(ivec2 pixel_coord){
+vec3 compute_molecular_interaction_force(ivec2 pixel_coord, float temperature){
 	#if multiphase_flow == 1
 
 	float self_density = compute_density(pixel_coord);
 	float self_psi = get_density_pseudopotential(self_density);
-	float G = intermolecular_interaction_strength;
+	float G = intermolecular_interaction_strength - get_density_pseudopotential(temperature) * 0.4;
 
 	vec3 interaction_force = vec3(0);
 	for (int population_id = 1; population_id < velocity_count; population_id++){
@@ -479,25 +479,25 @@ void main(){
 	//if (density == 0)
 	//	return;
 
-	vec3 force = get_force(pixel_coord);
+	vec3 force = get_force(pixel_coord) * density;
 	
 	float temperature = 0;
 	#if thermal_flow == 1
 	temperature = compute_temperature(pixel_coord);
 	float referance_density = 1;
 	float referance_temperature = 1;
-	vec3 buoyancy_force = -thermal_expension_coefficient * referance_density * (temperature - referance_temperature) * force;
+	vec3 buoyancy_force = -thermal_expension_coefficient * (temperature - referance_temperature) * force;
 	force += buoyancy_force;
 	#endif
 
 	#if multiphase_flow == 1
-	force += compute_molecular_interaction_force(pixel_coord);
+	force += compute_molecular_interaction_force(pixel_coord, temperature);
 	#endif
 
 	vec3 velocity = compute_velocity(pixel_coord, density) + force/(2*density);
-	bool velocity_out_of_limit = length(velocity.xy) > 0.15;
-	bool velocity_out_of_limit_extreme = length(velocity.xy) > 0.2;
-	velocity.xy = !velocity_out_of_limit ? velocity.xy : normalize(velocity.xy)* 0.15;
+	bool velocity_out_of_limit = length(velocity.xy) > 0.28;
+	bool velocity_out_of_limit_extreme = length(velocity.xy) > 0.3;
+	velocity.xy = !velocity_out_of_limit ? velocity.xy : normalize(velocity.xy)* 0.28;
 
 	for (int population_id = 0; population_id < velocity_count; population_id++){
 		
