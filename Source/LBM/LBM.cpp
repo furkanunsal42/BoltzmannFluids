@@ -58,6 +58,9 @@ void LBM::_compile_shaders()
 
 	plane_mesh = std::make_shared<Mesh>();
 	plane_mesh->load_model(plane_model);
+
+
+	plane_cube = std::make_shared<Mesh>();
 }
 
 void LBM::_generate_lattice(glm::ivec3 resolution)
@@ -291,6 +294,8 @@ void LBM::initialize_fields(
 		//_apply_boundry_conditions(); //the book doesn't specitfy whether or not to enforce boundry conditions in initialization algorithm
 		_stream();
 	}
+
+	iterate_time();
 
 	std::cout << "[LBM Info] _initialize_fields_default_pass() fields initialization scheme completed with relaxation_iteration_count(" << relaxation_iteration_count << ")" << std::endl;
 
@@ -915,6 +920,11 @@ void LBM::render2d_temperature()
 		1,
 		0
 	);
+}
+
+void LBM::render3d_density()
+{
+
 }
 
 void LBM::set_population(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_coordinate_end, int32_t population_index, float value)

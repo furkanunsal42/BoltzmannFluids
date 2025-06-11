@@ -86,6 +86,12 @@ public:
 	void render2d_forces();
 	void render2d_temperature();
 
+	void render3d_density();
+	void render3d_velocity();
+	void render3d_boundries();
+	void render3d_forces();
+	void render3d_temperature();
+
 	std::shared_ptr<Texture3D> get_velocity_density_texture();
 	std::shared_ptr<Texture3D> get_boundry_texture();
 	std::shared_ptr<Texture3D> get_force_temperature_texture();
@@ -278,4 +284,5 @@ private:
 	std::shared_ptr<Program> program_render2d_temperature = nullptr;
 
 	std::shared_ptr<Mesh> plane_mesh = nullptr;
+	std::shared_ptr<Mesh> plane_cube = nullptr;
 };
