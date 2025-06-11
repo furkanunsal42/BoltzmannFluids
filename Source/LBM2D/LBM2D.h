@@ -9,6 +9,7 @@
 #include "Tools/GraphicsOperation/GraphicsOperation.h"
 
 #include "ComputeProgram.h"
+#include "Mesh.h"
 
 // naming scheme of lattice boltzmann terms in variables and functions 
 // 
@@ -28,13 +29,32 @@ public:
 	constexpr static float referance_boundry_density = 1.0;
 
 	// simulation controls
-	void iterate_time(std::chrono::duration<double, std::milli> deltatime);
+	void iterate_time(float target_tick_per_second = 0);
+	int32_t get_total_ticks_elapsed();
 	std::chrono::duration<double, std::milli> get_total_time_elapsed();
-
 	glm::ivec2 get_resolution();
 	int32_t get_velocity_set_vector_count();
 
 	// high level field initialization api
+	struct FluidProperties {
+		glm::vec3 velocity = glm::vec3(0);
+		glm::vec3 force = glm::vec3(0);
+		float density = 1;
+		float temperature = referance_temperature;
+		float scalar_quantity = 0;
+		uint32_t boundry_id = not_a_boundry;
+	};
+	void initialize_fields(
+		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
+		glm::ivec3 resolution,
+		float relaxation_time,
+		bool periodic_x = true,
+		bool periodic_y = true,
+		VelocitySet velocity_set = VelocitySet::D2Q9,
+		FloatingPointAccuracy fp_accuracy = FloatingPointAccuracy::fp32,
+		bool is_flow_multiphase = false
+	);
+
 	void set_boundry_properties(
 		uint32_t boundry_id,
 		glm::vec3 velocity_translational,
@@ -59,64 +79,40 @@ public:
 
 	void clear_boundry_properties();
 
-	struct FluidProperties {
-		glm::vec3 velocity = glm::vec3(0);
-		glm::vec3 force = glm::vec3(0);
-		float density = 1;
-		float temperature = referance_temperature;
-		float scalar_quantity = 0;
-		uint32_t boundry_id = not_a_boundry;
-	};
-	void initialize_fields(
-		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
-		glm::ivec2 resolution,
-		float relaxation_time,
-		bool periodic_x = true,
-		bool periodic_y = true,
-		VelocitySet velocity_set = VelocitySet::D2Q9,
-		FloatingPointAccuracy fp_accuracy = FloatingPointAccuracy::fp32,
-		bool is_flow_multiphase = false
-	);
-	
-	// visualization
+	// high level visualization api
+	void render2d_density();
+	void render2d_velocity();
+	void render2d_boundries();
+	void render2d_forces();
+	void render2d_temperature();
+
+	std::shared_ptr<Texture3D> get_velocity_density_texture();
+	std::shared_ptr<Texture3D> get_boundry_texture();
+	std::shared_ptr<Texture3D> get_force_temperature_texture();
+
+	// low level visualization api
 	void copy_to_texture_population(Texture2D& target_texture, int32_t population_index);
 	void copy_to_texture_velocity_vector(Texture2D& target_texture);
-	void copy_to_texture_velocity_magnetude(Texture2D& target_texture);
 	void copy_to_texture_density(Texture2D& target_texture);
 	void copy_to_texture_boundries(Texture2D& target_texture);
 	void copy_to_texture_force_vector(Texture2D& target_texture);
 	void copy_to_texture_temperature(Texture2D& target_texture);
 
 	// low level field initialization api
-	void compile_shaders(); 
-	void generate_lattice(glm::ivec2 resolution);
-
-	void set_velocity_set(VelocitySet velocity_set);
+	float get_relaxation_time();
 	VelocitySet get_velocity_set();
-
-	void set_floating_point_accuracy(FloatingPointAccuracy floating_point_accuracy);
 	FloatingPointAccuracy get_floating_point_accuracy();
+	bool get_periodic_boundry_x();
+	bool get_periodic_boundry_y();
+	bool get_is_forcing_scheme();
+	bool get_is_force_field_constant();
+	bool get_is_flow_multiphase();
+	glm::vec3 get_constant_force();
+	float get_intermolecular_interaction_strength();
 
 	void set_relaxation_time(float relaxation_time);
-	float get_relaxation_time();
-
-	void set_periodic_boundry_x(bool value);
-	bool get_periodic_boundry_x();
-
-	void set_periodic_boundry_y(bool value);
-	bool get_periodic_boundry_y();
-
-	void set_is_forcing_scheme(bool value);
-	bool get_is_forcing_scheme();
-
-	void set_is_force_field_constant(bool value);
-	bool get_is_force_field_constant();
-
-	void set_constant_force(glm::vec3 constant_force);
-	glm::vec3 get_constant_force();
-
-	void set_is_flow_multiphase(bool value);
-	bool get_is_flow_multiphase();
+ 	void set_constant_force(glm::vec3 constant_force);
+	void set_intermolecular_interaction_strength(float value);
 
 	void set_population(glm::ivec2 voxel_coordinate, int32_t population_index, float value);
 	void set_population(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_coordinate_end, int32_t population_index, float value);
@@ -131,10 +127,11 @@ public:
 private:
 	
 	std::vector<std::pair<std::string, std::string>> _generate_shader_macros();
+	void _compile_shaders();
+	void _generate_lattice(glm::ivec3 resolution);
 	
 	void _stream();
-	void _collide();
-	void _apply_boundry_conditions();
+	void _collide(bool save_macrsoscopic_results);
 	void _generate_lattice_buffer();
 
 	// initialization functions
@@ -158,25 +155,32 @@ private:
 		);
 
 	// simulation time controls
-	std::chrono::duration<double, std::milli> total_time_elapsed;
-	std::chrono::duration<double, std::milli> step_deltatime = std::chrono::duration<double, std::milli>(1);
-	std::chrono::duration<double, std::milli> deltatime_overflow = std::chrono::duration<double, std::milli>(0);
+	bool first_iteration = true;
+	size_t total_ticks_elapsed = 0;
+	std::chrono::time_point<std::chrono::system_clock> simulation_begin;
 	
 	// LBM simulation parameters
 	VelocitySet velocity_set = D2Q9;
 	FloatingPointAccuracy floating_point_accuracy = fp32;
 
-	glm::ivec2 resolution = glm::ivec2(0);
+	glm::ivec3 resolution = glm::ivec3(0);
 	float relaxation_time = 0.53f;
 	
+	void _set_velocity_set(VelocitySet velocity_set);
+	void _set_floating_point_accuracy(FloatingPointAccuracy floating_point_accuracy);
+
 	// forces control flags
 	bool is_forcing_scheme = false;
 	bool is_force_field_constant = true;
 	glm::vec3 constant_force = glm::vec3(0);
+	void _set_is_forcing_scheme(bool value);
+	void _set_is_force_field_constant(bool value);
 
 	// moving/stationary boundries control flags
 	bool periodic_x = true;
 	bool periodic_y = true;
+	void _set_periodic_boundry_x(bool value);
+	void _set_periodic_boundry_y(bool value);
 	
 	struct _object_desc {
 	public:
@@ -208,7 +212,7 @@ private:
 	bool is_flow_thermal = false;
 	SimplifiedVelocitySet thermal_lattice_velocity_set = SimplifiedVelocitySet::D2Q5;
 	float thermal_relaxation_time = 0.53;
-	float thermal_expension_coeficient = 0.1f;
+	float thermal_expension_coeficient = 0.5f;
 
 	void _set_is_flow_thermal(bool value);
 	bool _get_is_flow_thermal();
@@ -218,14 +222,12 @@ private:
 	
 	// thermal flow physics
 	void _stream_thermal();
-	void _collide_thermal();
-	void _apply_boundry_conditions_thermal();
 	void _set_populations_to_equilibrium_thermal(Buffer& temperature_field, Buffer& velocity_field);
 
 	// multiphase flow control flags
 	bool is_flow_multiphase = false;
 	float intermolecular_interaction_strength = -6.0f;
-
+	void _set_is_flow_multiphase(bool value);
 
 	// device buffers
 	std::shared_ptr<Buffer> lattice0 = nullptr;
@@ -235,6 +237,9 @@ private:
 	std::shared_ptr<Buffer> forces = nullptr;
 	std::shared_ptr<Buffer> thermal_lattice0 = nullptr;
 	std::shared_ptr<Buffer> thermal_lattice1 = nullptr;
+
+	std::unique_ptr<UniformBuffer> lattice_velocity_set_buffer = nullptr;
+	std::unique_ptr<UniformBuffer> thermal_lattice_velocity_set_buffer = nullptr;
 
 	// dual buffer control
 	bool is_lattice_0_is_source = true;
@@ -247,14 +252,22 @@ private:
 	std::shared_ptr<Buffer> _get_thermal_lattice_target();
 	void _swap_thermal_lattice_buffers();
 	
+	// macroscopic variable textures
+	std::shared_ptr<Texture3D> velocity_density_texture = nullptr;
+	std::shared_ptr<Texture3D> boundry_texture = nullptr;
+	std::shared_ptr<Texture3D> force_temperature_texture = nullptr;
+	void _generate_macroscopic_textures();
+
+	Texture3D::ColorTextureFormat velocity_density_texture_internal_format = Texture3D::ColorTextureFormat::RGBA32F;
+	Texture3D::ColorTextureFormat boundry_texture_internal_format = Texture3D::ColorTextureFormat::R8;
+	Texture3D::ColorTextureFormat force_temperature_texture_internal_format = Texture3D::ColorTextureFormat::RGBA32F;
+
 	// kernels
 	bool is_programs_compiled = false;
 	std::shared_ptr<ComputeProgram> lbm2d_stream = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_stream_thermal = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_collide = nullptr;
-	std::shared_ptr<ComputeProgram> lbm2d_collide_thermal = nullptr;
-	std::shared_ptr<ComputeProgram> lbm2d_boundry_condition = nullptr;
-	std::shared_ptr<ComputeProgram> lbm2d_boundry_condition_thermal = nullptr;
+	std::shared_ptr<ComputeProgram> lbm2d_collide_save = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_collide_with_precomputed_velocity = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_set_equilibrium_populations = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_set_equilibrium_populations_thermal = nullptr;
@@ -263,11 +276,16 @@ private:
 	std::shared_ptr<ComputeProgram> lbm2d_copy_boundries = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_copy_density = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_copy_population = nullptr;
-	std::shared_ptr<ComputeProgram> lbm2d_copy_velocity_magnitude = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_copy_velocity_total = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_copy_force_total = nullptr;
 	std::shared_ptr<ComputeProgram> lbm2d_copy_temperature = nullptr;
+	
+	// renderers
+	std::shared_ptr<Program> program_render2d_density = nullptr;
+	std::shared_ptr<Program> program_render2d_velocity = nullptr;
+	std::shared_ptr<Program> program_render2d_boundries = nullptr;
+	std::shared_ptr<Program> program_render2d_forces = nullptr;
+	std::shared_ptr<Program> program_render2d_temperature = nullptr;
 
-	std::unique_ptr<UniformBuffer> lattice_velocity_set_buffer = nullptr;
-	std::unique_ptr<UniformBuffer> thermal_lattice_velocity_set_buffer = nullptr;
+	std::shared_ptr<Mesh> plane_mesh = nullptr;
 };

@@ -109,7 +109,7 @@ layout(std430, binding = 8) buffer thermal_lattice_buffer_target {
 };
 #endif
 
-uniform ivec2 lattice_resolution;
+uniform ivec3 lattice_resolution;
 uniform float lattice_speed_of_sound;
 uniform float relaxation_time;
 uniform int object_count;
@@ -313,7 +313,7 @@ vec3 compute_molecular_interaction_force(ivec2 pixel_coord){
 		float w = get_lattice_weight(population_id);
 
 		ivec2 neighbour_coord = pixel_coord + ivec2(c.xy);
-		neighbour_coord = positive_modulo(neighbour_coord, lattice_resolution);
+		neighbour_coord = positive_modulo(neighbour_coord, lattice_resolution.xy);
 
 		float neighbour_density = compute_density(neighbour_coord);
 		float neighbour_psudopotantial = get_density_pseudopotential(neighbour_density);
@@ -493,13 +493,13 @@ void main(){
 
 	//lattice[pixel_id * velocity_count + population_id]		= value_b + dirichlet_boundry_correction_term(inv_population_id, 1.0, boundry_velocity);
 	//lattice[pixel_id * velocity_count + inv_population_id]	= value_a + dirichlet_boundry_correction_term(population_id, 1.0, boundry_velocity);
-	
+	#if thermal_flow == 1
 	if (source_boundry != 0)
 		thermal_lattice_target[id.x] = -thermal_lattice_source[pixel_id * thermal_velocity_count + inv_velocity_id] +
 										dirichlet_boundry_correction_term_thermal(inv_velocity_id, source_boundry_temperature);
 	else 
 		thermal_lattice_target[id.x] = thermal_lattice_source[source_pixel_id * thermal_velocity_count + velocity_id];
-
+	#endif
 
 	
 }

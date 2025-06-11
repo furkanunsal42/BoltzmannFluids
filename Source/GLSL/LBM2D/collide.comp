@@ -56,6 +56,15 @@
 
 #define multiphase_flow 1
 
+#define save_macroscopic_variables 1
+
+#if volume_dimentionality == 2
+	#define macroscopic_image_type image2D
+#endif
+#if volume_dimentionality == 3
+	#define macroscopic_image_type image3D
+#endif
+
 #define id gl_GlobalInvocationID
 
 layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
@@ -106,7 +115,17 @@ layout(std430, binding = 8) buffer thermal_lattice_buffer_target {
 };
 #endif
 
-uniform ivec2 lattice_resolution;
+#if save_macroscopic_variables == 1
+	layout(rgba32f, binding = 0) uniform image3D velocity_density_texture;
+	#if boundry_count > 1
+	layout(r8,		binding = 1) uniform image3D boundry_texture;
+	#endif
+	#if forcing_scheme == 1 || thermal_flow == 1
+	layout(rgba32f, binding = 2) uniform image3D force_temperature_texture;
+	#endif
+#endif
+
+uniform ivec3 lattice_resolution;
 uniform float lattice_speed_of_sound;
 uniform float relaxation_time;
 uniform int object_count;
@@ -296,8 +315,12 @@ ivec2 positive_modulo(ivec2 i, ivec2 n){
 	return ivec2(mod((mod(i, n) + n), n));
 }
 
-vec3 compute_molecular_interaction_force(ivec2 pixel_coord, float temperature){
+vec3 compute_molecular_interaction_force(ivec2 pixel_coord){
 	#if multiphase_flow == 1
+
+	float self_density = compute_density(pixel_coord);
+	float self_psi = get_density_pseudopotential(self_density);
+	float G = intermolecular_interaction_strength;
 
 	vec3 interaction_force = vec3(0);
 	for (int population_id = 1; population_id < velocity_count; population_id++){
@@ -306,13 +329,31 @@ vec3 compute_molecular_interaction_force(ivec2 pixel_coord, float temperature){
 		float w = get_lattice_weight(population_id);
 
 		ivec2 neighbour_coord = pixel_coord + ivec2(c.xy);
-		neighbour_coord = positive_modulo(neighbour_coord, lattice_resolution);
+		bool open_boundry = false;
 
-		float neighbour_density = compute_density(neighbour_coord);
-		int neighbour_boundry = int(get_boundry(neighbour_coord));
-		object_info_s neighbour_object = get_object_info(neighbour_boundry);
+		#if periodic_x == 1
+		neighbour_coord.x = positive_modulo(neighbour_coord.x, lattice_resolution.x);
+		#else
+		if (neighbour_coord.x < 0 || neighbour_coord.x >= lattice_resolution.x) 
+			open_boundry = true;
+		#endif
+	
+		#if periodic_y == 1
+		source_pixel_coord.y = positive_modulo(neighbour_coord.y, lattice_resolution.y);
+		#else
+		if (neighbour_coord.y < 0 || neighbour_coord.y >= lattice_resolution.y) 
+			open_boundry = true;
+		#endif
 
-		neighbour_density = neighbour_boundry != 0 ? neighbour_object.effective_density : neighbour_density;
+		float neighbour_density;
+		if (!open_boundry){
+			neighbour_density = compute_density(neighbour_coord);
+			int neighbour_boundry = int(get_boundry(neighbour_coord));
+			object_info_s neighbour_object = get_object_info(neighbour_boundry);
+			neighbour_density = neighbour_boundry != 0 ? neighbour_object.effective_density : neighbour_density;
+		}
+		else
+			neighbour_density = self_density;
 
 		float neighbour_psudopotantial = get_density_pseudopotential(neighbour_density);
 		
@@ -320,10 +361,6 @@ vec3 compute_molecular_interaction_force(ivec2 pixel_coord, float temperature){
 
 		interaction_force += w * psi * c;
 	}
-
-	float self_density = compute_density(pixel_coord);
-	float self_psi = get_density_pseudopotential(self_density);
-	float G = intermolecular_interaction_strength;
 	
 	interaction_force *= -self_psi * G;
 
@@ -454,7 +491,7 @@ void main(){
 	#endif
 
 	#if multiphase_flow == 1
-	force += compute_molecular_interaction_force(pixel_coord, temperature / density);
+	force += compute_molecular_interaction_force(pixel_coord);
 	#endif
 
 	vec3 velocity = compute_velocity(pixel_coord, density) + force/(2*density);
@@ -479,4 +516,28 @@ void main(){
 			!velocity_out_of_limit_extreme ? update_value : stability_enforced_value /*stability_enforced_value*/
 		);
 	}
+
+	#if thermal_flow == 1
+
+	for (int population_id = 0; population_id < thermal_velocity_count; population_id++){
+		float weight = get_lattice_weight_thermal(population_id);
+		float equilibrium_temperature = compute_equilibrium_thermal(temperature, velocity, population_id);
+		
+		thermal_lattice_target[pixel_id * thermal_velocity_count + population_id] = 
+			get_lattice_source_thermal(pixel_coord, population_id) + 
+			compute_bgk_collision_term_thermal(get_lattice_source_thermal(pixel_coord, population_id), equilibrium_temperature);// + 
+			//compute_source_term(population_id, force, velocity);
+	}
+	#endif
+
+	#if save_macroscopic_variables == 1
+		imageStore(velocity_density_texture, ivec3(pixel_coord, 0), vec4(velocity, density));
+		#if boundry_count > 1
+		imageStore(boundry_texture, ivec3(pixel_coord, 0), vec4(boundry_id));
+		#endif
+		#if forcing_scheme == 1 || thermal_flow == 1
+		imageStore(force_temperature_texture, ivec3(pixel_coord, 0), vec4(force, temperature));
+		#endif
+	#endif
+
 }

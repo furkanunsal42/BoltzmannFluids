@@ -2,7 +2,7 @@
 #include "LBM2D/LBM2D.h"
 
 void init_poiseuille_flow(LBM2D& solver) {
-	glm::ivec2 simulation_resolution(1024, 128);
+	glm::ivec3 simulation_resolution(1024, 128, 1);
 	solver.clear_boundry_properties();
 	solver.set_boundry_properties(1, glm::vec3(1, 0, 0) / 16.0f);
 	solver.set_boundry_properties(2, glm::vec3(0, 0, 0) / 16.0f);
@@ -29,7 +29,7 @@ void init_poiseuille_flow(LBM2D& solver) {
 }
 
 void init_von_karman_street_set_velocity(LBM2D& solver) {
-	glm::ivec2 simulation_resolution(1024, 1024);
+	glm::ivec3 simulation_resolution(1024, 1024, 1);
 	solver.clear_boundry_properties();
 	solver.set_boundry_properties(1, glm::vec3(0, 0, 0) / 16.0f);
 
@@ -58,7 +58,7 @@ void init_von_karman_street_set_velocity(LBM2D& solver) {
 }
 
 void init_von_karman_street_periodic(LBM2D& solver) {
-	glm::ivec2 simulation_resolution(512, 512);
+	glm::ivec3 simulation_resolution(512, 512, 1);
 	solver.clear_boundry_properties();
 	solver.set_boundry_properties(1, glm::vec3(0, 0, 0) / 16.0f);
 
@@ -83,7 +83,7 @@ void init_von_karman_street_periodic(LBM2D& solver) {
 }
 
 void init_von_karman_street_inlet_boundry(LBM2D& solver) {
-	glm::ivec2 simulation_resolution(1024, 1024);
+	glm::ivec3 simulation_resolution(1024, 1024, 1);
 	solver.clear_boundry_properties();
 	solver.set_boundry_properties(1, glm::vec3(0, 0, 0) / 16.0f);
 	solver.set_boundry_properties(2, glm::vec3(1, 0, 0) / 16.0f);
@@ -112,7 +112,7 @@ void init_von_karman_street_inlet_boundry(LBM2D& solver) {
 }
 
 void init_von_karman_street_thin_jet(LBM2D& solver) {
-	glm::ivec2 simulation_resolution(1024, 128);
+	glm::ivec3 simulation_resolution(1024, 128, 1);
 	solver.clear_boundry_properties();
 	solver.set_boundry_properties(1, glm::vec3(0, 0, 0) / 16.0f);
 
@@ -145,7 +145,7 @@ void init_von_karman_street_thin_jet(LBM2D& solver) {
 }
 
 void init_von_karman_street_set_velocity_with_gravity(LBM2D& solver) {
-	glm::ivec2 simulation_resolution(1024, 1024);
+	glm::ivec3 simulation_resolution(1024, 1024, 1);
 	solver.clear_boundry_properties();
 	solver.set_boundry_properties(1, glm::vec3(0, 0, 0) / 16.0f);
 
@@ -176,7 +176,7 @@ void init_von_karman_street_set_velocity_with_gravity(LBM2D& solver) {
 }
 
 void init_rayleigh_benard_convection(LBM2D& solver) {
-	glm::ivec2 simulation_resolution(1024, 128);
+	glm::ivec3 simulation_resolution(1024, 128, 1);
 	solver.clear_boundry_properties();
 	solver.set_boundry_properties(1, 1.75);
 	solver.set_boundry_properties(2, 0.25);
@@ -185,7 +185,7 @@ void init_rayleigh_benard_convection(LBM2D& solver) {
 	solver.initialize_fields(
 		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
 
-			properties.force = glm::vec3(0, -4, 0) / 128000.0f;
+			properties.force = glm::vec3(0, -8, 0) / 128000.0f;
 
 			if (coordinate.x == 0)
 				properties.boundry_id = 3;
@@ -207,7 +207,7 @@ void init_rayleigh_benard_convection(LBM2D& solver) {
 }
 
 void init_thermal_convection_tall(LBM2D& solver) {
-	glm::ivec2 simulation_resolution(512, 1024);
+	glm::ivec3 simulation_resolution(512, 1024, 1);
 	solver.clear_boundry_properties();
 	solver.set_boundry_properties(1, 1.75);
 	solver.set_boundry_properties(2, 0.1);
@@ -238,7 +238,7 @@ void init_thermal_convection_tall(LBM2D& solver) {
 }
 
 void init_thermal_convection_square(LBM2D& solver) {
-	glm::ivec2 simulation_resolution(512, 512);
+	glm::ivec3 simulation_resolution(512, 512, 1);
 	solver.clear_boundry_properties();
 	//solver.set_boundry_properties(1, 4, 1);
 	//solver.set_boundry_properties(2, 1, 1);
@@ -277,49 +277,60 @@ void init_thermal_convection_square(LBM2D& solver) {
 	);
 }
 
-void init_multiphase_droplet(LBM2D& solver) {
-	glm::ivec2 simulation_resolution(1024, 1024);
+void init_multiphase_humid_platform(LBM2D& solver) {
+	glm::ivec3 simulation_resolution(1024, 1024, 1);
 	solver.clear_boundry_properties();
 
-	solver.set_boundry_properties(1, LBM2D::referance_temperature, 0.1);
+	solver.set_boundry_properties(1, LBM2D::referance_temperature, 4);
 
 	solver.initialize_fields(
 		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
 
-			properties.force = glm::vec3(0, -1, 0) / 128000.0f;
+			properties.force = glm::vec3(0, -8, 0) / 128000.0f;
 
 			//properties.density = 0.056;
 			properties.density = 0.356;
-			//properties.density = 0.20;
-
-			//if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1 / 4.0, simulation_resolution.y / 2)) < 32 ) {
-			//	properties.density = 2.659;
-			//	//properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
-			//}
-
-			//if (coordinate.x == 0)
-			//	properties.boundry_id = 1;
-			//if (coordinate.x == solver.get_resolution().x - 1)
-			//	properties.boundry_id = 1;
-			//if (coordinate.y == 0)
-			//	properties.boundry_id = 1;
-			//if (coordinate.y == solver.get_resolution().y - 1)
-			//	properties.boundry_id = 1;
+			
 			if (coordinate.y == 100 && glm::abs(coordinate.x - 512) < 300)
 				properties.boundry_id = 1;
-			//if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 2.1 / 4.0, simulation_resolution.y / 2)) < 16) {
-			//	//properties.density = 1.85;
-			//	properties.density = 1.89;
-			//	properties.velocity = glm::vec3(-1, 0, 0) / 16.0f;
-			//}
 		},
-		glm::ivec2(simulation_resolution),
+		simulation_resolution,
 		0.55,
 		true,
+		false,
+		VelocitySet::D2Q9,
+		FloatingPointAccuracy::fp32,
+		true
+	);
+}
+
+void init_multiphase_droplet_collision(LBM2D& solver) {
+	glm::ivec3 simulation_resolution(1024, 1024, 1);
+	solver.clear_boundry_properties();
+
+	solver.initialize_fields(
+		[&](glm::ivec2 coordinate, LBM2D::FluidProperties& properties) {
+
+			properties.density = 0.056;
+
+			if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1.7 / 4.0, simulation_resolution.y / 2)) < 32 ) {
+				properties.density = 2.659;
+				properties.velocity = glm::vec3(8, 0, 0) / 16.0f;
+			}
+
+			if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 2.3 / 4.0, simulation_resolution.y / 2)) < 32) {
+				properties.density = 2.659;
+				properties.velocity = glm::vec3(-8, 0, 0) / 16.0f;
+			}
+
+		},
+		simulation_resolution,
+		0.6,
+		false,
 		true,
 		VelocitySet::D2Q9,
 		FloatingPointAccuracy::fp32,
-		false
+		true
 	);
 }
 
@@ -333,15 +344,18 @@ int main() {
 	Window window(desc);
 
 	LBM2D lbm2d_solver;
-	init_thermal_convection_square(lbm2d_solver);
+	init_multiphase_humid_platform(lbm2d_solver);
 	window.set_window_resolution(lbm2d_solver.get_resolution());
+	primitive_renderer::set_viewport_size(lbm2d_solver.get_resolution());
 
-	Texture2D texture_1c(window.get_window_resolution().x, window.get_window_resolution().y, Texture2D::ColorTextureFormat::R32F, 1, 0, 0);
 	Texture2D texture_4c(window.get_window_resolution().x, window.get_window_resolution().y, Texture2D::ColorTextureFormat::RGBA32F, 1, 0, 0);
 
 	Framebuffer fb;
-	fb.attach_color(0, texture_1c, 0);
+	fb.attach_color(0, texture_4c, 0);
 	fb.activate_draw_buffer(0);
+	fb.bind_draw();
+	glEnable(GL_CULL_FACE);
+	glEnable(GL_DEPTH_TEST);
 
 	uint32_t display_mode = 3;
 	bool pause = true;
@@ -381,44 +395,42 @@ int main() {
 		exit(0);
 		});
 
+	auto last_ticks_print = std::chrono::system_clock::now();
 	auto update_function = [&](double deltatime) {
-		if(!pause)
-			lbm2d_solver.iterate_time(std::chrono::duration<double, std::milli>(deltatime * 10));
+		if (!pause) {
+			lbm2d_solver.iterate_time(0);
+
+			if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - last_ticks_print).count() >= 1000) {
+				last_ticks_print = std::chrono::system_clock::now();
+				std::cout << "[LBM Info] total ticks elapsed : " << lbm2d_solver.get_total_ticks_elapsed() << std::endl;
+			}
+		}
+
+		primitive_renderer::clear(0, 0, 0, 0);
 
 		if (display_mode == 1) {
-			Texture2D& texture_target = texture_1c;
-			lbm2d_solver.copy_to_texture_density(texture_target);
-			fb.attach_color(0, texture_target, 0);
+			lbm2d_solver.render2d_density();
 		}
 		else if (display_mode == 2) {
-			Texture2D& texture_target = texture_1c;
-			lbm2d_solver.copy_to_texture_velocity_magnetude(texture_target);
-			fb.attach_color(0, texture_target, 0);
+			lbm2d_solver.render2d_boundries();
 		}
 		else if (display_mode == 3) {
-			Texture2D& texture_target = texture_4c;
-			lbm2d_solver.copy_to_texture_velocity_vector(texture_target);
-			fb.attach_color(0, texture_target, 0);
+			lbm2d_solver.render2d_velocity();
 		}
 		else if (display_mode == 4) {
-			Texture2D& texture_target = texture_4c;
-			lbm2d_solver.copy_to_texture_boundries(texture_target);
-			fb.attach_color(0, texture_target, 0);
+			lbm2d_solver.render2d_forces();
 		}
 		else if (display_mode == 5) {
-			Texture2D& texture_target = texture_4c;
-			lbm2d_solver.copy_to_texture_force_vector(texture_target);
-			fb.attach_color(0, texture_target, 0);
+			lbm2d_solver.render2d_temperature();
 		}
-		else if (display_mode == 6) {
-			Texture2D& texture_target = texture_1c;
-			lbm2d_solver.copy_to_texture_temperature(texture_target);
-			fb.attach_color(0, texture_target, 0);
-		}
-
+		
 		fb.blit_to_screen(window.get_window_resolution(), window.get_framebuffer_resolution(), Framebuffer::Channel::COLOR, Framebuffer::Filter::NEAREST);
 		window.swap_buffers();
 		};
+
+	window.newsletters->on_window_resolution_events.subscribe([&](const glm::vec2& new_resolution) {
+		primitive_renderer::set_viewport_size(new_resolution);
+		});
 
 	window.newsletters->on_window_refresh_events.subscribe([&]() {
 		double deltatime = window.get_and_reset_deltatime();
@@ -426,7 +438,7 @@ int main() {
 		});
 
 	while (true) {
-		double deltatime = window.handle_events(true);
+		double deltatime = window.handle_events(false);
 		update_function(deltatime);
 	}
 }

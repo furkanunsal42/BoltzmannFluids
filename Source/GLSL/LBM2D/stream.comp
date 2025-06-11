@@ -109,7 +109,7 @@ layout(std430, binding = 8) buffer thermal_lattice_buffer_target {
 };
 #endif
 
-uniform ivec2 lattice_resolution;
+uniform ivec3 lattice_resolution;
 uniform float lattice_speed_of_sound;
 uniform float relaxation_time;
 uniform int object_count;
@@ -313,7 +313,7 @@ vec3 compute_molecular_interaction_force(ivec2 pixel_coord){
 		float w = get_lattice_weight(population_id);
 
 		ivec2 neighbour_coord = pixel_coord + ivec2(c.xy);
-		neighbour_coord = positive_modulo(neighbour_coord, lattice_resolution);
+		neighbour_coord = positive_modulo(neighbour_coord, lattice_resolution.xy);
 
 		float neighbour_density = compute_density(neighbour_coord);
 		float neighbour_psudopotantial = get_density_pseudopotential(neighbour_density);
@@ -457,13 +457,19 @@ void main(){
 	#if periodic_x == 1
 	source_pixel_coord.x = positive_modulo(source_pixel_coord.x, lattice_resolution.x);
 	#else
-	if (source_pixel_coord.x < 0 || source_pixel_coord.x >= lattice_resolution.x) return;
+	if (source_pixel_coord.x < 0 || source_pixel_coord.x >= lattice_resolution.x) {
+		lattice_target[id.x] = 0;
+		return;
+	}
 	#endif
 	
 	#if periodic_y == 1
 	source_pixel_coord.y = positive_modulo(source_pixel_coord.y, lattice_resolution.y);
 	#else
-	if (source_pixel_coord.y < 0 || source_pixel_coord.y >= lattice_resolution.y) return;
+	if (source_pixel_coord.y < 0 || source_pixel_coord.y >= lattice_resolution.y) {
+		lattice_target[id.x] = 0;
+		return;
+	}
 	#endif
 
 	int source_pixel_id = source_pixel_coord.y * lattice_resolution.x + source_pixel_coord.x;
