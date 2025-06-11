@@ -12,16 +12,18 @@ void init_poiseuille_flow(LBM& solver) {
 
 			properties.boundry_id = false;
 
-			if (coordinate.y == 10 && coordinate.x > 10 && coordinate.x < solver.get_resolution().x - 10)
+			//properties.force = glm::vec3(.1, 0, 0) / 128000.0f;
+
+			if (coordinate.y == 0)
 				properties.boundry_id = 2;
-			if (coordinate.y == solver.get_resolution().y - 11 && coordinate.x > 10 && coordinate.x < solver.get_resolution().x - 10)
+			if (coordinate.y == solver.get_resolution().y-1)
 				properties.boundry_id = 1;
 
 		},
 		simulation_resolution,
 		0.53f,
-		false,
 		true,
+		false,
 		VelocitySet::D2Q9,
 		FloatingPointAccuracy::fp32,
 		false
@@ -346,7 +348,7 @@ int main() {
 	Window window(desc);
 
 	LBM solver;
-	init_multiphase_droplet_collision(solver);
+	init_poiseuille_flow(solver);
 	window.set_window_resolution(solver.get_resolution());
 	primitive_renderer::set_viewport_size(solver.get_resolution());
 
