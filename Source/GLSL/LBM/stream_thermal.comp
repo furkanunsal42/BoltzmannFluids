@@ -446,7 +446,7 @@ float dirichlet_boundry_correction_term_thermal(int lattice_velocity_index, floa
 	//float cs = 1.0 / sqrt(3);
 	//float cs2 = pow(1.0 / sqrt(3), 2);
 
-	return -2 * w * t; 
+	return 2 * w * t; 
 }
 #endif
 
@@ -457,14 +457,14 @@ void main(){
 
 	int pixel_id = int(id.x) / thermal_velocity_count;
 	int velocity_id = int(id.x) % thermal_velocity_count;
-	int inv_velocity_id = get_inverse_lattice_population_id_index(velocity_id);
+	int inv_velocity_id = get_inverse_lattice_population_id_index_thermal(velocity_id);
 	ivec2 pixel_coord = ivec2(pixel_id.x % lattice_resolution.x, pixel_id.x / lattice_resolution.x);
 	
 	int self_boundry = int(get_boundry(pixel_coord));
 	if (self_boundry != 0)
 		return;
 
-	ivec2 source_pixel_coord = pixel_coord - ivec2(lattice_velocity_set[velocity_id].xy);
+	ivec2 source_pixel_coord = pixel_coord - ivec2(thermal_lattice_velocity_set[velocity_id].xy);
 	
 	#if periodic_x == 1
 	source_pixel_coord.x = positive_modulo(source_pixel_coord.x, lattice_resolution.x);
