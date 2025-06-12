@@ -18,6 +18,7 @@
 
 #define periodic_x 1
 #define periodic_y 1
+#define periodic_z 1
 
 #define forcing_scheme 1
 #define constant_force 0
@@ -124,6 +125,10 @@ uniform float thermal_expension_coefficient;
 uniform float intermolecular_interaction_strength;
 #endif
 
+uint coord_to_id(ivec3 pixel_coord){
+	return pixel_coord.z * lattice_resolution.y * lattice_resolution.x + pixel_coord.y * lattice_resolution.x + pixel_coord.x;
+}
+
 //////////////////////////////////////////
 // momentum density lattice functions
 
@@ -135,20 +140,20 @@ int get_inverse_lattice_population_id_index(int lattice_velocity_index){
 	return is_odd ? lattice_velocity_index + 1 : lattice_velocity_index - 1;
 }
 
-float get_lattice_source(ivec2 pixel_coord, int velocity_index){
-	return lattice_source[(pixel_coord.y * lattice_resolution.x + pixel_coord.x) * velocity_count + velocity_index];
+float get_lattice_source(ivec3 pixel_coord, int velocity_index){
+	return lattice_source[coord_to_id(pixel_coord) * velocity_count + velocity_index];
 }
 
-void set_lattice_source(ivec2 pixel_coord, int velocity_index, float value){
-	lattice_source[(pixel_coord.y * lattice_resolution.x + pixel_coord.x) * velocity_count + velocity_index] = value;
+void set_lattice_source(ivec3 pixel_coord, int velocity_index, float value){
+	lattice_source[coord_to_id(pixel_coord) * velocity_count + velocity_index] = value;
 }
 
-float get_lattice_target(ivec2 pixel_coord, int velocity_index){
-	return lattice_target[(pixel_coord.y * lattice_resolution.x + pixel_coord.x) * velocity_count + velocity_index];
+float get_lattice_target(ivec3 pixel_coord, int velocity_index){
+	return lattice_target[coord_to_id(pixel_coord) * velocity_count + velocity_index];
 }
 
-void set_lattice_target(ivec2 pixel_coord, int velocity_index, float value){
-	lattice_target[(pixel_coord.y * lattice_resolution.x + pixel_coord.x) * velocity_count + velocity_index] = value;
+void set_lattice_target(ivec3 pixel_coord, int velocity_index, float value){
+	lattice_target[coord_to_id(pixel_coord) * velocity_count + velocity_index] = value;
 }
 
 vec3 get_lattice_velocity(int velocity_index){
@@ -159,14 +164,14 @@ float get_lattice_weight(int velocity_index){
 	return lattice_velocity_set[velocity_index].w;
 }
 
-float compute_density(ivec2 pixel_coord){
+float compute_density(ivec3 pixel_coord){
 	float density = 0;
 	for (int i = 0; i < velocity_count; i++)
 		density += get_lattice_source(pixel_coord, i);
 	return density;
 }
 
-vec3 compute_velocity(ivec2 pixel_coord, float density){
+vec3 compute_velocity(ivec3 pixel_coord, float density){
 	vec3 velocity = vec3(0);
 	for (int i = 0; i < velocity_count; i++){
 		velocity += get_lattice_source(pixel_coord, i) * get_lattice_velocity(i);
@@ -177,10 +182,10 @@ vec3 compute_velocity(ivec2 pixel_coord, float density){
 //////////////////////////////////////////
 // boundry subsystem
 
-uint get_boundry(ivec2 pixel_coord) {
+uint get_boundry(ivec3 pixel_coord) {
 #if boundry_count > 1
 
-	uint voxel_id = pixel_coord.y * lattice_resolution.x + pixel_coord.x;
+	uint voxel_id = coord_to_id(pixel_coord);
 	uint bits_begin = voxel_id * bits_per_boundry;
 			
 	uint dword_offset = bits_begin / 32;
@@ -227,12 +232,12 @@ object_info_s get_object_info(int object_id){
 
 //////////////////////////////////////////
 // force subsystem
-vec3 get_force(ivec2 pixel_coord){
+vec3 get_force(ivec3 pixel_coord){
 	#if forcing_scheme == 1
 		#if constant_force == 1
 			return force_constant;
 		#else
-			uint voxel_id = pixel_coord.y * lattice_resolution.x + pixel_coord.x;
+			uint voxel_id = coord_to_id(pixel_coord);
 			vec3 force = forces[voxel_id].xyz;
 			return force;
 		#endif
@@ -254,20 +259,20 @@ int get_inverse_lattice_population_id_index_thermal(int thermal_lattice_velocity
 	return is_odd ? thermal_lattice_velocity_index + 1 : thermal_lattice_velocity_index - 1;
 }
 
-float get_lattice_source_thermal(ivec2 pixel_coord, int thermal_velocity_index){
-	return thermal_lattice_source[(pixel_coord.y * lattice_resolution.x + pixel_coord.x) * thermal_velocity_count + thermal_velocity_index];
+float get_lattice_source_thermal(ivec3 pixel_coord, int thermal_velocity_index){
+	return thermal_lattice_source[coord_to_id(pixel_coord) * thermal_velocity_count + thermal_velocity_index];
 }
 
-void set_lattice_source_thermal(ivec2 pixel_coord, int thermal_velocity_index, float value){
-	thermal_lattice_source[(pixel_coord.y * lattice_resolution.x + pixel_coord.x) * thermal_velocity_count + thermal_velocity_index] = value;
+void set_lattice_source_thermal(ivec3 pixel_coord, int thermal_velocity_index, float value){
+	thermal_lattice_source[coord_to_id(pixel_coord) * thermal_velocity_count + thermal_velocity_index] = value;
 }
 
-float get_lattice_target_thermal(ivec2 pixel_coord, int thermal_velocity_index){
-	return thermal_lattice_target[(pixel_coord.y * lattice_resolution.x + pixel_coord.x) * thermal_velocity_count + thermal_velocity_index];
+float get_lattice_target_thermal(ivec3 pixel_coord, int thermal_velocity_index){
+	return thermal_lattice_target[coord_to_id(pixel_coord) * thermal_velocity_count + thermal_velocity_index];
 }
 
-void set_lattice_target_thermal(ivec2 pixel_coord, int thermal_velocity_index, float value){
-	thermal_lattice_target[(pixel_coord.y * lattice_resolution.x + pixel_coord.x) * thermal_velocity_count + thermal_velocity_index] = value;
+void set_lattice_target_thermal(ivec3 pixel_coord, int thermal_velocity_index, float value){
+	thermal_lattice_target[coord_to_id(pixel_coord) * thermal_velocity_count + thermal_velocity_index] = value;
 }
 
 vec3 get_lattice_velocity_thermal(int thermal_velocity_index){
@@ -278,7 +283,7 @@ float get_lattice_weight_thermal(int thermal_velocity_index){
 	return thermal_lattice_velocity_set[thermal_velocity_index].w;
 }
 
-float compute_temperature(ivec2 pixel_coord){
+float compute_temperature(ivec3 pixel_coord){
 	float temperature = 0;
 	for (int i = 0; i < thermal_velocity_count; i++)
 		temperature += get_lattice_source_thermal(pixel_coord, i);
@@ -303,7 +308,11 @@ ivec2 positive_modulo(ivec2 i, ivec2 n){
 	return ivec2(mod((mod(i, n) + n), n));
 }
 
-vec3 compute_molecular_interaction_force(ivec2 pixel_coord){
+ivec3 positive_modulo(ivec3 i, ivec3 n){
+	return ivec3(mod((mod(i, n) + n), n));
+}
+
+vec3 compute_molecular_interaction_force(ivec3 pixel_coord){
 	#if multiphase_flow == 1
 
 	vec3 interaction_force = vec3(0);
@@ -312,8 +321,8 @@ vec3 compute_molecular_interaction_force(ivec2 pixel_coord){
 		vec3 c = get_lattice_velocity(population_id);
 		float w = get_lattice_weight(population_id);
 
-		ivec2 neighbour_coord = pixel_coord + ivec2(c.xy);
-		neighbour_coord = positive_modulo(neighbour_coord, lattice_resolution.xy);
+		ivec3 neighbour_coord = pixel_coord + ivec3(c);
+		neighbour_coord = positive_modulo(neighbour_coord, lattice_resolution);
 
 		float neighbour_density = compute_density(neighbour_coord);
 		float neighbour_psudopotantial = get_density_pseudopotential(neighbour_density);
@@ -440,19 +449,23 @@ float dirichlet_boundry_correction_term(int lattice_velocity_index, float local_
 
 void main(){
 
-	if (int(id.x) >= lattice_resolution.x * lattice_resolution.y * velocity_count)
+	if (int(id.x) >= lattice_resolution.x * lattice_resolution.y * lattice_resolution.z * velocity_count)
 		return;
 
-	int pixel_id = int(id.x) / velocity_count;
-	int velocity_id = int(id.x) % velocity_count;
+	uint pixel_id = id.x / velocity_count;
+	int velocity_id = int(id.x % velocity_count);
 	int inv_velocity_id = get_inverse_lattice_population_id_index(velocity_id);
-	ivec2 pixel_coord = ivec2(pixel_id.x % lattice_resolution.x, pixel_id.x / lattice_resolution.x);
-	
+	ivec3 pixel_coord = ivec3(
+		pixel_id % lattice_resolution.x,
+		(pixel_id / lattice_resolution.x) % lattice_resolution.y,
+		(pixel_id / lattice_resolution.x) / lattice_resolution.y
+		);
+
 	int self_boundry = int(get_boundry(pixel_coord));
 	if (self_boundry != 0)
 		return;
 
-	ivec2 source_pixel_coord = pixel_coord - ivec2(lattice_velocity_set[velocity_id].xy);
+	ivec3 source_pixel_coord = pixel_coord - ivec3(lattice_velocity_set[velocity_id].xyz);
 	
 	#if periodic_x == 1
 	source_pixel_coord.x = positive_modulo(source_pixel_coord.x, lattice_resolution.x);
@@ -472,7 +485,16 @@ void main(){
 	}
 	#endif
 
-	int source_pixel_id = source_pixel_coord.y * lattice_resolution.x + source_pixel_coord.x;
+	#if periodic_z == 1
+	source_pixel_coord.z = positive_modulo(source_pixel_coord.z, lattice_resolution.z);
+	#else
+	if (source_pixel_coord.z < 0 || source_pixel_coord.z >= lattice_resolution.z) {
+		lattice_target[id.x] = 0.01;
+		return;
+	}
+	#endif
+
+	uint source_pixel_id = coord_to_id(source_pixel_coord);
 
 	int source_boundry = int(get_boundry(source_pixel_coord));
 	object_info_s source_object = get_object_info(source_boundry);

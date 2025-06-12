@@ -33,7 +33,7 @@ public:
 	void iterate_time(float target_tick_per_second = 0);
 	int32_t get_total_ticks_elapsed();
 	std::chrono::duration<double, std::milli> get_total_time_elapsed();
-	glm::ivec2 get_resolution();
+	glm::ivec3 get_resolution();
 	int32_t get_velocity_set_vector_count();
 
 	// high level field initialization api
@@ -46,7 +46,7 @@ public:
 		uint32_t boundry_id = not_a_boundry;
 	};
 	void initialize_fields(
-		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
+		std::function<void(glm::ivec3, FluidProperties&)> initialization_lambda,
 		glm::ivec3 resolution,
 		float relaxation_time,
 		bool periodic_x = true,
@@ -87,25 +87,27 @@ public:
 	void render2d_forces();
 	void render2d_temperature();
 
-	void render3d_density(Camera& camera, int32_t sample_count = 1024);
-	void render3d_velocity(Camera& camera, int32_t sample_count = 1024);
-	void render3d_boundries(Camera& camera, int32_t sample_count = 1024);
-	void render3d_forces(Camera& camera, int32_t sample_count = 1024);
-	void render3d_temperature(Camera& camera, int32_t sample_count = 1024);
+	void render3d_density(Camera& camera, int32_t sample_count = 128);
+	void render3d_velocity(Camera& camera, int32_t sample_count = 128);
+	void render3d_boundries(Camera& camera, int32_t sample_count = 128);
+	void render3d_forces(Camera& camera, int32_t sample_count = 128);
+	void render3d_temperature(Camera& camera, int32_t sample_count = 128);
 
 	std::shared_ptr<Texture3D> get_velocity_density_texture();
 	std::shared_ptr<Texture3D> get_boundry_texture();
 	std::shared_ptr<Texture3D> get_force_temperature_texture();
 
 	// low level visualization api
-	void copy_to_texture_population(Texture2D& target_texture, int32_t population_index);
+	//void copy_to_texture_population(Texture2D& target_texture, int32_t population_index);
 
 	// low level field initialization api
 	float get_relaxation_time();
 	VelocitySet get_velocity_set();
+	int32_t get_dimentionality();
 	FloatingPointAccuracy get_floating_point_accuracy();
 	bool get_periodic_boundry_x();
 	bool get_periodic_boundry_y();
+	bool get_periodic_boundry_z();
 	bool get_is_forcing_scheme();
 	bool get_is_force_field_constant();
 	bool get_is_flow_multiphase();
@@ -116,15 +118,15 @@ public:
  	void set_constant_force(glm::vec3 constant_force);
 	void set_intermolecular_interaction_strength(float value);
 
-	void set_population(glm::ivec2 voxel_coordinate, int32_t population_index, float value);
-	void set_population(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_coordinate_end, int32_t population_index, float value);
-	void set_population(int32_t population_index, float value);
-	void set_population(float value);
-
-	void add_random_population(glm::ivec2 voxel_coordinate, int32_t population_index, float amplitude);
-	void add_random_population(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_coordinate_end, int32_t population_index, float amplitude);
-	void add_random_population(int32_t population_index, float amplitude);
-	void add_random_population(float amplitude);
+	//void set_population(glm::ivec2 voxel_coordinate, int32_t population_index, float value);
+	//void set_population(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_coordinate_end, int32_t population_index, float value);
+	//void set_population(int32_t population_index, float value);
+	//void set_population(float value);
+	//
+	//void add_random_population(glm::ivec2 voxel_coordinate, int32_t population_index, float amplitude);
+	//void add_random_population(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_coordinate_end, int32_t population_index, float amplitude);
+	//void add_random_population(int32_t population_index, float amplitude);
+	//void add_random_population(float amplitude);
 
 private:
 	
@@ -132,6 +134,10 @@ private:
 	void _compile_shaders();
 	void _generate_lattice(glm::ivec3 resolution);
 	
+	size_t _coord_to_id(glm::uvec3 coord);
+	size_t _coord_to_id(uint32_t x, uint32_t y, uint32_t z);
+	size_t _get_voxel_count();
+
 	void _stream();
 	void _collide(bool save_macrsoscopic_results);
 	void _generate_lattice_buffer();
@@ -141,18 +147,18 @@ private:
 	void _set_populations_to_equilibrium(Buffer& density_field, Buffer& velocity_field);
 
 	void _initialize_fields_default_pass(
-		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
+		std::function<void(glm::ivec3, FluidProperties&)> initialization_lambda,
 		std::shared_ptr<Buffer>& out_density_field,
 		std::shared_ptr<Buffer>& out_velocity_field
 		);
 	void _initialize_fields_boundries_pass(
-		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda
+		std::function<void(glm::ivec3, FluidProperties&)> initialization_lambda
 		);
 	void _initialize_fields_force_pass(
-		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda
+		std::function<void(glm::ivec3, FluidProperties&)> initialization_lambda
 		);
 	void _initialize_fields_thermal_pass(
-		std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
+		std::function<void(glm::ivec3, FluidProperties&)> initialization_lambda,
 		std::shared_ptr<Buffer> in_velocity_field
 		);
 
@@ -181,9 +187,11 @@ private:
 	// moving/stationary boundries control flags
 	bool periodic_x = true;
 	bool periodic_y = true;
+	bool periodic_z = true;
 	void _set_periodic_boundry_x(bool value);
 	void _set_periodic_boundry_y(bool value);
-	
+	void _set_periodic_boundry_z(bool value);
+
 	struct _object_desc {
 	public:
 		_object_desc(

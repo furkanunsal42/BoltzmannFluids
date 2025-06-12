@@ -53,15 +53,15 @@ void main(){
 	float step_length = 1.0 / sample_count;
 	vec3 current_position = object_space_begin;
 
-	float total_density = 0;
+	vec3 total_value = vec3(0);
 	float current_depth = 0;
 
 	while(current_depth < ray_info.y) {
-		float density = texture(volume, current_position + 0.5).a * 4;
-		total_density += density * step_length;
+		vec3 value = abs(texture(volume, current_position + 0.5).rgb) * 8;
+		total_value += value * step_length;
 		current_depth += step_length;
 		current_position += object_space_direction * step_length;
 	}
 	
-	frag_color = vec4(1, 1, 1, min(total_density, 1));
+	frag_color = vec4(vec3(total_value), 1);
 }

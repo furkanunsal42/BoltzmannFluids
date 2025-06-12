@@ -14,7 +14,7 @@ int main() {
 	Window window(desc);
 
 	LBM solver;
-	demo2d::multiphase_droplet_collision(solver);
+	demo3d::multiphase_droplet_collision(solver);
 
 	window.set_window_resolution(solver.get_resolution());
 	primitive_renderer::set_viewport_size(solver.get_resolution());
@@ -70,38 +70,32 @@ int main() {
 			}
 		}
 
-		glEnable(GL_CULL_FACE);
-		glCullFace(GL_BACK);
-		glEnable(GL_DEPTH_TEST);
-		glDisable(GL_BLEND);
-
 		primitive_renderer::clear(0, 0, 0, 0);
 		camera_3d.handle_movements((GLFWwindow*)window.get_handle(), deltatime);
 
-		if (display_mode == 1) {
-			glEnable(GL_CULL_FACE);
-			glCullFace(GL_FRONT);
-			glDisable(GL_DEPTH_TEST);
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		switch (display_mode) {
+		case 1:
+			if (solver.get_dimentionality() == 3)	solver.render3d_density(camera_3d);
+			else									solver.render2d_density();
+			break;
+		case 2:
+			if (solver.get_dimentionality() == 3)	solver.render3d_boundries(camera_3d);
+			else									solver.render2d_boundries();
+			break;
+		case 3:
+			if (solver.get_dimentionality() == 3)	solver.render3d_velocity(camera_3d);
+			else									solver.render2d_velocity();
+			break;
+		case 4:
+			if (solver.get_dimentionality() == 3)	solver.render3d_forces(camera_3d);
+			else									solver.render2d_forces();
+			break;
+		case 5:
+			if (solver.get_dimentionality() == 3)	solver.render3d_temperature(camera_3d);
+			else									solver.render2d_temperature();
+			break;
+		}
 
-			solver.render3d_density(camera_3d);
-
-			//solver.render2d_density();
-		}
-		else if (display_mode == 2) {
-			solver.render2d_boundries();
-		}
-		else if (display_mode == 3) {
-			solver.render2d_velocity();
-		}
-		else if (display_mode == 4) {
-			solver.render2d_forces();
-		}
-		else if (display_mode == 5) {
-			solver.render2d_temperature();
-		}
-		
 		window.swap_buffers();
 		};
 

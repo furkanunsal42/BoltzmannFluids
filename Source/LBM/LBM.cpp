@@ -39,7 +39,11 @@ void LBM::_compile_shaders()
 	program_render2d_forces						= std::make_shared<Program>(Shader(renderer2d_shader_directory / "basic.vert", renderer2d_shader_directory / "forces_2d.frag"));;
 	program_render2d_temperature				= std::make_shared<Program>(Shader(renderer2d_shader_directory / "basic.vert", renderer2d_shader_directory / "temperature_2d.frag"));;
 
-	program_render_volumetric_density			= std::make_shared<Program>(Shader(renderer3d_shader_directory / "basic.vert", renderer3d_shader_directory / "volumetric.frag"));
+	program_render_volumetric_density			= std::make_shared<Program>(Shader(renderer3d_shader_directory / "basic.vert", renderer3d_shader_directory / "density_volumetric.frag"));
+	program_render_volumetric_velocity			= std::make_shared<Program>(Shader(renderer3d_shader_directory / "basic.vert", renderer3d_shader_directory / "velocity_volumetric.frag"));
+	program_render_volumetric_boundries			= std::make_shared<Program>(Shader(renderer3d_shader_directory / "basic.vert", renderer3d_shader_directory / "boundries_volumetric.frag"));
+	program_render_volumetric_forces			= std::make_shared<Program>(Shader(renderer3d_shader_directory / "basic.vert", renderer3d_shader_directory / "forces_volumetric.frag"));
+	program_render_volumetric_temperature		= std::make_shared<Program>(Shader(renderer3d_shader_directory / "basic.vert", renderer3d_shader_directory / "temperature_volumetric.frag"));
 
 	SingleModel plane_model;
 	plane_model.verticies = {
@@ -186,6 +190,21 @@ void LBM::_generate_lattice(glm::ivec3 resolution)
 	_generate_lattice_buffer();
 }
 
+size_t LBM::_coord_to_id(glm::uvec3 coord)
+{
+	return _coord_to_id(coord.x, coord.y, coord.z);
+}
+
+size_t LBM::_coord_to_id(uint32_t x, uint32_t y, uint32_t z)
+{
+	return z * resolution.y * resolution.x + y * resolution.x + x;
+}
+
+size_t LBM::_get_voxel_count()
+{
+	return resolution.x * resolution.y * resolution.z;
+}
+
 void LBM::iterate_time(float target_tick_per_second)
 {
 	if (first_iteration) {
@@ -243,6 +262,11 @@ VelocitySet LBM::get_velocity_set()
 	return velocity_set;
 }
 
+int32_t LBM::get_dimentionality()
+{
+	return get_VelocitySet_dimention(get_velocity_set());
+}
+
 void LBM::set_relaxation_time(float relaxation_time)
 {
 	this->relaxation_time = relaxation_time;
@@ -276,9 +300,24 @@ void LBM::_set_periodic_boundry_y(bool value)
 	is_programs_compiled = false;
 }
 
+
 bool LBM::get_periodic_boundry_y()
 {
 	return periodic_y;
+}
+
+bool LBM::get_periodic_boundry_z()
+{
+	return periodic_z;
+}
+
+void LBM::_set_periodic_boundry_z(bool value)
+{
+	if (periodic_z == value)
+		return;
+
+	periodic_z = value;
+	is_programs_compiled = false;
 }
 
 void LBM::_set_is_forcing_scheme(bool value)
@@ -344,7 +383,7 @@ bool LBM::get_is_flow_multiphase()
 }
 
 void LBM::initialize_fields(
-	std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda, 
+	std::function<void(glm::ivec3, FluidProperties&)> initialization_lambda, 
 	glm::ivec3 resolution, 
 	float relaxation_time, 
 	bool periodic_x, 
@@ -354,6 +393,16 @@ void LBM::initialize_fields(
 	bool is_flow_multiphase
 ) {
 	is_programs_compiled = false;
+
+	if (glm::any(glm::lessThanEqual(resolution, glm::ivec3(0)))) {
+		std::cout << "[LBM Error] LBM::initialize_fields() is called but given resolution is not valid, all components must be greater than zero" << std::endl;
+		ASSERT(false);
+	}
+
+	if (get_VelocitySet_dimention(velocity_set) == 2 && resolution.z != 1) {
+		std::cout << "[LBM Error] LBM::initialize_fields() is called but given velocity set dimention doesn't match the resolution dimention" << std::endl;
+		ASSERT(false);
+	}
 
 	if (objects_cpu.size() == 0)
 		objects_cpu.resize(1);
@@ -413,13 +462,13 @@ void LBM::initialize_fields(
 }
 
 void LBM::_initialize_fields_default_pass(
-	std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
+	std::function<void(glm::ivec3, FluidProperties&)> initialization_lambda,
 	std::shared_ptr<Buffer>& out_density_field,
 	std::shared_ptr<Buffer>& out_velocity_field
 ) {
 
-	std::shared_ptr<Buffer> velocity_buffer = std::make_shared<Buffer>(resolution.x * resolution.y * sizeof(glm::vec4));
-	std::shared_ptr<Buffer> density_buffer = std::make_shared<Buffer>(resolution.x * resolution.y * sizeof(float));
+	std::shared_ptr<Buffer> velocity_buffer = std::make_shared<Buffer>(_get_voxel_count() * sizeof(glm::vec4));
+	std::shared_ptr<Buffer> density_buffer = std::make_shared<Buffer>(_get_voxel_count() * sizeof(float));
 
 	velocity_buffer->map(Buffer::MapInfo(Buffer::MapInfo::Upload, Buffer::MapInfo::Temporary));
 	density_buffer->map(Buffer::MapInfo(Buffer::MapInfo::Upload, Buffer::MapInfo::Temporary));
@@ -428,7 +477,7 @@ void LBM::_initialize_fields_default_pass(
 	float* density_buffer_data = (float*)density_buffer->get_mapped_pointer();
 
 	FluidProperties temp_properties;
-	initialization_lambda(glm::ivec2(0, 0), temp_properties);
+	initialization_lambda(glm::ivec3(0, 0, 0), temp_properties);
 
 	_set_is_force_field_constant(true);
 	set_constant_force(temp_properties.force);
@@ -437,25 +486,27 @@ void LBM::_initialize_fields_default_pass(
 	
 	uint32_t object_count = 1;
 
-	for (int32_t x = 0; x < resolution.x; x++) {
+	for (int32_t z = 0; z < resolution.z; z++) {
 		for (int32_t y = 0; y < resolution.y; y++) {
-			FluidProperties properties;
-			initialization_lambda(glm::ivec2(x, y), properties);
+			for (int32_t x = 0; x < resolution.x; x++) {
+				FluidProperties properties;
+				initialization_lambda(glm::ivec3(x, y, z), properties);
 
-			if (properties.boundry_id != 0)
-				properties.velocity = glm::vec3(0);
+				if (properties.boundry_id != 0)
+					properties.velocity = glm::vec3(0);
 
-			object_count = std::max(object_count, properties.boundry_id + 1);
+				object_count = std::max(object_count, properties.boundry_id + 1);
 
-			if (properties.force != constant_force)
-				_set_is_force_field_constant(false);
-			if (properties.temperature != temp_properties.temperature)
-				_set_is_flow_thermal(true);
-			if (properties.boundry_id != not_a_boundry && objects_cpu[properties.boundry_id].temperature != temp_properties.temperature)
-				_set_is_flow_thermal(true);
-			
-			velocity_buffer_data[y * resolution.x + x] = glm::vec4(properties.velocity, 0.0f);
-			density_buffer_data[y * resolution.x + x] = properties.density;
+				if (properties.force != constant_force)
+					_set_is_force_field_constant(false);
+				if (properties.temperature != temp_properties.temperature)
+					_set_is_flow_thermal(true);
+				if (properties.boundry_id != not_a_boundry && objects_cpu[properties.boundry_id].temperature != temp_properties.temperature)
+					_set_is_flow_thermal(true);
+
+				velocity_buffer_data[_coord_to_id(x, y, z)] = glm::vec4(properties.velocity, 0.0f);
+				density_buffer_data[_coord_to_id(x, y, z)] = properties.density;
+			}
 		}
 	}
 
@@ -497,7 +548,7 @@ void LBM::_initialize_fields_default_pass(
 	std::cout << "[LBM Info] _initialize_fields_default_pass() completed" << std::endl;
 }
 
-void LBM::_initialize_fields_boundries_pass(std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda)
+void LBM::_initialize_fields_boundries_pass(std::function<void(glm::ivec3, FluidProperties&)> initialization_lambda)
 {
 	uint32_t object_count = objects_cpu.size();
 
@@ -538,7 +589,7 @@ void LBM::_initialize_fields_boundries_pass(std::function<void(glm::ivec2, Fluid
 
 	// boundries initialization
 
-	size_t boundries_buffer_size = std::ceil(std::ceil((bits_per_boundry * resolution.x * resolution.y) / 8.0f) / 4.0f) * 4;
+	size_t boundries_buffer_size = std::ceil(std::ceil((_get_voxel_count() * bits_per_boundry) / 8.0f) / 4.0f) * 4;
 	boundries = std::make_shared<Buffer>(boundries_buffer_size);
 
 	boundries->map();
@@ -548,41 +599,45 @@ void LBM::_initialize_fields_boundries_pass(std::function<void(glm::ivec2, Fluid
 		(boundries_mapped_buffer)[i] = 0;
 	}
 
-	for (int32_t x = 0; x < resolution.x; x++) {
+	for (int32_t z = 0; z < resolution.z; z++) {
 		for (int32_t y = 0; y < resolution.y; y++) {
-			FluidProperties properties;
-			initialization_lambda(glm::ivec2(x, y), properties);
+			for (int32_t x = 0; x < resolution.x; x++) {
+				FluidProperties properties;
+				initialization_lambda(glm::ivec3(x, y, z), properties);
 
-			size_t voxel_id = y * resolution.x + x;
-			size_t bits_begin = voxel_id * bits_per_boundry;
+				size_t voxel_id = _coord_to_id(x, y, z);
+				size_t bits_begin = voxel_id * bits_per_boundry;
 
-			size_t dword_offset = bits_begin / 32;
-			int32_t subdword_offset_in_bits = bits_begin % 32;
+				size_t dword_offset = bits_begin / 32;
+				int32_t subdword_offset_in_bits = bits_begin % 32;
 
-			(boundries_mapped_buffer)[dword_offset] |= (properties.boundry_id << subdword_offset_in_bits);
+				(boundries_mapped_buffer)[dword_offset] |= (properties.boundry_id << subdword_offset_in_bits);
+			}
 		}
 	}
 
 	// debug
-	for (int32_t x = 0; x < resolution.x; x++) {
+	for (int32_t z = 0; z < resolution.z; z++) {
 		for (int32_t y = 0; y < resolution.y; y++) {
-			FluidProperties properties;
-			initialization_lambda(glm::ivec2(x, y), properties);
+			for (int32_t x = 0; x < resolution.x; x++) {
+				FluidProperties properties;
+				initialization_lambda(glm::ivec3(x, y, z), properties);
 
-			int voxel_id = y * resolution.x + x;
-			int bits_begin = voxel_id * bits_per_boundry;
+				unsigned int voxel_id = _coord_to_id(x, y, z);
+				unsigned int bits_begin = voxel_id * bits_per_boundry;
 
-			int dword_offset = bits_begin / 32;
-			int subdword_offset_in_bits = bits_begin % 32;
+				unsigned int dword_offset = bits_begin / 32;
+				unsigned int subdword_offset_in_bits = bits_begin % 32;
 
-			uint32_t bitmask = (1 << bits_per_boundry) - 1;
-			uint32_t boundry = (boundries_mapped_buffer)[dword_offset] & (bitmask << subdword_offset_in_bits);
-			boundry = boundry >> subdword_offset_in_bits;
+				uint32_t bitmask = (1 << bits_per_boundry) - 1;
+				uint32_t boundry = (boundries_mapped_buffer)[dword_offset] & (bitmask << subdword_offset_in_bits);
+				boundry = boundry >> subdword_offset_in_bits;
 
-			if (boundry != properties.boundry_id) {
-				std::cout << "[LBM Error] _initialize_fields_boundries_pass() is called but an error occured during writing or reading the boundries bits" << std::endl;
-				std::cout << "[LBM Error] boundry value read(" << boundry << ") mismatch the value written(" << properties.boundry_id << ")" << " at the coordinates(" << x << ", " << y << ")" << std::endl;
-				ASSERT(false);
+				if (boundry != properties.boundry_id) {
+					std::cout << "[LBM Error] _initialize_fields_boundries_pass() is called but an error occured during writing or reading the boundries bits" << std::endl;
+					std::cout << "[LBM Error] boundry value read(" << boundry << ") mismatch the value written(" << properties.boundry_id << ")" << " at the coordinates(" << x << ", " << y << ", " << z << ")" << std::endl;
+					ASSERT(false);
+				}
 			}
 		}
 	}
@@ -593,20 +648,22 @@ void LBM::_initialize_fields_boundries_pass(std::function<void(glm::ivec2, Fluid
 	std::cout << "[LBM Info] _initialize_fields_boundries_pass() completed" << std::endl;
 }
 
-void LBM::_initialize_fields_force_pass(std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda) {
+void LBM::_initialize_fields_force_pass(std::function<void(glm::ivec3, FluidProperties&)> initialization_lambda) {
 	if (is_force_field_constant)
 		this->forces = nullptr;
 	else {
-		forces = std::make_shared<Buffer>(sizeof(glm::vec4) * resolution.x * resolution.y);
+		forces = std::make_shared<Buffer>(_get_voxel_count() * sizeof(glm::vec4));
 		forces->map();
 
 		glm::vec4* forces_buffer_data = (glm::vec4*)forces->get_mapped_pointer();
 
-		for (int32_t x = 0; x < resolution.x; x++) {
+		for (int32_t z = 0; z < resolution.z; z++) {
 			for (int32_t y = 0; y < resolution.y; y++) {
-				FluidProperties properties;
-				initialization_lambda(glm::ivec2(x, y), properties);
-				forces_buffer_data[y * resolution.x + x] = glm::vec4(properties.force, 0.0f);
+				for (int32_t x = 0; x < resolution.x; x++) {
+					FluidProperties properties;
+					initialization_lambda(glm::ivec3(x, y, z), properties);
+					forces_buffer_data[_coord_to_id(x, y, z)] = glm::vec4(properties.force, 0.0f);
+				}
 			}
 		}
 
@@ -618,7 +675,7 @@ void LBM::_initialize_fields_force_pass(std::function<void(glm::ivec2, FluidProp
 }
 
 void LBM::_initialize_fields_thermal_pass(
-	std::function<void(glm::ivec2, FluidProperties&)> initialization_lambda,
+	std::function<void(glm::ivec3, FluidProperties&)> initialization_lambda,
 	std::shared_ptr<Buffer> in_velocity_field
 ) {
 	if (!is_flow_thermal) {
@@ -636,19 +693,21 @@ void LBM::_initialize_fields_thermal_pass(
 		thermal_lattice_velocity_set_buffer->upload_data();
 
 		int32_t lattice_vector_count = get_SimplifiedVelocitySet_vector_count(thermal_lattice_velocity_set);
-		thermal_lattice0 = std::make_shared<Buffer>(sizeof(float) * lattice_vector_count * resolution.x * resolution.y);
-		thermal_lattice1 = std::make_shared<Buffer>(sizeof(float) * lattice_vector_count * resolution.x * resolution.y);
+		thermal_lattice0 = std::make_shared<Buffer>(sizeof(float) * lattice_vector_count * _get_voxel_count());
+		thermal_lattice1 = std::make_shared<Buffer>(sizeof(float) * lattice_vector_count * _get_voxel_count());
 
-		Buffer temperature_field(sizeof(float) * resolution.x * resolution.y);
+		Buffer temperature_field(sizeof(float) * _get_voxel_count());
 		temperature_field.map();
 
 		float* temperature_field_buffer_data = (float*)temperature_field.get_mapped_pointer();
 
-		for (int32_t x = 0; x < resolution.x; x++) {
+		for (int32_t z = 0; z < resolution.z; z++) {
 			for (int32_t y = 0; y < resolution.y; y++) {
-				FluidProperties properties;
-				initialization_lambda(glm::ivec2(x, y), properties);
-				temperature_field_buffer_data[y * resolution.x + x] = properties.temperature;
+				for (int32_t x = 0; x < resolution.x; x++) {
+					FluidProperties properties;
+					initialization_lambda(glm::ivec3(x, y, z), properties);
+					temperature_field_buffer_data[_coord_to_id(x, y, z)] = properties.temperature;
+				}
 			}
 		}
 
@@ -661,66 +720,62 @@ void LBM::_initialize_fields_thermal_pass(
 	std::cout << "[LBM Info] _initialize_fields_themral_pass() completed" << std::endl;
 }
 
-void LBM::copy_to_texture_population(Texture2D& target_texture, int32_t population_index)
-{
-	if (_get_lattice_source() == nullptr) {
-		std::cout << "[LBM Error] LBM::copy_to_texture_population() is called but lattice wasn't generated" << std::endl;
-		ASSERT(false);
-	}
-
-	if ((boundries == nullptr || objects == nullptr) && bits_per_boundry != 0) {
-		std::cout << "[LBM Error] LBM::copy_to_texture_population() is called with boundries activated but boundries buffer wasn't generated" << std::endl;
-		ASSERT(false);
-	}
-
-	if (target_texture.get_internal_format_color() != Texture2D::ColorTextureFormat::R32F) {
-		std::cout << "[LBM Error] LBM::copy_to_texture_population() is called but target_texture's format wasn't compatible" << std::endl;
-		ASSERT(false);
-	}
-
-	if (population_index < 0 || population_index >= get_velocity_set_vector_count()) {
-		std::cout << "[LBM Error] LBM::copy_to_texture_population() is called but population_index is out of bounds" << std::endl;
-		ASSERT(false);
-	}
-
-
-	_compile_shaders();
-
-	ComputeProgram& kernel = *lbm2d_copy_population;
-
-	Buffer& lattice = *_get_lattice_source();
-
-	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
-	kernel.update_uniform_as_storage_buffer("lattice_buffer", lattice, 0);
-	if (bits_per_boundry != 0) {
-		kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
-		kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
-	}
-	kernel.update_uniform_as_image("target_texture", target_texture, 0);
-	kernel.update_uniform("lattice_resolution", resolution);
-	kernel.update_uniform("texture_resolution", target_texture.get_size());
-	kernel.update_uniform("population_index", population_index);
-
-	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
-}
+//void LBM::copy_to_texture_population(Texture2D& target_texture, int32_t population_index)
+//{
+//	if (_get_lattice_source() == nullptr) {
+//		std::cout << "[LBM Error] LBM::copy_to_texture_population() is called but lattice wasn't generated" << std::endl;
+//		ASSERT(false);
+//	}
+//
+//	if ((boundries == nullptr || objects == nullptr) && bits_per_boundry != 0) {
+//		std::cout << "[LBM Error] LBM::copy_to_texture_population() is called with boundries activated but boundries buffer wasn't generated" << std::endl;
+//		ASSERT(false);
+//	}
+//
+//	if (target_texture.get_internal_format_color() != Texture2D::ColorTextureFormat::R32F) {
+//		std::cout << "[LBM Error] LBM::copy_to_texture_population() is called but target_texture's format wasn't compatible" << std::endl;
+//		ASSERT(false);
+//	}
+//
+//	if (population_index < 0 || population_index >= get_velocity_set_vector_count()) {
+//		std::cout << "[LBM Error] LBM::copy_to_texture_population() is called but population_index is out of bounds" << std::endl;
+//		ASSERT(false);
+//	}
+//
+//
+//	_compile_shaders();
+//
+//	ComputeProgram& kernel = *lbm2d_copy_population;
+//
+//	Buffer& lattice = *_get_lattice_source();
+//
+//	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
+//	kernel.update_uniform_as_storage_buffer("lattice_buffer", lattice, 0);
+//	if (bits_per_boundry != 0) {
+//		kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);
+//		kernel.update_uniform_as_storage_buffer("objects_buffer", *objects, 0);
+//	}
+//	kernel.update_uniform_as_image("target_texture", target_texture, 0);
+//	kernel.update_uniform("lattice_resolution", resolution);
+//	kernel.update_uniform("texture_resolution", target_texture.get_size());
+//	kernel.update_uniform("population_index", population_index);
+//
+//	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
+//}
 
 void LBM::_generate_lattice_buffer()
 {
-	size_t voxel_count = resolution.x * resolution.y;
+	size_t voxel_count = _get_voxel_count();
 	size_t total_buffer_size_in_bytes =
 		voxel_count *
 		get_velocity_set_vector_count() *
 		get_FloatingPointAccuracy_size_in_bytes(floating_point_accuracy);
 
-	size_t boundry_buffer_size = (size_t)std::ceil(voxel_count / 8.0);
-
 	lattice0 = std::make_shared<Buffer>(total_buffer_size_in_bytes);
 	lattice1 = std::make_shared<Buffer>(total_buffer_size_in_bytes);
-	boundries = std::make_shared<Buffer>(boundry_buffer_size);
 
 	lattice0->clear(0.0f);
 	lattice1->clear(0.0f);
-	boundries->clear(0);
 
 	lattice_velocity_set_buffer = std::make_unique<UniformBuffer>();
 	lattice_velocity_set_buffer->push_variable_array(get_velocity_set_vector_count()); // a vec4 for every velocity direction
@@ -841,7 +896,7 @@ void LBM::_generate_macroscopic_textures()
 	}
 }
 
-glm::ivec2 LBM::get_resolution()
+glm::ivec3 LBM::get_resolution()
 {
 	return resolution;
 }
@@ -924,6 +979,8 @@ void LBM::render2d_density()
 	program.update_uniform("texture_resolution", glm::vec3(velocity_density_texture->get_size()));
 	program.update_uniform("render_depth", 0);
 
+	glCullFace(GL_BACK);
+
 	primitive_renderer::render(
 		program,
 		*plane_mesh->get_mesh(0),
@@ -948,6 +1005,8 @@ void LBM::render2d_velocity()
 	program.update_uniform("projection", glm::identity<glm::mat4>());
 	program.update_uniform("texture_resolution", glm::vec3(velocity_density_texture->get_size()));
 	program.update_uniform("render_depth", 0);
+
+	glCullFace(GL_BACK);
 
 	primitive_renderer::render(
 		program,
@@ -974,6 +1033,8 @@ void LBM::render2d_boundries()
 	program.update_uniform("texture_resolution", glm::vec3(boundry_texture->get_size()));
 	program.update_uniform("render_depth", 0);
 
+	glCullFace(GL_BACK);
+
 	primitive_renderer::render(
 		program,
 		*plane_mesh->get_mesh(0),
@@ -998,6 +1059,8 @@ void LBM::render2d_forces()
 	program.update_uniform("projection", glm::identity<glm::mat4>());
 	program.update_uniform("texture_resolution", glm::vec3(force_temperature_texture->get_size()));
 	program.update_uniform("render_depth", 0);
+
+	glCullFace(GL_BACK);
 
 	primitive_renderer::render(
 		program,
@@ -1024,6 +1087,8 @@ void LBM::render2d_temperature()
 	program.update_uniform("texture_resolution", glm::vec3(force_temperature_texture->get_size()));
 	program.update_uniform("render_depth", 0);
 
+	glCullFace(GL_BACK);
+
 	primitive_renderer::render(
 		program,
 		*plane_mesh->get_mesh(0),
@@ -1049,8 +1114,14 @@ void LBM::render3d_density(Camera& camera, int32_t sample_count)
 	program.update_uniform("inverse_model", glm::identity<glm::mat4>());
 	program.update_uniform("inverse_view", glm::inverse(camera.view_matrix));
 	
-	program.update_uniform("sample_count", 1024);
+	program.update_uniform("sample_count", sample_count);
 	program.update_uniform("volume", *velocity_density_texture);
+
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_FRONT);
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	primitive_renderer::render(
 		program,
@@ -1061,71 +1132,207 @@ void LBM::render3d_density(Camera& camera, int32_t sample_count)
 	);
 }
 
-void LBM::set_population(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_coordinate_end, int32_t population_index, float value)
+void LBM::render3d_velocity(Camera& camera, int32_t sample_count)
 {
 	_compile_shaders();
 
-	ComputeProgram& kernel = *lbm2d_set_population;
+	if (velocity_density_texture == nullptr)
+		return;
 
-	Buffer& lattice = *_get_lattice_source();
+	Program& program = *program_render_volumetric_velocity;
 
-	kernel.update_uniform_as_storage_buffer("lattice_buffer", lattice, 0);
-	kernel.update_uniform("lattice_resolution", resolution);
-	kernel.update_uniform("lattice_region_begin", voxel_coordinate_begin);
-	kernel.update_uniform("lattice_region_end", voxel_coordinate_end);
-	kernel.update_uniform("population_id", population_index);
-	kernel.update_uniform("value", value);
+	camera.update_matrixes();
+	camera.update_default_uniforms(program);
 
-	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
+	program.update_uniform("model", glm::identity<glm::mat4>());
+	program.update_uniform("inverse_model", glm::identity<glm::mat4>());
+	program.update_uniform("inverse_view", glm::inverse(camera.view_matrix));
+
+	program.update_uniform("sample_count", sample_count);
+	program.update_uniform("volume", *velocity_density_texture);
+
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_FRONT);
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	primitive_renderer::render(
+		program,
+		*plane_cube->get_mesh(0),
+		RenderParameters(),
+		1,
+		0
+	);
 }
 
-void LBM::set_population(glm::ivec2 voxel_coordinate, int32_t population_index, float value)
-{
-	set_population(voxel_coordinate, voxel_coordinate + glm::ivec2(1), population_index, value);
-}
-
-void LBM::set_population(int32_t population_index, float value)
-{
-	set_population(glm::ivec2(0), resolution, population_index, value);
-}
-
-void LBM::set_population(float value)
-{
-	for (int index = 0; index < get_velocity_set_vector_count(); index++)
-		set_population(glm::ivec2(0), resolution, index, value);
-}
-
-void LBM::add_random_population(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_coordinate_end, int32_t population_index, float amplitude)
+void LBM::render3d_boundries(Camera& camera, int32_t sample_count)
 {
 	_compile_shaders();
 
-	ComputeProgram& kernel = *lbm2d_add_random_population;
+	if (boundry_texture == nullptr)
+		return;
 
-	Buffer& lattice = *_get_lattice_source();
+	Program& program = *program_render_volumetric_boundries;
 
-	kernel.update_uniform_as_storage_buffer("lattice_buffer", lattice, 0);
-	kernel.update_uniform("lattice_resolution", resolution);
-	kernel.update_uniform("lattice_region_begin", voxel_coordinate_begin);
-	kernel.update_uniform("lattice_region_end", voxel_coordinate_end);
-	kernel.update_uniform("population_id", population_index);
-	kernel.update_uniform("amplitude", amplitude);
+	camera.update_matrixes();
+	camera.update_default_uniforms(program);
 
-	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
+	program.update_uniform("model", glm::identity<glm::mat4>());
+	program.update_uniform("inverse_model", glm::identity<glm::mat4>());
+	program.update_uniform("inverse_view", glm::inverse(camera.view_matrix));
+
+	program.update_uniform("sample_count", sample_count);
+	program.update_uniform("volume", *boundry_texture);
+
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_FRONT);
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	primitive_renderer::render(
+		program,
+		*plane_cube->get_mesh(0),
+		RenderParameters(),
+		1,
+		0
+	);
 }
 
-void LBM::add_random_population(glm::ivec2 voxel_coordinate, int32_t population_index, float value) {
-	add_random_population(voxel_coordinate, voxel_coordinate + glm::ivec2(1), population_index, value);
+void LBM::render3d_forces(Camera& camera, int32_t sample_count)
+{
+	_compile_shaders();
+
+	if (force_temperature_texture == nullptr)
+		return;
+
+	Program& program = *program_render_volumetric_forces;
+
+	camera.update_matrixes();
+	camera.update_default_uniforms(program);
+
+	program.update_uniform("model", glm::identity<glm::mat4>());
+	program.update_uniform("inverse_model", glm::identity<glm::mat4>());
+	program.update_uniform("inverse_view", glm::inverse(camera.view_matrix));
+
+	program.update_uniform("sample_count", sample_count);
+	program.update_uniform("volume", *force_temperature_texture);
+
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_FRONT);
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	primitive_renderer::render(
+		program,
+		*plane_cube->get_mesh(0),
+		RenderParameters(),
+		1,
+		0
+	);
 }
 
-void LBM::add_random_population(int32_t population_index, float amplitude) {
-	add_random_population(glm::ivec2(0), resolution, population_index, amplitude);
+void LBM::render3d_temperature(Camera& camera, int32_t sample_count)
+{
+	_compile_shaders();
 
+	if (force_temperature_texture == nullptr)
+		return;
+
+	Program& program = *program_render_volumetric_temperature;
+
+	camera.update_matrixes();
+	camera.update_default_uniforms(program);
+
+	program.update_uniform("model", glm::identity<glm::mat4>());
+	program.update_uniform("inverse_model", glm::identity<glm::mat4>());
+	program.update_uniform("inverse_view", glm::inverse(camera.view_matrix));
+
+	program.update_uniform("sample_count", sample_count);
+	program.update_uniform("volume", *force_temperature_texture);
+
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_FRONT);
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	primitive_renderer::render(
+		program,
+		*plane_cube->get_mesh(0),
+		RenderParameters(),
+		1,
+		0
+	);
 }
 
-void LBM::add_random_population(float amplitude) {
-	for (int index = 0; index < get_velocity_set_vector_count(); index++)
-		add_random_population(glm::ivec2(0), resolution, index, amplitude);
-}
+//void LBM::set_population(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_coordinate_end, int32_t population_index, float value)
+//{
+//	_compile_shaders();
+//
+//	ComputeProgram& kernel = *lbm2d_set_population;
+//
+//	Buffer& lattice = *_get_lattice_source();
+//
+//	kernel.update_uniform_as_storage_buffer("lattice_buffer", lattice, 0);
+//	kernel.update_uniform("lattice_resolution", resolution);
+//	kernel.update_uniform("lattice_region_begin", voxel_coordinate_begin);
+//	kernel.update_uniform("lattice_region_end", voxel_coordinate_end);
+//	kernel.update_uniform("population_id", population_index);
+//	kernel.update_uniform("value", value);
+//
+//	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
+//}
+//
+//void LBM::set_population(glm::ivec2 voxel_coordinate, int32_t population_index, float value)
+//{
+//	set_population(voxel_coordinate, voxel_coordinate + glm::ivec2(1), population_index, value);
+//}
+//
+//void LBM::set_population(int32_t population_index, float value)
+//{
+//	set_population(glm::ivec2(0), resolution, population_index, value);
+//}
+//
+//void LBM::set_population(float value)
+//{
+//	for (int index = 0; index < get_velocity_set_vector_count(); index++)
+//		set_population(glm::ivec2(0), resolution, index, value);
+//}
+//
+//void LBM::add_random_population(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_coordinate_end, int32_t population_index, float amplitude)
+//{
+//	_compile_shaders();
+//
+//	ComputeProgram& kernel = *lbm2d_add_random_population;
+//
+//	Buffer& lattice = *_get_lattice_source();
+//
+//	kernel.update_uniform_as_storage_buffer("lattice_buffer", lattice, 0);
+//	kernel.update_uniform("lattice_resolution", resolution);
+//	kernel.update_uniform("lattice_region_begin", voxel_coordinate_begin);
+//	kernel.update_uniform("lattice_region_end", voxel_coordinate_end);
+//	kernel.update_uniform("population_id", population_index);
+//	kernel.update_uniform("amplitude", amplitude);
+//
+//	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
+//}
+//
+//void LBM::add_random_population(glm::ivec2 voxel_coordinate, int32_t population_index, float value) {
+//	add_random_population(voxel_coordinate, voxel_coordinate + glm::ivec2(1), population_index, value);
+//}
+//
+//void LBM::add_random_population(int32_t population_index, float amplitude) {
+//	add_random_population(glm::ivec2(0), resolution, population_index, amplitude);
+//
+//}
+//
+//void LBM::add_random_population(float amplitude) {
+//	for (int index = 0; index < get_velocity_set_vector_count(); index++)
+//		add_random_population(glm::ivec2(0), resolution, index, amplitude);
+//}
 
 std::shared_ptr<Texture3D> LBM::get_velocity_density_texture()
 {
@@ -1152,6 +1359,7 @@ std::vector<std::pair<std::string, std::string>> LBM::_generate_shader_macros()
 		{"bits_per_boundry",		std::to_string(bits_per_boundry)},
 		{"periodic_x",				periodic_x ? "1" : "0"},
 		{"periodic_y",				periodic_y ? "1" : "0"},
+		{"periodic_z",				periodic_z ? "1" : "0"},
 		{"forcing_scheme",			is_forcing_scheme ? "1" : "0"},
 		{"constant_force",			is_force_field_constant ? "1" : "0"},
 		{"thermal_flow",			is_flow_thermal ? "1" : "0"},
@@ -1204,7 +1412,7 @@ void LBM::_stream()
 		kernel.update_uniform("intermolecular_interaction_strength", intermolecular_interaction_strength);
 	}
 
-	kernel.dispatch_thread(resolution.x * resolution.y * get_velocity_set_vector_count(), 1, 1);
+	kernel.dispatch_thread(_get_voxel_count() * get_velocity_set_vector_count(), 1, 1);
 
 	_swap_lattice_buffers();
 }
@@ -1261,7 +1469,7 @@ void LBM::_collide(bool save_macrsoscopic_results)
 			kernel.update_uniform_as_image("force_temperature_texture", *force_temperature_texture, 0);
 	}
 
-	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
+	kernel.dispatch_thread(_get_voxel_count(), 1, 1);
 
 	_swap_lattice_buffers();
 	_swap_thermal_lattice_buffers();
@@ -1311,7 +1519,7 @@ void LBM::_collide_with_precomputed_velocities(Buffer& velocity_field)
 		kernel.update_uniform("intermolecular_interaction_strength", intermolecular_interaction_strength);
 	}
 
-	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
+	kernel.dispatch_thread(_get_voxel_count(), 1, 1);
 }
 
 void LBM::_set_populations_to_equilibrium(Buffer& density_field, Buffer& velocity_field)
@@ -1330,7 +1538,7 @@ void LBM::_set_populations_to_equilibrium(Buffer& density_field, Buffer& velocit
 	kernel.update_uniform("lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3)));
 	kernel.update_uniform("relaxation_time", relaxation_time);
 
-	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
+	kernel.dispatch_thread(_get_voxel_count(), 1, 1);
 }
 
 void LBM::_stream_thermal()
@@ -1375,7 +1583,7 @@ void LBM::_stream_thermal()
 		kernel.update_uniform("intermolecular_interaction_strength", intermolecular_interaction_strength);
 	}
 
-	kernel.dispatch_thread(resolution.x * resolution.y * get_SimplifiedVelocitySet_vector_count(thermal_lattice_velocity_set), 1, 1);
+	kernel.dispatch_thread(_get_voxel_count() * get_SimplifiedVelocitySet_vector_count(thermal_lattice_velocity_set), 1, 1);
 
 	_swap_thermal_lattice_buffers();
 }
@@ -1396,7 +1604,7 @@ void LBM::_set_populations_to_equilibrium_thermal(Buffer& temperature_field, Buf
 	kernel.update_uniform("lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3))); // is thermal speed of sound heat conductivity?
 	kernel.update_uniform("relaxation_time", thermal_relaxation_time);
 
-	kernel.dispatch_thread(resolution.x * resolution.y, 1, 1);
+	kernel.dispatch_thread(_get_voxel_count(), 1, 1);
 }
 
 LBM::_object_desc::_object_desc(
