@@ -255,12 +255,12 @@ object_info_s get_object_info(int object_id){
 //////////////////////////////////////////
 // force subsystem
 vec3 get_force(ivec3 pixel_coord){
-	#if forcing_schesme == 1
+	#if forcing_scheme == 1
 		#if constant_force == 1
 			return force_constant;
 		#else
 			uint voxel_id = coord_to_id(pixel_coord);
-			vec3 force = forces[voxel_id];
+			vec3 force = forces[voxel_id].xyz;
 			return force;
 		#endif
 	#else
@@ -353,19 +353,19 @@ vec3 compute_molecular_interaction_force(ivec3 pixel_coord, float temperature){
 		#if periodic_x == 1
 		neighbour_coord.x = positive_modulo(neighbour_coord.x, lattice_resolution.x);
 		#else
-		open_boundry |= (neighbour_coord.x < 0 || neighbour_coord.x >= lattice_resolution.x);
+		open_boundry = open_boundry || (neighbour_coord.x < 0 || neighbour_coord.x >= lattice_resolution.x);
 		#endif
-	
+		
 		#if periodic_y == 1
 		neighbour_coord.y = positive_modulo(neighbour_coord.y, lattice_resolution.y);
 		#else
-		open_boundry |= (neighbour_coord.x < 0 || neighbour_coord.x >= lattice_resolution.x);
+		open_boundry = open_boundry || (neighbour_coord.y < 0 || neighbour_coord.y >= lattice_resolution.y);
 		#endif
-
+		
 		#if periodic_z == 1
 		neighbour_coord.z = positive_modulo(neighbour_coord.z, lattice_resolution.z);
 		#else
-		open_boundry |= (neighbour_coord.x < 0 || neighbour_coord.x >= lattice_resolution.x);
+		open_boundry = open_boundry || (neighbour_coord.z < 0 || neighbour_coord.z >= lattice_resolution.z);
 		#endif
 
 		float neighbour_density;

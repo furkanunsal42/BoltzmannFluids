@@ -299,7 +299,7 @@ void demo2d::multiphase_humid_platform(LBM& solver) {
 		},
 		simulation_resolution,
 		0.51,
-		true,
+		false,
 		false,
 		VelocitySet::D2Q9,
 		FloatingPointAccuracy::fp32,

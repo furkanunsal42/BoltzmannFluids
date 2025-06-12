@@ -16,6 +16,10 @@ void LBM::_compile_shaders()
 	auto definitions_plus_save = definitions;
 	definitions_plus_save.push_back(std::pair("save_macroscopic_variables", "1"));
 
+	std::cout << "[LBM Info] kernels are compiled with configuration : " << std::endl;
+	for (auto& definition : definitions)
+		std::cout << "\t" << definition.first << " : " << definition.second << std::endl;
+
 	lbm2d_stream								= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "stream.comp"), definitions);
 	lbm2d_stream_thermal						= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "stream_thermal.comp"), definitions);
 	lbm2d_collide								= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "collide.comp"), definitions);
@@ -26,10 +30,6 @@ void LBM::_compile_shaders()
 	lbm2d_set_population						= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "set_population.comp"), definitions);
 	lbm2d_copy_population						= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "copy_population.comp"), definitions);
 	lbm2d_add_random_population					= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "add_random_population.comp"), definitions);
-
-	std::cout << "[LBM Info] kernels are compiled with configuration : " << std::endl;
-	for (auto& definition : definitions)
-		std::cout << "\t" << definition.first << " : " << definition.second << std::endl;
 
 	// renderer2d
 
@@ -420,6 +420,7 @@ void LBM::initialize_fields(
 	_set_floating_point_accuracy(fp_accuracy);
 	_set_periodic_boundry_x(periodic_x);
 	_set_periodic_boundry_y(periodic_y);
+	_set_periodic_boundry_z(false);
 	_set_thermal_lattice_velocity_set(
 		get_VelocitySet_dimention(velocity_set) == 2 ? 
 		SimplifiedVelocitySet::D2Q5 : SimplifiedVelocitySet::D3Q7

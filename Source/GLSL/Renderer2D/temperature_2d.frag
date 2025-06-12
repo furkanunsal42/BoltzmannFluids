@@ -12,5 +12,5 @@ uniform int render_depth;
 
 void main(){
     float temperature = texture(source_texture, vec3(v_texcoord, render_depth / texture_resolution.z + 0.5 / texture_resolution.z)).a;
-    frag_color = vec4(vec3(temperature, 0, 0) / 2, 1);
+    frag_color = vec4(vec3(abs(temperature), 0, 0) / 2, 1);
 }

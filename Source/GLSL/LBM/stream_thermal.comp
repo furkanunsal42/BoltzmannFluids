@@ -455,7 +455,7 @@ float dirichlet_boundry_correction_term_thermal(int lattice_velocity_index, floa
 	//float cs = 1.0 / sqrt(3);
 	//float cs2 = pow(1.0 / sqrt(3), 2);
 
-	return -2 * w * t; 
+	return 2 * w * t; 
 }
 #endif
 
