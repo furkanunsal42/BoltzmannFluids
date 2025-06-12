@@ -87,11 +87,11 @@ public:
 	void render2d_forces();
 	void render2d_temperature();
 
-	void render3d_density(Camera& camera, int32_t sample_count = 128);
-	void render3d_velocity(Camera& camera, int32_t sample_count = 128);
-	void render3d_boundries(Camera& camera, int32_t sample_count = 128);
-	void render3d_forces(Camera& camera, int32_t sample_count = 128);
-	void render3d_temperature(Camera& camera, int32_t sample_count = 128);
+	void render3d_density(Camera& camera, int32_t sample_count = 256);
+	void render3d_velocity(Camera& camera, int32_t sample_count = 256);
+	void render3d_boundries(Camera& camera, int32_t sample_count = 256);
+	void render3d_forces(Camera& camera, int32_t sample_count = 256);
+	void render3d_temperature(Camera& camera, int32_t sample_count = 256);
 
 	std::shared_ptr<Texture3D> get_velocity_density_texture();
 	std::shared_ptr<Texture3D> get_boundry_texture();

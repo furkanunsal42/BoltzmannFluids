@@ -400,6 +400,7 @@ void LBM::initialize_fields(
 	bool is_flow_multiphase
 ) {
 	is_programs_compiled = false;
+	first_iteration = true;
 
 	if (glm::any(glm::lessThanEqual(resolution, glm::ivec3(0)))) {
 		std::cout << "[LBM Error] LBM::initialize_fields() is called but given resolution is not valid, all components must be greater than zero" << std::endl;
@@ -420,7 +421,7 @@ void LBM::initialize_fields(
 	_set_floating_point_accuracy(fp_accuracy);
 	_set_periodic_boundry_x(periodic_x);
 	_set_periodic_boundry_y(periodic_y);
-	_set_periodic_boundry_z(false);
+	_set_periodic_boundry_z(true);
 	_set_thermal_lattice_velocity_set(
 		get_VelocitySet_dimention(velocity_set) == 2 ? 
 		SimplifiedVelocitySet::D2Q5 : SimplifiedVelocitySet::D3Q7

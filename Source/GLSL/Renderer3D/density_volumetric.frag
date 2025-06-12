@@ -63,5 +63,7 @@ void main(){
 		current_position += object_space_direction * step_length;
 	}
 	
-	frag_color = vec4(0.5, 0.8, 1, min(total_value, 1));
+	total_value = 1-exp(-total_value);
+
+	frag_color = vec4(0.5, 0.8, 1, min(total_value * 2, 1));
 }

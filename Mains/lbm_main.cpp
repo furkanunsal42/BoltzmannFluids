@@ -14,7 +14,7 @@ int main() {
 	Window window(desc);
 
 	LBM solver;
-	demo2d::rayleigh_benard_convection(solver);
+	demo3d::multiphase_droplet_collision(solver);
 
 	window.set_window_resolution(solver.get_resolution());
 	primitive_renderer::set_viewport_size(solver.get_resolution());
@@ -48,6 +48,10 @@ int main() {
 				break;
 			case Window::Key::TAB:
 				pause = !pause;
+				break;
+			case Window::Key::R:
+				solver = LBM();
+				demo3d::multiphase_droplet_collision(solver);
 				break;
 			}
 		}

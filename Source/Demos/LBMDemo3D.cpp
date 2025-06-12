@@ -12,7 +12,7 @@ void demo3d::poiseuille_flow(LBM& solver)
 
 			properties.boundry_id = false;
 
-			properties.velocity = glm::vec3(1, 0, 0) / 1024.0f;
+			properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
 
 			//properties.force = glm::vec3(.1, 0, 0) / 128000.0f;
 
@@ -25,7 +25,7 @@ void demo3d::poiseuille_flow(LBM& solver)
 		simulation_resolution,
 		0.53f,
 		true,
-		false,
+		true,
 		VelocitySet::D3Q19,
 		FloatingPointAccuracy::fp32,
 		false
@@ -34,7 +34,7 @@ void demo3d::poiseuille_flow(LBM& solver)
 
 void demo3d::multiphase_droplet_collision(LBM& solver)
 {
-	glm::ivec3 simulation_resolution(128, 128, 128);
+	glm::ivec3 simulation_resolution(256, 256, 256);
 	solver.clear_boundry_properties();
 
 	solver.initialize_fields(
@@ -42,22 +42,22 @@ void demo3d::multiphase_droplet_collision(LBM& solver)
 
 			properties.density = 0.056;
 
-			if (glm::distance(glm::vec3(coordinate), glm::vec3(simulation_resolution.x * 2 / 4.0, simulation_resolution.y / 2, simulation_resolution.z / 2)) < 32) {
+			if (glm::distance(glm::vec3(coordinate), glm::vec3(simulation_resolution.x * 1.2 / 4.0, simulation_resolution.y / 2, simulation_resolution.z / 2 + 10)) < 24) {
 				properties.density = 2.659;
-				//properties.velocity = glm::vec3(16, 0, 0) / 16.0f;
+				properties.velocity = glm::vec3(24, 0, 0) / 16.0f;
 			}
 
-			//if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 2.5 / 4.0, simulation_resolution.y / 2)) < 32) {
-			//	properties.density = 2.659;
-			//	properties.velocity = glm::vec3(-16, 0, 0) / 16.0f;
-			//}
+			if (glm::distance(glm::vec3(coordinate), glm::vec3(simulation_resolution.x * 2.8 / 4.0, simulation_resolution.y / 2, simulation_resolution.z / 2 - 10)) < 24) {
+				properties.density = 2.659;
+				properties.velocity = glm::vec3(-24, 0, 0) / 16.0f;
+			}
 
 		},
 		simulation_resolution,
-		0.55,
+		0.51,
 		true,
 		true,
-		VelocitySet::D3Q27,
+		VelocitySet::D3Q19,
 		FloatingPointAccuracy::fp32,
 		true
 	);
