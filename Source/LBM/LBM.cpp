@@ -209,12 +209,17 @@ void LBM::iterate_time(float target_tick_per_second)
 {
 	if (first_iteration) {
 		simulation_begin = std::chrono::system_clock::now();
-		first_iteration = false;
+		last_visual_update = std::chrono::system_clock::now();
 	}
 
 	size_t targeted_tick_count = target_tick_per_second * get_total_time_elapsed().count() / 1000.0f;
 	if (target_tick_per_second <= 0 || total_ticks_elapsed < targeted_tick_count) {
-		_collide(true);
+		
+		auto time_since_visual_update = std::chrono::system_clock::now() - last_visual_update;
+		bool should_update_visuals = first_iteration || std::chrono::duration_cast<std::chrono::milliseconds>(time_since_visual_update).count() > 1000.0 / 3;
+		if (should_update_visuals) last_visual_update = std::chrono::system_clock::now();
+
+		_collide(should_update_visuals);
 		_stream();
 
 		if (is_flow_thermal)
@@ -222,6 +227,8 @@ void LBM::iterate_time(float target_tick_per_second)
 
 		total_ticks_elapsed++;
 	}
+	
+	first_iteration = false;
 }
 
 int32_t LBM::get_total_ticks_elapsed()

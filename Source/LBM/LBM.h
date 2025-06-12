@@ -166,7 +166,8 @@ private:
 	bool first_iteration = true;
 	size_t total_ticks_elapsed = 0;
 	std::chrono::time_point<std::chrono::system_clock> simulation_begin;
-	
+	std::chrono::time_point<std::chrono::system_clock> last_visual_update;
+
 	// LBM simulation parameters
 	VelocitySet velocity_set = D2Q9;
 	FloatingPointAccuracy floating_point_accuracy = fp32;

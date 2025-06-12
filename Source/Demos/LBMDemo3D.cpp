@@ -34,7 +34,7 @@ void demo3d::poiseuille_flow(LBM& solver)
 
 void demo3d::multiphase_droplet_collision(LBM& solver)
 {
-	glm::ivec3 simulation_resolution(256, 256, 256);
+	glm::ivec3 simulation_resolution(128, 128, 128);
 	solver.clear_boundry_properties();
 
 	solver.initialize_fields(
