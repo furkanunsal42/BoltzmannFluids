@@ -22,7 +22,7 @@ InitialConditionsBox::InitialConditionsBox(QWidget* parent)
 
     setStyleSheet(
     "InitialConditionsBox {"
-        "background-color: rgb(60, 61, 62);"
+        "background-color: rgb(65, 66, 67);"
         "color: rgb(245, 246, 247);"
     "}"
     "InitialConditionsBox QDoubleSpinBox {"
@@ -36,15 +36,15 @@ InitialConditionsBox::InitialConditionsBox(QWidget* parent)
 
     "InitialConditionsBox QLabel {"
         "font-weight: bold;"
-        "background-color: rgb(60, 61, 62);"
+        "background-color: rgb(65, 66, 67);"
         "color: rgb(225, 226, 227);"
     "}"
     "InitialConditionsBox QGroupBox {"
         "border: 0;"
-        "background-color: rgb(60, 61, 62);"
+        "background-color: rgb(65, 66, 67);"
     "}"
     "InitialConditionsBox QCheckBox {"
-        "background-color: rgb(60, 61, 62);"
+        "background-color: rgb(65, 66, 67);"
     "}"
         );
 

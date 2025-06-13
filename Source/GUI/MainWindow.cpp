@@ -18,6 +18,7 @@
 #include "CollabsibleBox.h"
 #include "UI_Config.h"
 #include "Timeline.h"
+#include "LBMWrapper.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -135,37 +136,21 @@ MainWindow::MainWindow(QWidget *parent)
 
         auto left_panel_layout = new QVBoxLayout(left_scroll_area);
         left_scroll_area->setLayout(left_panel_layout);
-        //left_panel_layout->setContentsMargins(0,0,0,0);
-
+        //left_panel_layout->setContentsMargins(0, 0, 0, 0);   // TODO
+        left_panel_layout->setSpacing(2);                    // TODO
         {
             auto add_items_box = new CollapsibleBox("Add Items", left_scroll_area);
-            //left_scroll_content->setStyleSheet("background-color: red;");
-            //auto left_scroll_layout = new QVBoxLayout(left_scroll_content);
-            //left_scroll_layout->setContentsMargins(0, 0, 0, 0);
-            //left_scroll_layout->setSpacing(0);
+            left_panel_layout->addWidget(add_items_box);
 
             auto label1 = new QLabel("box1", add_items_box);
             add_items_box->addWidget(label1);
-            //left_scroll_layout->addWidget(label1);
-
-            //left_scroll_layout->addStretch();
-            //left_scroll_content->setLayout(left_scroll_layout);
-            left_panel_layout->addWidget(add_items_box);
         }
         {
             auto add_items_box2 = new CollapsibleBox("Add Items12", left_scroll_area);
-            //left_scroll_content->setStyleSheet("background-color: red;");
-            //auto left_scroll_layout = new QVBoxLayout(left_scroll_content);
-            //left_scroll_layout->setContentsMargins(0, 0, 0, 0);
-            //left_scroll_layout->setSpacing(0);
-
-            auto label1 = new QLabel("box1", add_items_box2);
-            add_items_box2->addWidget(label1);
-            //left_scroll_layout->addWidget(label1);
-
-            //left_scroll_layout->addStretch();
-            //left_scroll_content->setLayout(left_scroll_layout);
             left_panel_layout->addWidget(add_items_box2);
+
+            auto label2 = new QLabel("box2", add_items_box2);
+            add_items_box2->addWidget(label2);
         }
 
         left_panel_layout->addStretch();
@@ -209,6 +194,8 @@ MainWindow::MainWindow(QWidget *parent)
             // Rendering Box
             auto render_box = new QOpenGLWidget(middle_splitter_one);
             render_box->setMinimumSize(100, 100);
+
+            //wrapper = new QT_LBMWrapper
 
             middle_vertical_layout->addWidget(render_box);
         }
@@ -261,7 +248,7 @@ MainWindow::MainWindow(QWidget *parent)
         auto scroll_content = new QWidget(right_scroll_area);
         auto scroll_layout = new QVBoxLayout(scroll_content);
         scroll_layout->setContentsMargins(7, 7, 7, 7);
-        scroll_layout->setSpacing(5);
+        scroll_layout->setSpacing(2);
 
         auto box1 = new CollapsibleBox("Initial Conditions - 1", scroll_content);
         box1->addWidget(new InitialConditionsBox());

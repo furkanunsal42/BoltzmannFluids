@@ -2,7 +2,6 @@
 #define TIMELINE_H
 
 #include <QWidget>
-#include <QTimer>
 
 class Timeline : public QWidget
 {
@@ -24,7 +23,10 @@ public:
 
 signals:
     void frame_changed(int frame);
-    void finished();
+    void start_signal();
+    void pause_signal();
+    void stop_signal();
+    //void finish_signal();
 
 protected:
     void paintEvent(QPaintEvent* event) override;
@@ -34,11 +36,8 @@ private:
     int _frame;
     int _max_frame;
     int start_frame = 0;
+    bool _running = false;
 
-    QTimer _timer;
-    int _frame_interval_ms = 33; // ~30 fps
-
-    void _advance();
 };
 
 #endif // TIMELINE_H

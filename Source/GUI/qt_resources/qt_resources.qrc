@@ -5,5 +5,11 @@
         <file>qt_icons/checkbox_checked3.png</file>
         <file>qt_icons/checkbox_unchecked2.png</file>
         <file>qt_icons/checkbox_unchecked1.png</file>
+        <file>qt_icons/pause.png</file>
+        <file>qt_icons/start.png</file>
+        <file>qt_icons/stop.png</file>
+        <file>qt_icons/white_pause.png</file>
+        <file>qt_icons/white_start.png</file>
+        <file>qt_icons/white_stop.png</file>
     </qresource>
 </RCC>
