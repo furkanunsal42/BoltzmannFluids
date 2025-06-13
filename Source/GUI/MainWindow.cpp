@@ -17,6 +17,7 @@
 #include "InitialConditionsBox.h"
 #include "CollabsibleBox.h"
 #include "UI_Config.h"
+#include "Timeline.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -129,6 +130,7 @@ MainWindow::MainWindow(QWidget *parent)
     {
         auto left_scroll_area = new QScrollArea(central_widget);
         left_scroll_area->setWidgetResizable(true); // Makes inner widget resize properly
+        left_scroll_area->setMinimumWidth(100);
         left_scroll_area->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 
         auto left_panel_layout = new QVBoxLayout(left_scroll_area);
@@ -136,13 +138,13 @@ MainWindow::MainWindow(QWidget *parent)
         //left_panel_layout->setContentsMargins(0,0,0,0);
 
         {
-            auto add_items_box = new CollapsibleBox("Add Items");
+            auto add_items_box = new CollapsibleBox("Add Items", left_scroll_area);
             //left_scroll_content->setStyleSheet("background-color: red;");
             //auto left_scroll_layout = new QVBoxLayout(left_scroll_content);
             //left_scroll_layout->setContentsMargins(0, 0, 0, 0);
             //left_scroll_layout->setSpacing(0);
 
-            auto label1 = new QLabel("box1");
+            auto label1 = new QLabel("box1", add_items_box);
             add_items_box->addWidget(label1);
             //left_scroll_layout->addWidget(label1);
 
@@ -151,19 +153,19 @@ MainWindow::MainWindow(QWidget *parent)
             left_panel_layout->addWidget(add_items_box);
         }
         {
-            auto add_items_box = new CollapsibleBox("Add Items12");
+            auto add_items_box2 = new CollapsibleBox("Add Items12", left_scroll_area);
             //left_scroll_content->setStyleSheet("background-color: red;");
             //auto left_scroll_layout = new QVBoxLayout(left_scroll_content);
             //left_scroll_layout->setContentsMargins(0, 0, 0, 0);
             //left_scroll_layout->setSpacing(0);
 
-            auto label1 = new QLabel("box1");
-            add_items_box->addWidget(label1);
+            auto label1 = new QLabel("box1", add_items_box2);
+            add_items_box2->addWidget(label1);
             //left_scroll_layout->addWidget(label1);
 
             //left_scroll_layout->addStretch();
             //left_scroll_content->setLayout(left_scroll_layout);
-            left_panel_layout->addWidget(add_items_box);
+            left_panel_layout->addWidget(add_items_box2);
         }
 
         left_panel_layout->addStretch();
@@ -181,9 +183,6 @@ MainWindow::MainWindow(QWidget *parent)
             "QDoubleSpinBox {"
                 "border: 2px solid rgb(50, 51, 52); "
             "}"
-            "CollapsibleBox {"
-            "background-color: rgb(255, 181, 182); "    //////
-            "}"
             "QCheckBox::indicator {"
                 "width: 12px;"
                 "height: 12px;"
@@ -197,59 +196,83 @@ MainWindow::MainWindow(QWidget *parent)
     }
 
     // --- Middle Panel ---
-    auto middle_panel = new QWidget(central_widget);
-    auto middle_vertical_layout = new QVBoxLayout(middle_panel);
-    middle_vertical_layout->setContentsMargins(0, 0, 0, 0);
-    middle_vertical_layout->setSpacing(0);
-    main_splitter->addWidget(middle_panel);
+    auto middle_splitter_one = new QSplitter(Qt::Vertical, central_widget);
+    main_splitter->addWidget(middle_splitter_one);
+
     {
-        // Rendering Box
-        auto render_box = new QOpenGLWidget(middle_panel);
-        render_box->setMinimumSize(100, 100);
+        //auto middle_panel = new QWidget(central_widget);
+        auto middle_vertical_layout = new QVBoxLayout(middle_splitter_one);
+        middle_vertical_layout->setContentsMargins(0, 0, 0, 0);
+        middle_vertical_layout->setSpacing(0);
 
-        middle_vertical_layout->addWidget(render_box);
+        {
+            // Rendering Box
+            auto render_box = new QOpenGLWidget(middle_splitter_one);
+            render_box->setMinimumSize(100, 100);
+
+            middle_vertical_layout->addWidget(render_box);
+        }
+        {
+            // --- Timeline ---
+            auto timeline = new Timeline(1000, middle_splitter_one);
+            timeline->setMinimumHeight(50);
+            auto action = new QAction();
+            timeline->addAction(action);
+        }
+        {
+            // Application Output
+            auto application_output = new QTextEdit(middle_splitter_one);
+            application_output->setReadOnly(true);
+            application_output->setText("asd\nThat is good!");
+            application_output->setFrameStyle(QFrame::StyledPanel | QFrame::Raised);
+            application_output->setMinimumHeight(100);
+
+            middle_vertical_layout->addWidget(application_output);
+
+            qss_text += "QTextEdit {"
+                        "background-color: rgb(51, 52, 53); "
+                        "color: rgb(200, 201, 202); "
+                        "border: 2px solid rgb(75, 76, 77); "
+                        "}";
+
+        }
+
+        middle_splitter_one->setSizes({render_box_height,
+                                 timeline_height,
+                                 application_output_height});
+
+        middle_splitter_one->setStretchFactor(0, 1); // Left panel    ->growable
+        middle_splitter_one->setStretchFactor(1, 0); // Middle panel  ->fixed size
+        middle_splitter_one->setStretchFactor(2, 0); // Right panel   ->fixed size
+
+        middle_splitter_one->setCollapsible(0, false);
+        middle_splitter_one->setCollapsible(1, false);
+        middle_splitter_one->setCollapsible(2, false);
     }
-    {
-        // Application Output
-        auto application_output = new QTextEdit(middle_panel);
-        application_output->setReadOnly(true);
-        application_output->setText("asd\nThat is good!");
-        application_output->setFrameStyle(QFrame::StyledPanel | QFrame::Raised);
-        application_output->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
-
-        middle_vertical_layout->addWidget(application_output);
-
-        // Application Output
-        qss_text += "QTextEdit {"
-                    "background-color: rgb(51, 52, 53); "
-                    "color: rgb(200, 201, 202); "
-                    "border: 2px solid rgb(75, 76, 77); "
-                    "}";
-    }
-
 
     // --- Right Panel ---
     {
         auto right_scroll_area = new QScrollArea(central_widget);
         right_scroll_area->setWidgetResizable(true); // Makes inner widget resize properly
+        right_scroll_area->setMinimumWidth(100);
         right_scroll_area->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
         //right_scroll_area->setMinimumWidth(120);
 
-        auto scroll_content = new QWidget();
+        auto scroll_content = new QWidget(right_scroll_area);
         auto scroll_layout = new QVBoxLayout(scroll_content);
-        //scroll_layout->setContentsMargins(0, 0, 0, 0);
-        //scroll_layout->setSpacing(0);
+        scroll_layout->setContentsMargins(7, 7, 7, 7);
+        scroll_layout->setSpacing(5);
 
-        auto box1 = new CollapsibleBox("Initial Conditions - 1");
+        auto box1 = new CollapsibleBox("Initial Conditions - 1", scroll_content);
         box1->addWidget(new InitialConditionsBox());
         scroll_layout->addWidget(box1);
 
-        auto box2 = new CollapsibleBox("Initial Conditions - 2");
+        auto box2 = new CollapsibleBox("Initial Conditions - 2", scroll_content);
         box2->addWidget(new InitialConditionsBox());
         box2->addWidget(new InitialConditionsBox());
         scroll_layout->addWidget(box2);
 
-        auto box3 = new CollapsibleBox("Initial Conditions - 3");
+        auto box3 = new CollapsibleBox("Initial Conditions - 3", scroll_content);
         box3->addWidget(new InitialConditionsBox());
         box3->addWidget(new InitialConditionsBox());
         box3->addWidget(new InitialConditionsBox());
@@ -270,7 +293,9 @@ MainWindow::MainWindow(QWidget *parent)
     main_splitter->setStretchFactor(1, 1); // Middle panel  ->growable
     main_splitter->setStretchFactor(2, 0); // Right panel   ->fixed size
 
-
+    main_splitter->setCollapsible(0, false);
+    main_splitter->setCollapsible(1, false);
+    main_splitter->setCollapsible(2, false);
 
     // --- Status Bar ---
     {

@@ -31,6 +31,8 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         qt_resources/qt_resources.qrc
+        Timeline.h
+        Timeline.cpp
 
     )
 # Define target properties for Android with Qt 6 as:
