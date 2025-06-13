@@ -13,6 +13,10 @@ void LBM::_compile_shaders()
 	// simulation kernels
 
 	auto definitions = _generate_shader_macros();
+
+	auto definitions_plus_not_save = definitions;
+	definitions_plus_not_save.push_back(std::pair("save_macroscopic_variables", "0"));
+
 	auto definitions_plus_save = definitions;
 	definitions_plus_save.push_back(std::pair("save_macroscopic_variables", "1"));
 
@@ -22,7 +26,7 @@ void LBM::_compile_shaders()
 
 	lbm2d_stream								= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "stream.comp"), definitions);
 	lbm2d_stream_thermal						= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "stream_thermal.comp"), definitions);
-	lbm2d_collide								= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "collide.comp"), definitions);
+	lbm2d_collide								= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "collide.comp"), definitions_plus_not_save);
 	lbm2d_collide_save							= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "collide.comp"), definitions_plus_save);
 	lbm2d_collide_with_precomputed_velocity		= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "collide_with_precomputed_velocity.comp"), definitions);
 	lbm2d_set_equilibrium_populations			= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "set_equilibrium_populations.comp"), definitions);
@@ -216,12 +220,12 @@ void LBM::iterate_time(float target_tick_per_second)
 	if (target_tick_per_second <= 0 || total_ticks_elapsed < targeted_tick_count) {
 		
 		auto time_since_visual_update = std::chrono::system_clock::now() - last_visual_update;
-		bool should_update_visuals = first_iteration || std::chrono::duration_cast<std::chrono::milliseconds>(time_since_visual_update).count() > 1000.0 / 3;
+		bool should_update_visuals = first_iteration || std::chrono::duration_cast<std::chrono::milliseconds>(time_since_visual_update).count() > 1000.0 / 60;
 		if (should_update_visuals) last_visual_update = std::chrono::system_clock::now();
 
 		_collide(should_update_visuals);
 		_stream();
-
+		
 		if (is_flow_thermal)
 			_stream_thermal();
 

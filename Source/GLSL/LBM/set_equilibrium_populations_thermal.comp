@@ -77,6 +77,24 @@ uint coord_to_id(ivec3 pixel_coord){
 	return pixel_coord.z * lattice_resolution.y * lattice_resolution.x + pixel_coord.y * lattice_resolution.x + pixel_coord.x;
 }
 
+uint id_to_address(uint voxel_id, uint population_id){
+	uint voxel_count = lattice_resolution.x * lattice_resolution.y * lattice_resolution.z; 
+	return population_id * voxel_count + voxel_id;
+	//return voxel_id * velocity_count + population_id;
+}
+
+uint coord_to_address(ivec3 pixel_coord, uint population_id){
+	return id_to_address(coord_to_id(pixel_coord), population_id);
+}
+
+uint id_to_address_thermal(uint voxel_id, uint population_id){
+	return voxel_id * thermal_velocity_count + population_id;
+}
+
+uint coord_to_address_thermal(ivec3 pixel_coord, uint population_id){
+	return id_to_address_thermal(coord_to_id(pixel_coord), population_id);
+}
+
 int get_inverse_lattice_population_id_index(int lattice_velocity_index){
 	if (lattice_velocity_index == 0 || lattice_velocity_index >= thermal_velocity_count)
 		return 0;
@@ -86,11 +104,11 @@ int get_inverse_lattice_population_id_index(int lattice_velocity_index){
 }
 
 float get_lattice(ivec3 pixel_coord, int velocity_index){
-	return lattice[coord_to_id(pixel_coord) * thermal_velocity_count + velocity_index];
+	return lattice[coord_to_address(pixel_coord, thermal_velocity_count)];
 }
 
 void set_lattice(ivec3 pixel_coord, int velocity_index, float value){
-	lattice[coord_to_id(pixel_coord) * thermal_velocity_count + velocity_index] = value;
+	lattice[coord_to_address(pixel_coord, thermal_velocity_count)] = value;
 }
 
 vec3 get_velocity_field(ivec3 pixel_coord){

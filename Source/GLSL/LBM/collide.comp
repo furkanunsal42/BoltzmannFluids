@@ -151,6 +151,24 @@ uint coord_to_id(ivec3 pixel_coord){
 	return pixel_coord.z * lattice_resolution.y * lattice_resolution.x + pixel_coord.y * lattice_resolution.x + pixel_coord.x;
 }
 
+uint id_to_address(uint voxel_id, uint population_id){
+	uint voxel_count = lattice_resolution.x * lattice_resolution.y * lattice_resolution.z; 
+	return population_id * voxel_count + voxel_id;
+	//return voxel_id * velocity_count + population_id;
+}
+
+uint coord_to_address(ivec3 pixel_coord, uint population_id){
+	return id_to_address(coord_to_id(pixel_coord), population_id);
+}
+
+uint id_to_address_thermal(uint voxel_id, uint population_id){
+	return voxel_id * thermal_velocity_count + population_id;
+}
+
+uint coord_to_address_thermal(ivec3 pixel_coord, uint population_id){
+	return id_to_address_thermal(coord_to_id(pixel_coord), population_id);
+}
+
 int get_inverse_lattice_population_id_index(int lattice_velocity_index){
 	if (lattice_velocity_index == 0 || lattice_velocity_index >= velocity_count)
 		return 0;
@@ -160,19 +178,19 @@ int get_inverse_lattice_population_id_index(int lattice_velocity_index){
 }
 
 float get_lattice_source(ivec3 pixel_coord, int velocity_index){
-	return lattice_source[coord_to_id(pixel_coord) * velocity_count + velocity_index];
+	return lattice_source[coord_to_address(pixel_coord, velocity_index)];
 }
 
 void set_lattice_source(ivec3 pixel_coord, int velocity_index, float value){
-	lattice_source[coord_to_id(pixel_coord) * velocity_count + velocity_index] = value;
+	lattice_source[coord_to_address(pixel_coord, velocity_index)] = value;
 }
 
 float get_lattice_target(ivec3 pixel_coord, int velocity_index){
-	return lattice_target[coord_to_id(pixel_coord) * velocity_count + velocity_index];
+	return lattice_target[coord_to_address(pixel_coord, velocity_index)];
 }
 
 void set_lattice_target(ivec3 pixel_coord, int velocity_index, float value){
-	lattice_target[coord_to_id(pixel_coord) * velocity_count + velocity_index] = value;
+	lattice_target[coord_to_address(pixel_coord, velocity_index)] = value;
 }
 
 vec3 get_lattice_velocity(int velocity_index){
@@ -279,19 +297,19 @@ int get_inverse_lattice_population_id_index_thermal(int thermal_lattice_velocity
 }
 
 float get_lattice_source_thermal(ivec3 pixel_coord, int thermal_velocity_index){
-	return thermal_lattice_source[coord_to_id(pixel_coord) * thermal_velocity_count + thermal_velocity_index];
+	return thermal_lattice_source[coord_to_address_thermal(pixel_coord, thermal_velocity_index)];
 }
 
 void set_lattice_source_thermal(ivec3 pixel_coord, int thermal_velocity_index, float value){
-	thermal_lattice_source[coord_to_id(pixel_coord) * thermal_velocity_count + thermal_velocity_index] = value;
+	thermal_lattice_source[coord_to_address_thermal(pixel_coord, thermal_velocity_index)] = value;
 }
 
 float get_lattice_target_thermal(ivec3 pixel_coord, int thermal_velocity_index){
-	return thermal_lattice_target[coord_to_id(pixel_coord) * thermal_velocity_count + thermal_velocity_index];
+	return thermal_lattice_target[coord_to_address_thermal(pixel_coord, thermal_velocity_index)];
 }
 
 void set_lattice_target_thermal(ivec3 pixel_coord, int thermal_velocity_index, float value){
-	thermal_lattice_target[coord_to_id(pixel_coord) * thermal_velocity_count + thermal_velocity_index] = value;
+	thermal_lattice_target[coord_to_address_thermal(pixel_coord, thermal_velocity_index)] = value;
 }
 
 vec3 get_lattice_velocity_thermal(int thermal_velocity_index){
@@ -546,10 +564,11 @@ void main(){
 		float weight = get_lattice_weight_thermal(population_id);
 		float equilibrium_temperature = compute_equilibrium_thermal(temperature, velocity, population_id);
 		
-		thermal_lattice_target[pixel_id * thermal_velocity_count + population_id] = 
+		set_lattice_target_thermal(pixel_coord, population_id, 
 			get_lattice_source_thermal(pixel_coord, population_id) + 
-			compute_bgk_collision_term_thermal(get_lattice_source_thermal(pixel_coord, population_id), equilibrium_temperature);// + 
+			compute_bgk_collision_term_thermal(get_lattice_source_thermal(pixel_coord, population_id), equilibrium_temperature) // + 
 			//compute_source_term(population_id, force, velocity);
+			);
 	}
 	#endif
 
