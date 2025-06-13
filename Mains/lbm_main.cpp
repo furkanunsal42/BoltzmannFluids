@@ -6,6 +6,8 @@
 
 int main() {
 
+	std::function<void(LBM&)> init_scenario = demo3d::multiphase_droplet_collision;
+
 	WindowDescription desc;
 	desc.w_scale_framebuffer_size = false;
 	desc.w_scale_window_size = false;
@@ -14,10 +16,10 @@ int main() {
 	Window window(desc);
 
 	LBM solver;
-	demo3d::multiphase_droplet_collision(solver);
+	init_scenario(solver);
 
-	window.set_window_resolution(solver.get_resolution());
-	primitive_renderer::set_viewport_size(solver.get_resolution());
+	window.set_window_resolution(solver.get_dimentionality() == 2 ? solver.get_resolution() : glm::ivec2(1024, 1024));
+	primitive_renderer::set_viewport_size(window.get_window_resolution());
 
 	uint32_t display_mode = 1;
 	bool pause = true;
@@ -51,7 +53,7 @@ int main() {
 				break;
 			case Window::Key::R:
 				solver = LBM();
-				demo3d::multiphase_droplet_collision(solver);
+				init_scenario(solver);
 				break;
 			}
 		}
@@ -62,6 +64,8 @@ int main() {
 		});
 
 	Camera camera_3d;
+	camera_3d.screen_width = window.get_window_resolution().x;
+	camera_3d.screen_height = window.get_window_resolution().y;
 
 	auto last_ticks_print = std::chrono::system_clock::now();
 	auto update_function = [&](double deltatime) {
@@ -105,6 +109,8 @@ int main() {
 
 	window.newsletters->on_window_resolution_events.subscribe([&](const glm::vec2& new_resolution) {
 		primitive_renderer::set_viewport_size(new_resolution);
+		camera_3d.screen_width = new_resolution.x;
+		camera_3d.screen_height = new_resolution.y;
 		});
 
 	window.newsletters->on_window_refresh_events.subscribe([&]() {

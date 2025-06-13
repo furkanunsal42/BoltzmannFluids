@@ -53,17 +53,20 @@ void main(){
 	float step_length = 1.0 / sample_count;
 	vec3 current_position = object_space_begin;
 
-	float total_value = 0;
 	float current_depth = 0;
+	
+	vec3 color = vec3(0);
+	float transmittance = 1;
+	float extinction_coefficient = 8;
+	vec3 current_light = vec3(0.5, 0.8, 1);
 
 	while(current_depth < ray_info.y) {
-		float value = texture(volume, current_position + 0.5).a * 4;
-		total_value += value * step_length;
+		float value = texture(volume, current_position + 0.5).a;
+		transmittance *= exp(-value * extinction_coefficient * step_length);
+		color += transmittance * current_light * step_length;
 		current_depth += step_length;
 		current_position += object_space_direction * step_length;
 	}
 	
-	total_value = 1-exp(-total_value);
-
-	frag_color = vec4(0.5, 0.8, 1, min(total_value * 2, 1));
+	frag_color = vec4(color / (1 - transmittance), 1 - transmittance);
 }
