@@ -3,14 +3,17 @@
 CollapsibleBox::CollapsibleBox(const QString &title, QWidget *parent)
     : QWidget(parent)
 {
+    this->setStyleSheet("background-color: rgb(60, 61, 62)");
+
     header_button = new QToolButton;
-    header_button->setStyleSheet("QToolButton { border: none; color: rgb(225, 226, 227); font-weight: bold; font-size:10pt; }");
+    header_button->setStyleSheet("QToolButton { border: none; color: rgb(245, 246, 247); font-weight: bold; font-size:10pt; }");
     header_button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     header_button->setArrowType(Qt::DownArrow);
     header_button->setIconSize(QSize(11, 11));
     header_button->setText("  " + title);
     header_button->setCheckable(true);
     header_button->setChecked(true);
+    header_button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
     // Container
     content_area = new QFrame;

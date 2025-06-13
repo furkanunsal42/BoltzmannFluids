@@ -30,13 +30,17 @@ InitialConditionsBox::InitialConditionsBox(QWidget* parent)
         "border: 1px solid rgb(80, 81, 82);"
         "background-color: rgb(85, 86, 87);"
     "}"
-        "InitialConditionsBox QLabel {"
+    "InitialConditionsBox QDoubleSpinBox:hover {"
+        "background-color: rgb(110, 111, 112);"
+    "}"
+
+    "InitialConditionsBox QLabel {"
         "font-weight: bold;"
         "background-color: rgb(60, 61, 62);"
         "color: rgb(225, 226, 227);"
     "}"
     "InitialConditionsBox QGroupBox {"
-        "border: 2px solid rgb(75, 76, 77);"
+        "border: 0;"
         "background-color: rgb(60, 61, 62);"
     "}"
     "InitialConditionsBox QCheckBox {"
@@ -54,9 +58,9 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
     layout->setSpacing(10);
 
 
-    // Box Label - Initial Conditions
-    auto box_label_initial_conditions = new QLabel("Initial Conditions");
-    layout->addWidget(box_label_initial_conditions);
+    //// Box Label - Initial Conditions
+    //auto box_label_initial_conditions = new QLabel("Initial Conditions");
+    //layout->addWidget(box_label_initial_conditions);
 
     // Gravity
     {

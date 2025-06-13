@@ -10,8 +10,8 @@ namespace {
 // Panel sizes
 constexpr unsigned int main_window_width    = 1280;
 constexpr unsigned int main_window_height   = 720;
-constexpr unsigned int right_panel_width    = 335;
-constexpr unsigned int left_panel_width     = 335;
+constexpr unsigned int right_panel_width    = 340;
+constexpr unsigned int left_panel_width     = 340;
 constexpr unsigned int middle_panel_width   = constexpr_max(500, (main_window_width - left_panel_width - right_panel_width));
 
 constexpr float GRAVITY_MIN = -100.f;

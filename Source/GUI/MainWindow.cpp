@@ -12,6 +12,7 @@
 #include <QFrame>
 #include <QSplitter>
 #include <QScrollArea>
+#include <QLabel>
 
 #include "InitialConditionsBox.h"
 #include "CollabsibleBox.h"
@@ -124,25 +125,48 @@ MainWindow::MainWindow(QWidget *parent)
     auto main_splitter = new QSplitter(Qt::Horizontal, central_widget);
     main_layout->addWidget(main_splitter);
 
-    // --- Left Layout ---
+    // --- Left Panel ---
     {
         auto left_scroll_area = new QScrollArea(central_widget);
         left_scroll_area->setWidgetResizable(true); // Makes inner widget resize properly
         left_scroll_area->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
-        //right_scroll_area->setMinimumWidth(120);
 
-        auto left_scroll_content = new QWidget();
-        auto left_scroll_layout = new QVBoxLayout(left_scroll_content);
-        left_scroll_layout->setContentsMargins(0, 0, 0, 0);
-        left_scroll_layout->setSpacing(0);
+        auto left_panel_layout = new QVBoxLayout(left_scroll_area);
+        left_scroll_area->setLayout(left_panel_layout);
+        //left_panel_layout->setContentsMargins(0,0,0,0);
 
-        auto box1 = new CollapsibleBox("Initial Conditions - 1");
-        box1->addWidget(new InitialConditionsBox());
-        left_scroll_layout->addWidget(box1);;
+        {
+            auto add_items_box = new CollapsibleBox("Add Items");
+            //left_scroll_content->setStyleSheet("background-color: red;");
+            //auto left_scroll_layout = new QVBoxLayout(left_scroll_content);
+            //left_scroll_layout->setContentsMargins(0, 0, 0, 0);
+            //left_scroll_layout->setSpacing(0);
 
-        left_scroll_layout->addStretch();
-        left_scroll_content->setLayout(left_scroll_layout);
-        left_scroll_area->setWidget(left_scroll_content);
+            auto label1 = new QLabel("box1");
+            add_items_box->addWidget(label1);
+            //left_scroll_layout->addWidget(label1);
+
+            //left_scroll_layout->addStretch();
+            //left_scroll_content->setLayout(left_scroll_layout);
+            left_panel_layout->addWidget(add_items_box);
+        }
+        {
+            auto add_items_box = new CollapsibleBox("Add Items12");
+            //left_scroll_content->setStyleSheet("background-color: red;");
+            //auto left_scroll_layout = new QVBoxLayout(left_scroll_content);
+            //left_scroll_layout->setContentsMargins(0, 0, 0, 0);
+            //left_scroll_layout->setSpacing(0);
+
+            auto label1 = new QLabel("box1");
+            add_items_box->addWidget(label1);
+            //left_scroll_layout->addWidget(label1);
+
+            //left_scroll_layout->addStretch();
+            //left_scroll_content->setLayout(left_scroll_layout);
+            left_panel_layout->addWidget(add_items_box);
+        }
+
+        left_panel_layout->addStretch();
         main_splitter->addWidget(left_scroll_area);
 
 
@@ -156,6 +180,9 @@ MainWindow::MainWindow(QWidget *parent)
             "}"
             "QDoubleSpinBox {"
                 "border: 2px solid rgb(50, 51, 52); "
+            "}"
+            "CollapsibleBox {"
+            "background-color: rgb(255, 181, 182); "    //////
             "}"
             "QCheckBox::indicator {"
                 "width: 12px;"
@@ -201,7 +228,7 @@ MainWindow::MainWindow(QWidget *parent)
     }
 
 
-    // --- Right Layout ---
+    // --- Right Panel ---
     {
         auto right_scroll_area = new QScrollArea(central_widget);
         right_scroll_area->setWidgetResizable(true); // Makes inner widget resize properly
@@ -210,8 +237,8 @@ MainWindow::MainWindow(QWidget *parent)
 
         auto scroll_content = new QWidget();
         auto scroll_layout = new QVBoxLayout(scroll_content);
-        scroll_layout->setContentsMargins(0, 0, 0, 0);
-        scroll_layout->setSpacing(0);
+        //scroll_layout->setContentsMargins(0, 0, 0, 0);
+        //scroll_layout->setSpacing(0);
 
         auto box1 = new CollapsibleBox("Initial Conditions - 1");
         box1->addWidget(new InitialConditionsBox());
