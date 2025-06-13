@@ -15,6 +15,7 @@
 
 #include "InitialConditionsBox.h"
 #include "CollabsibleBox.h"
+#include "UI_Config.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -23,11 +24,11 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     QString qss_text;
 
-    this->resize(1280, 720);
+    this->resize(main_window_width, main_window_height);
 
     // *** Menu Bar ***
     auto menu_bar = menuBar();
-    {   // File
+    {   // File Menu
         auto menu_File = new QMenu("File", this);
         menu_bar->addMenu(menu_File);
 
@@ -42,7 +43,7 @@ MainWindow::MainWindow(QWidget *parent)
         menu_File->addAction(actionSave);
         menu_File->addAction(actionSave_as);
     }
-    {   // Edit
+    {   // Edit Menu
         auto menu_Edit = new QMenu("Edit", this);
         menu_bar->addMenu(menu_Edit);
 
@@ -58,14 +59,14 @@ MainWindow::MainWindow(QWidget *parent)
         menu_Edit->addAction(actionCopy);
         menu_Edit->addAction(actionPaste);
     }
-    {   // View
+    {   // View Menu
         auto menu_View = new QMenu("View", this);
         menu_bar->addMenu(menu_View);
 
         auto actionShow_Right_Side_Bar  = new QAction("Show Right Side Bar");
         menu_View->addAction(actionShow_Right_Side_Bar);
     }
-    {   // Help
+    {   // Help Menu
         auto menu_Help = new QMenu("Help", this);
         menu_bar->addMenu(menu_Help);
 
@@ -98,8 +99,75 @@ MainWindow::MainWindow(QWidget *parent)
     main_layout->setContentsMargins(0, 0, 0, 0);
     main_layout->setSpacing(0);
 
+    qss_text += "QWidget { "
+                    "background-color: rgb(50, 51, 52); "
+                    "color: rgb(180, 181, 182); "
+                "}"
+                "QScrollArea {"
+                    "border: 2px solid rgb(75, 76, 77); "
+                "}"
+                "QDoubleSpinBox {"
+                    "border: 2px solid rgb(50, 51, 52); "
+                "}"
+                "QCheckBox::indicator {"
+                    "width: 12px;"
+                    "height: 12px;"
+                "}"
+                "QCheckBox::indicator:checked {"
+                    "image: url(:/qt_icons/checkbox_checked3.png);"
+                "}"
+                "QCheckBox::indicator:unchecked {"
+                    "image: url(:/qt_icons/checkbox_unchecked2.png);"
+                "}";
+
+
     auto main_splitter = new QSplitter(Qt::Horizontal, central_widget);
     main_layout->addWidget(main_splitter);
+
+    // --- Left Layout ---
+    {
+        auto left_scroll_area = new QScrollArea(central_widget);
+        left_scroll_area->setWidgetResizable(true); // Makes inner widget resize properly
+        left_scroll_area->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+        //right_scroll_area->setMinimumWidth(120);
+
+        auto left_scroll_content = new QWidget();
+        auto left_scroll_layout = new QVBoxLayout(left_scroll_content);
+        left_scroll_layout->setContentsMargins(0, 0, 0, 0);
+        left_scroll_layout->setSpacing(0);
+
+        auto box1 = new CollapsibleBox("Initial Conditions - 1");
+        box1->addWidget(new InitialConditionsBox());
+        left_scroll_layout->addWidget(box1);;
+
+        left_scroll_layout->addStretch();
+        left_scroll_content->setLayout(left_scroll_layout);
+        left_scroll_area->setWidget(left_scroll_content);
+        main_splitter->addWidget(left_scroll_area);
+
+
+        left_scroll_area->setStyleSheet(
+            "QWidget { "
+                "background-color: rgb(50, 51, 52); "
+                "color: rgb(180, 181, 182); "
+            "}"
+            "QScrollArea {"
+                "border: 2px solid rgb(75, 76, 77); "
+            "}"
+            "QDoubleSpinBox {"
+                "border: 2px solid rgb(50, 51, 52); "
+            "}"
+            "QCheckBox::indicator {"
+                "width: 12px;"
+                "height: 12px;"
+            "}"
+            "QCheckBox::indicator:checked {"
+                "image: url(:/qt_icons/checkbox_checked3.png);"
+            "}"
+            "QCheckBox::indicator:unchecked {"
+                "image: url(:/qt_icons/checkbox_unchecked2.png);"
+            "}");
+    }
 
     // --- Middle Panel ---
     auto middle_panel = new QWidget(central_widget);
@@ -127,7 +195,7 @@ MainWindow::MainWindow(QWidget *parent)
         // Application Output
         qss_text += "QTextEdit {"
                     "background-color: rgb(51, 52, 53); "
-                    "color: rgb(180, 181, 182); "
+                    "color: rgb(200, 201, 202); "
                     "border: 2px solid rgb(75, 76, 77); "
                     "}";
     }
@@ -164,30 +232,16 @@ MainWindow::MainWindow(QWidget *parent)
         scroll_content->setLayout(scroll_layout);
         right_scroll_area->setWidget(scroll_content);
         main_splitter->addWidget(right_scroll_area);
-
-        qss_text += "QWidget { "
-                    "background-color: rgb(45, 46, 47); "
-                    "color: rgb(180, 181, 182); "
-                    "}"
-                    "QScrollArea {"
-                    "border: 2px solid rgb(75, 76, 77); "
-                    "}"
-                    "QDoubleSpinBox {"
-                    "border: 2px solid rgb(75, 76, 77); "
-                    "}"
-                    "QCheckBox::indicator {"
-                    "width: 12px;"
-                    "height: 12px;"
-                    "}"
-                    "QCheckBox::indicator:checked {"
-                    "image: url(:/qt_icons/checkbox_checked3.png);"
-                    "}"
-                    "QCheckBox::indicator:unchecked {"
-                    "image: url(:/qt_icons/checkbox_unchecked2.png);"
-                    "}";
-
-        ;
     }
+
+
+    main_splitter->setSizes({left_panel_width,
+                             middle_panel_width,
+                             right_panel_width});
+
+    main_splitter->setStretchFactor(0, 0); // Left panel    ->fixed size
+    main_splitter->setStretchFactor(1, 1); // Middle panel  ->growable
+    main_splitter->setStretchFactor(2, 0); // Right panel   ->fixed size
 
 
 

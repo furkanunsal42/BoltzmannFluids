@@ -15,7 +15,7 @@ CollapsibleBox::CollapsibleBox(const QString &title, QWidget *parent)
     // Container
     content_area = new QFrame;
     content_area->setFrameShape(QFrame::NoFrame);
-    content_area->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    //content_area->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     content_area_layout = new QVBoxLayout;
     content_area_layout->setContentsMargins(0, 0, 0, 0);
     content_area->setLayout(content_area_layout);

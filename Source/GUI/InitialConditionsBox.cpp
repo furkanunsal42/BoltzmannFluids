@@ -16,26 +16,39 @@
 InitialConditionsBox::InitialConditionsBox(QWidget* parent)
     : QWidget(parent)
 {
-    setStyleSheet("background-color: rgb(45, 45, 45); color: rgb(225, 226, 227);");
-
     main_layout = new QVBoxLayout(this);
     main_layout->setAlignment(Qt::AlignTop);
     main_layout->addWidget(createInitialConditionsGroup());
 
-
-    /**/
- //   auto scroll_bar = new QScrollBar();
- //   main_layout->addWidget(scroll_bar);
-
-
-    /**/
+    setStyleSheet(
+    "InitialConditionsBox {"
+        "background-color: rgb(60, 61, 62);"
+        "color: rgb(245, 246, 247);"
+    "}"
+    "InitialConditionsBox QDoubleSpinBox {"
+        "color: rgb(225, 226, 227);"
+        "border: 1px solid rgb(80, 81, 82);"
+        "background-color: rgb(85, 86, 87);"
+    "}"
+        "InitialConditionsBox QLabel {"
+        "font-weight: bold;"
+        "background-color: rgb(60, 61, 62);"
+        "color: rgb(225, 226, 227);"
+    "}"
+    "InitialConditionsBox QGroupBox {"
+        "border: 2px solid rgb(75, 76, 77);"
+        "background-color: rgb(60, 61, 62);"
+    "}"
+    "InitialConditionsBox QCheckBox {"
+        "background-color: rgb(60, 61, 62);"
+    "}"
+        );
 
 }
 
 QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
 {
     auto group = new QGroupBox();
-    group->setStyleSheet("QGroupBox { border: 2px solid gray; border-color: rgb(75, 76, 77);}");
 
     auto layout = new QVBoxLayout();
     layout->setSpacing(10);
@@ -43,14 +56,12 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
 
     // Box Label - Initial Conditions
     auto box_label_initial_conditions = new QLabel("Initial Conditions");
-    box_label_initial_conditions->setStyleSheet("font-weight: bold; font-size:10pt; color: rgb(205, 206, 207);");
     layout->addWidget(box_label_initial_conditions);
 
     // Gravity
     {
         // Label
         auto gravity_label = new QLabel("Gravity");
-        gravity_label->setStyleSheet("QLabel { font-weight: bold; color: rgb(205, 206, 207);}");
         layout->addWidget(gravity_label);
 
         auto gravity_layout = new QHBoxLayout();
@@ -88,7 +99,6 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
     {
         // Label
         auto initial_velocity_label = new QLabel("Initial Velocity");
-        initial_velocity_label->setStyleSheet("QLabel { font-weight: bold; color: rgb(205, 206, 207);}");
         layout->addWidget(initial_velocity_label);
 
         auto initial_velocity_layout = new QHBoxLayout();
@@ -124,7 +134,6 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
 
         // Label - Single Phase
         auto density_label_single = new QLabel("Single Phase");
-        density_label_single->setStyleSheet("QLabel { font-weight: bold; color: rgb(205, 206, 207);}");
         density_layout->addWidget(density_label_single);
 
         // Single Phase Checkbox
@@ -134,7 +143,6 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
 
         // Label - Multi Phase
         auto density_label_multi = new QLabel("Multi Phase");
-        density_label_multi->setStyleSheet("QLabel { font-weight: bold; color: rgb(205, 206, 207);}");
         density_layout->addWidget(density_label_multi);
 
         // Multi Phase Checkbox
@@ -144,9 +152,11 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
         // Mutual Exclusiveness
         QObject::connect(density_single_phase_checkbox, &QCheckBox::toggled, [=](bool checked) {
             if (checked) density_multi_phase_checkbox->setChecked(false);
+            if (!checked && !density_multi_phase_checkbox->isChecked()) density_single_phase_checkbox->setChecked(true);
         });
         QObject::connect(density_multi_phase_checkbox, &QCheckBox::toggled, [=](bool checked) {
             if (checked) density_single_phase_checkbox->setChecked(false);
+            if (!checked && !density_single_phase_checkbox->isChecked()) density_multi_phase_checkbox->setChecked(true);
         });
 
         density_layout->addStretch();
@@ -159,7 +169,6 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
 
         // Initial Temprature Label
         auto initial_temprature_label = new QLabel("Initial Temperature");
-        initial_temprature_label->setStyleSheet("QLabel { font-weight: bold; color: rgb(205, 206, 207);}");
         initial_temprature_layout->addWidget(initial_temprature_label);
 
         // Initial Temprature Value
@@ -167,11 +176,6 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
         initial_temprature_value->setRange(INITIAL_TEMPRATURE_MIN, INITIAL_TEMPRATURE_MAX); // Example range for temperature
         initial_temprature_value->setSingleStep(0.1);
         initial_temprature_layout->addWidget(initial_temprature_value);
-
-        // "°C"
-        auto degree_label = new QLabel("Celsius Degree");
-        degree_label->setStyleSheet("QLabel { color: rgb(200, 200, 200); }");
-        initial_temprature_layout->addWidget(degree_label);
 
         initial_temprature_layout->addStretch();
         layout->addLayout(initial_temprature_layout);
