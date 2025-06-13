@@ -236,11 +236,16 @@ private:
 	void _set_populations_to_equilibrium_thermal(Buffer& temperature_field, Buffer& velocity_field);
 
 	// multiphase flow control flags
-	bool is_flow_multiphase = false;
+	bool is_flow_multiphase = true;
 	float intermolecular_interaction_strength = -6.0f;
 	void _set_is_flow_multiphase(bool value);
 
 	// device buffers
+	bool is_lattice_texture3d = true;
+	Texture3D::ColorTextureFormat lattice_tex_internal_format = Texture3D::ColorTextureFormat::R16F;
+	
+	std::shared_ptr<Texture3D> lattice0_tex = nullptr;
+	std::shared_ptr<Texture3D> lattice1_tex = nullptr;
 	std::shared_ptr<Buffer> lattice0 = nullptr;
 	std::shared_ptr<Buffer> lattice1 = nullptr;
 	std::shared_ptr<Buffer> boundries = nullptr;
@@ -256,6 +261,8 @@ private:
 	bool is_lattice_0_is_source = true;
 	std::shared_ptr<Buffer> _get_lattice_source();
 	std::shared_ptr<Buffer> _get_lattice_target();
+	std::shared_ptr<Texture3D> _get_lattice_tex_source();
+	std::shared_ptr<Texture3D> _get_lattice_tex_target();
 	void _swap_lattice_buffers();
 
 	bool is_thermal_lattice_0_is_source = true;

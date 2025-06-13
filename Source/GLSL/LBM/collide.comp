@@ -69,6 +69,8 @@
 	#define macroscopic_image_type image3D
 #endif
 
+#define lattice_is_texutre3d 1
+
 #define id gl_GlobalInvocationID
 
 layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
@@ -77,6 +79,7 @@ layout(std140, binding = 0) uniform velocity_set_buffer {
 	vec4[velocity_count] lattice_velocity_set;
 };
 
+#if lattice_is_texutre3d == 0
 layout(std430, binding = 1) buffer lattice_buffer_source {
 	float[] lattice_source;
 };
@@ -84,6 +87,11 @@ layout(std430, binding = 1) buffer lattice_buffer_source {
 layout(std430, binding = 2) buffer lattice_buffer_target {
 	float[] lattice_target;
 };
+#else
+layout(r16f, binding = 1) uniform image3D lattice_source;
+layout(r16f, binding = 2) uniform image3D lattice_target;
+#endif
+
 
 #if boundry_count > 1
 layout(std430, binding = 3) buffer boundries_buffer {
@@ -169,6 +177,11 @@ uint coord_to_address_thermal(ivec3 pixel_coord, uint population_id){
 	return id_to_address_thermal(coord_to_id(pixel_coord), population_id);
 }
 
+ivec3 coord_to_tex3d(ivec3 pixel_coord, uint population_id){
+	return ivec3(lattice_resolution.x * population_id, 0, 0) + pixel_coord;
+	//return pixel_coord * ivec3(velocity_count, 1, 1) + ivec3(population_id, 0, 0);
+}
+
 int get_inverse_lattice_population_id_index(int lattice_velocity_index){
 	if (lattice_velocity_index == 0 || lattice_velocity_index >= velocity_count)
 		return 0;
@@ -178,19 +191,35 @@ int get_inverse_lattice_population_id_index(int lattice_velocity_index){
 }
 
 float get_lattice_source(ivec3 pixel_coord, int velocity_index){
+	#if lattice_is_texutre3d == 0
 	return lattice_source[coord_to_address(pixel_coord, velocity_index)];
+	#else
+	return imageLoad(lattice_source, coord_to_tex3d(pixel_coord, velocity_index)).x;
+	#endif
 }
 
 void set_lattice_source(ivec3 pixel_coord, int velocity_index, float value){
+	#if lattice_is_texutre3d == 0
 	lattice_source[coord_to_address(pixel_coord, velocity_index)] = value;
+	#else
+	imageStore(lattice_source, coord_to_tex3d(pixel_coord, velocity_index), vec4(value));
+	#endif
 }
 
 float get_lattice_target(ivec3 pixel_coord, int velocity_index){
+	#if lattice_is_texutre3d == 0
 	return lattice_target[coord_to_address(pixel_coord, velocity_index)];
+	#else
+	return imageLoad(lattice_target, coord_to_tex3d(pixel_coord, velocity_index)).x;
+	#endif
 }
 
 void set_lattice_target(ivec3 pixel_coord, int velocity_index, float value){
+	#if lattice_is_texutre3d == 0
 	lattice_target[coord_to_address(pixel_coord, velocity_index)] = value;
+	#else
+	imageStore(lattice_target, coord_to_tex3d(pixel_coord, velocity_index), vec4(value));
+	#endif
 }
 
 vec3 get_lattice_velocity(int velocity_index){
@@ -512,14 +541,12 @@ void main(){
 
 	#if boundry_count > 1
 	uint boundry_id = get_boundry(pixel_coord);
-	//if (boundry_id != 0)
-	//	return;
+	if (boundry_id != 0)
+		return;
 	#endif
 
 	float density = compute_density(pixel_coord);
 	density = max(density, 0.01);
-	//if (density == 0)
-	//	return;
 
 	vec3 force = get_force(pixel_coord);
 	
@@ -543,6 +570,26 @@ void main(){
 
 	for (int population_id = 0; population_id < velocity_count; population_id++){
 		
+		//ivec3 source_pixel_coord = pixel_coord - ivec3(lattice_velocity_set[population_id].xyz);
+		//bool source_is_open_boundry = false;
+		//#if periodic_x == 1
+		//source_pixel_coord.x = positive_modulo(source_pixel_coord.x, lattice_resolution.x);
+		//#else
+		//source_is_open_boundry = source_is_open_boundry || source_pixel_coord.x < 0 || source_pixel_coord.x >= lattice_resolution.x;
+		//#endif
+		//
+		//#if periodic_y == 1
+		//source_pixel_coord.y = positive_modulo(source_pixel_coord.y, lattice_resolution.y);
+		//#else
+		//source_is_open_boundry = source_is_open_boundry || source_pixel_coord.y < 0 || source_pixel_coord.y >= lattice_resolution.y;
+		//#endif
+		//
+		//#if periodic_z == 1
+		//source_pixel_coord.z = positive_modulo(source_pixel_coord.z, lattice_resolution.z);
+		//#else
+		//source_is_open_boundry = source_is_open_boundry || source_pixel_coord.z < 0 || source_pixel_coord.z >= lattice_resolution.z;
+		//#endif
+
 		float equilibrium_velocity = compute_equilibrium(density, velocity, population_id);
 		
 		float old_population = get_lattice_source(pixel_coord, population_id);
