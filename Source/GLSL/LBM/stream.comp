@@ -60,6 +60,8 @@
 
 #define multiphase_flow 1
 
+#define lattice_is_texutre3d 1
+
 #define id gl_GlobalInvocationID
 
 layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
@@ -68,6 +70,7 @@ layout(std140, binding = 0) uniform velocity_set_buffer {
 	vec4[velocity_count] lattice_velocity_set;
 };
 
+#if lattice_is_texutre3d == 0
 layout(std430, binding = 1) buffer lattice_buffer_source {
 	float[] lattice_source;
 };
@@ -75,6 +78,10 @@ layout(std430, binding = 1) buffer lattice_buffer_source {
 layout(std430, binding = 2) buffer lattice_buffer_target {
 	float[] lattice_target;
 };
+#else
+layout(r16f, binding = 1) uniform image3D lattice_source;
+layout(r16f, binding = 2) uniform image3D lattice_target;
+#endif
 
 #if boundry_count > 1
 layout(std430, binding = 3) buffer boundries_buffer {
@@ -158,20 +165,41 @@ int get_inverse_lattice_population_id_index(int lattice_velocity_index){
 	return is_odd ? lattice_velocity_index + 1 : lattice_velocity_index - 1;
 }
 
+ivec3 coord_to_tex3d(ivec3 pixel_coord, uint population_id){
+	return ivec3(lattice_resolution.x * population_id, 0, 0) + pixel_coord;
+	//return pixel_coord * ivec3(velocity_count, 1, 1) + ivec3(population_id, 0, 0);
+}
+
 float get_lattice_source(ivec3 pixel_coord, int velocity_index){
+	#if lattice_is_texutre3d == 0
 	return lattice_source[coord_to_address(pixel_coord, velocity_index)];
+	#else
+	return imageLoad(lattice_source, coord_to_tex3d(pixel_coord, velocity_index)).x;
+	#endif
 }
 
 void set_lattice_source(ivec3 pixel_coord, int velocity_index, float value){
+	#if lattice_is_texutre3d == 0
 	lattice_source[coord_to_address(pixel_coord, velocity_index)] = value;
+	#else
+	imageStore(lattice_source, coord_to_tex3d(pixel_coord, velocity_index), vec4(value));
+	#endif
 }
 
 float get_lattice_target(ivec3 pixel_coord, int velocity_index){
+	#if lattice_is_texutre3d == 0
 	return lattice_target[coord_to_address(pixel_coord, velocity_index)];
+	#else
+	return imageLoad(lattice_target, coord_to_tex3d(pixel_coord, velocity_index)).x;
+	#endif
 }
 
 void set_lattice_target(ivec3 pixel_coord, int velocity_index, float value){
+	#if lattice_is_texutre3d == 0
 	lattice_target[coord_to_address(pixel_coord, velocity_index)] = value;
+	#else
+	imageStore(lattice_target, coord_to_tex3d(pixel_coord, velocity_index), vec4(value));
+	#endif
 }
 
 vec3 get_lattice_velocity(int velocity_index){
@@ -490,7 +518,7 @@ void main(){
 	source_pixel_coord.x = positive_modulo(source_pixel_coord.x, lattice_resolution.x);
 	#else
 	if (source_pixel_coord.x < 0 || source_pixel_coord.x >= lattice_resolution.x) {
-		lattice_target[id.x] = 0.01;
+		set_lattice_target(pixel_coord, velocity_id, 0.01);
 		return;
 	}
 	#endif
@@ -499,7 +527,7 @@ void main(){
 	source_pixel_coord.y = positive_modulo(source_pixel_coord.y, lattice_resolution.y);
 	#else
 	if (source_pixel_coord.y < 0 || source_pixel_coord.y >= lattice_resolution.y) {
-		lattice_target[id.x] = 0.01;
+		set_lattice_target(pixel_coord, velocity_id, 0.01);
 		return;
 	}
 	#endif
@@ -508,7 +536,7 @@ void main(){
 	source_pixel_coord.z = positive_modulo(source_pixel_coord.z, lattice_resolution.z);
 	#else
 	if (source_pixel_coord.z < 0 || source_pixel_coord.z >= lattice_resolution.z) {
-		lattice_target[id.x] = 0.01;
+		set_lattice_target(pixel_coord, velocity_id, 0.01);
 		return;
 	}
 	#endif

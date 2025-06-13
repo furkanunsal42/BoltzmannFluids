@@ -57,7 +57,7 @@ void demo3d::multiphase_droplet_collision(LBM& solver)
 		0.51,
 		true,
 		true,
-		VelocitySet::D3Q19,
+		VelocitySet::D3Q27,
 		FloatingPointAccuracy::fp32,
 		true
 	);

@@ -224,10 +224,10 @@ void LBM::iterate_time(float target_tick_per_second)
 		if (should_update_visuals) last_visual_update = std::chrono::system_clock::now();
 
 		_collide(should_update_visuals);
-		//_stream();
-		//
-		//if (is_flow_thermal)
-		//	_stream_thermal();
+		_stream();
+		
+		if (is_flow_thermal)
+			_stream_thermal();
 
 		total_ticks_elapsed++;
 	}
@@ -437,7 +437,7 @@ void LBM::initialize_fields(
 
 	std::shared_ptr<Buffer> density_field = nullptr;
 	std::shared_ptr<Buffer> velocity_field = nullptr;
-
+	
 	_initialize_fields_default_pass(
 		initialization_lambda,
 		density_field,
@@ -456,10 +456,10 @@ void LBM::initialize_fields(
 		initialization_lambda,
 		velocity_field
 	);
-
+	
 	int32_t relaxation_iteration_count = 0;
 	std::cout << "[LBM Info] _initialize_fields_default_pass() initialization of particle population distributions from given veloicty and density fields is initiated" << std::endl;
-
+	
 	_set_populations_to_equilibrium(*density_field, *velocity_field);
 	
 	for (int32_t i = 0; i < relaxation_iteration_count; i++) {
@@ -471,7 +471,6 @@ void LBM::initialize_fields(
 	iterate_time();
 
 	std::cout << "[LBM Info] _initialize_fields_default_pass() fields initialization scheme completed with relaxation_iteration_count(" << relaxation_iteration_count << ")" << std::endl;
-
 }
 
 void LBM::_initialize_fields_default_pass(
@@ -802,8 +801,8 @@ void LBM::_generate_lattice_buffer()
 			0
 		);
 
-		lattice0_tex->clear(0.0f);
-		lattice1_tex->clear(0.0f);
+		//lattice0_tex->clear(0.0f);
+		//lattice1_tex->clear(0.0f);
 	}
 	else {
 		lattice0 = std::make_shared<Buffer>(total_buffer_size_in_bytes);
@@ -811,12 +810,6 @@ void LBM::_generate_lattice_buffer()
 
 		//lattice0->clear(0.0f);
 		//lattice1->clear(0.0f);
-
-		//lattice0->unmap();
-		//lattice1->unmap();
-
-		//lattice0 = nullptr;
-		//lattice1 = nullptr;
 	}
 
 	
@@ -1430,10 +1423,21 @@ void LBM::_stream()
 
 	ComputeProgram& kernel = *lbm2d_stream;
 
-	Buffer& lattice_source = *_get_lattice_source();
-	Buffer& lattice_target = *_get_lattice_target();
-	kernel.update_uniform_as_storage_buffer("lattice_buffer_source", lattice_source, 0);
-	kernel.update_uniform_as_storage_buffer("lattice_buffer_target", lattice_target, 0);
+	if (is_lattice_texture3d) {
+		Texture3D& lattice_tex_source = *_get_lattice_tex_source();
+		Texture3D& lattice_tex_target = *_get_lattice_tex_target();
+
+		kernel.update_uniform_as_image("lattice_source", lattice_tex_source, 0);
+		kernel.update_uniform_as_image("lattice_target", lattice_tex_target, 0);
+	}
+	else {
+		Buffer& lattice_source = *_get_lattice_source();
+		Buffer& lattice_target = *_get_lattice_target();
+
+		kernel.update_uniform_as_storage_buffer("lattice_buffer_source", lattice_source, 0);
+		kernel.update_uniform_as_storage_buffer("lattice_buffer_target", lattice_target, 0);
+	}
+
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 
 	kernel.update_uniform("lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3.0)));
