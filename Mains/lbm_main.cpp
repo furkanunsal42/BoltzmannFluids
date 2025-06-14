@@ -6,7 +6,7 @@
 
 int main() {
 
-	std::function<void(LBM&)> init_scenario = demo3d::multiphase_droplet_collision;
+	std::function<void(LBM&)> init_scenario = demo2d::multiphase_droplet_collision;
 
 	WindowDescription desc;
 	desc.w_scale_framebuffer_size = false;

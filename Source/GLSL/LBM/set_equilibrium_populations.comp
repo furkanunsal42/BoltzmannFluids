@@ -65,7 +65,7 @@ layout(std430, binding = 1) buffer lattice_buffer {
 	float[] lattice;
 };
 #else
-layout(r16f, binding = 1) uniform image3D lattice;
+layout(r16f, binding = 0) uniform image3D lattice;
 #endif
 
 #define velocity_field_dimentionality 4

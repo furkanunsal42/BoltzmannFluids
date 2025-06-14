@@ -248,7 +248,7 @@ private:
 	void _set_is_flow_multiphase(bool value);
 
 	// device buffers
-	bool is_lattice_texture3d = false;
+	bool is_lattice_texture3d = true;
 	Texture3D::ColorTextureFormat lattice_tex_internal_format = Texture3D::ColorTextureFormat::R16F;
 	
 	std::shared_ptr<Texture3D> lattice0_tex = nullptr;
@@ -289,16 +289,16 @@ private:
 
 	// kernels
 	bool is_programs_compiled = false;
-	std::shared_ptr<ComputeProgram> lbm2d_stream = nullptr;
-	std::shared_ptr<ComputeProgram> lbm2d_stream_thermal = nullptr;
-	std::shared_ptr<ComputeProgram> lbm2d_collide = nullptr;
-	std::shared_ptr<ComputeProgram> lbm2d_collide_save = nullptr;
-	std::shared_ptr<ComputeProgram> lbm2d_collide_with_precomputed_velocity = nullptr;
-	std::shared_ptr<ComputeProgram> lbm2d_set_equilibrium_populations = nullptr;
-	std::shared_ptr<ComputeProgram> lbm2d_set_equilibrium_populations_thermal = nullptr;
-	std::shared_ptr<ComputeProgram> lbm2d_set_population = nullptr;
-	std::shared_ptr<ComputeProgram> lbm2d_add_random_population = nullptr;
-	std::shared_ptr<ComputeProgram> lbm2d_copy_population = nullptr;
+	std::shared_ptr<ComputeProgram> lbm_stream = nullptr;
+	std::shared_ptr<ComputeProgram> lbm_stream_thermal = nullptr;
+	std::shared_ptr<ComputeProgram> lbm_collide = nullptr;
+	std::shared_ptr<ComputeProgram> lbm_collide_save = nullptr;
+	std::shared_ptr<ComputeProgram> lbm_collide_with_precomputed_velocity = nullptr;
+	std::shared_ptr<ComputeProgram> lbm_set_equilibrium_populations = nullptr;
+	std::shared_ptr<ComputeProgram> lbm_set_equilibrium_populations_thermal = nullptr;
+	std::shared_ptr<ComputeProgram> lbm_set_population = nullptr;
+	std::shared_ptr<ComputeProgram> lbm_add_random_population = nullptr;
+	std::shared_ptr<ComputeProgram> lbm_copy_population = nullptr;
 	
 	// renderers
 	std::shared_ptr<Program> program_render2d_density = nullptr;

@@ -73,7 +73,11 @@
 
 #define id gl_GlobalInvocationID
 
+#if lattice_is_texutre3d  == 1
 layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+#else 
+layout (local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
+#endif
 
 layout(std140, binding = 0) uniform velocity_set_buffer {
 	vec4[velocity_count] lattice_velocity_set;
@@ -528,16 +532,25 @@ float compute_bgk_collision_term_thermal(float current_velocity, float thermal_e
 #endif
 
 void main(){
+
+	ivec3 pixel_coord;
 	
+	#if lattice_is_texutre3d == 0
 	if (int(id.x) >= lattice_resolution.x * lattice_resolution.y * lattice_resolution.z)
 		return;
 
 	uint pixel_id = id.x;
-	ivec3 pixel_coord = ivec3(
+	pixel_coord = ivec3(
 		pixel_id % lattice_resolution.x,
 		(pixel_id / lattice_resolution.x) % lattice_resolution.y,
 		(pixel_id / lattice_resolution.x) / lattice_resolution.y
 		);
+	#else 
+	if (any(greaterThanEqual(id, lattice_resolution)))
+		return;
+	pixel_coord = ivec3(id);
+	#endif
+	
 
 	#if boundry_count > 1
 	uint boundry_id = get_boundry(pixel_coord);
@@ -570,29 +583,10 @@ void main(){
 
 	for (int population_id = 0; population_id < velocity_count; population_id++){
 		
-		//ivec3 source_pixel_coord = pixel_coord - ivec3(lattice_velocity_set[population_id].xyz);
-		//bool source_is_open_boundry = false;
-		//#if periodic_x == 1
-		//source_pixel_coord.x = positive_modulo(source_pixel_coord.x, lattice_resolution.x);
-		//#else
-		//source_is_open_boundry = source_is_open_boundry || source_pixel_coord.x < 0 || source_pixel_coord.x >= lattice_resolution.x;
-		//#endif
-		//
-		//#if periodic_y == 1
-		//source_pixel_coord.y = positive_modulo(source_pixel_coord.y, lattice_resolution.y);
-		//#else
-		//source_is_open_boundry = source_is_open_boundry || source_pixel_coord.y < 0 || source_pixel_coord.y >= lattice_resolution.y;
-		//#endif
-		//
-		//#if periodic_z == 1
-		//source_pixel_coord.z = positive_modulo(source_pixel_coord.z, lattice_resolution.z);
-		//#else
-		//source_is_open_boundry = source_is_open_boundry || source_pixel_coord.z < 0 || source_pixel_coord.z >= lattice_resolution.z;
-		//#endif
+		float old_population = get_lattice_source(pixel_coord, population_id);
 
 		float equilibrium_velocity = compute_equilibrium(density, velocity, population_id);
 		
-		float old_population = get_lattice_source(pixel_coord, population_id);
 		float update_value = 
 			old_population + 
 			compute_bgk_collision_term(old_population, equilibrium_velocity) + 

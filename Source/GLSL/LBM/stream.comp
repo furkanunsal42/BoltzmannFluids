@@ -64,7 +64,11 @@
 
 #define id gl_GlobalInvocationID
 
+#if lattice_is_texutre3d == 0
 layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+#else 
+layout (local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
+#endif
 
 layout(std140, binding = 0) uniform velocity_set_buffer {
 	vec4[velocity_count] lattice_velocity_set;
@@ -494,20 +498,30 @@ float dirichlet_boundry_correction_term(int lattice_velocity_index, float local_
 }
 
 void main(){
+	
+	ivec3 pixel_coord;
 
+	#if lattice_is_texutre3d == 0
 	if (int(id.x) >= lattice_resolution.x * lattice_resolution.y * lattice_resolution.z * velocity_count)
 		return;
 
 	uint voxel_count = lattice_resolution.x * lattice_resolution.y * lattice_resolution.z;
 	uint pixel_id = id.x % voxel_count;
 	int velocity_id = int(id.x / voxel_count);
-	int inv_velocity_id = get_inverse_lattice_population_id_index(velocity_id);
-	ivec3 pixel_coord = ivec3(
+	pixel_coord = ivec3(
 		pixel_id % lattice_resolution.x,
 		(pixel_id / lattice_resolution.x) % lattice_resolution.y,
 		(pixel_id / lattice_resolution.x) / lattice_resolution.y
 		);
+	#else
+	if (any(greaterThanEqual(id, lattice_resolution * ivec3(velocity_count, 1, 1))))
+		return;
 
+	pixel_coord = ivec3(id) % ivec3(lattice_resolution);
+	int velocity_id = int(id.x / lattice_resolution.x);
+	#endif
+
+	int inv_velocity_id = get_inverse_lattice_population_id_index(velocity_id);
 	int self_boundry = int(get_boundry(pixel_coord));
 	if (self_boundry != 0)
 		return;
@@ -541,7 +555,7 @@ void main(){
 	}
 	#endif
 
-	uint source_pixel_id = coord_to_id(source_pixel_coord);
+	//uint source_pixel_id = coord_to_id(source_pixel_coord);
 
 	int source_boundry = int(get_boundry(source_pixel_coord));
 	object_info_s source_object = get_object_info(source_boundry);
@@ -557,13 +571,13 @@ void main(){
 	//lattice[pixel_id * velocity_count + population_id]		= value_b + dirichlet_boundry_correction_term(inv_population_id, 1.0, boundry_velocity);
 	//lattice[pixel_id * velocity_count + inv_population_id]	= value_a + dirichlet_boundry_correction_term(population_id, 1.0, boundry_velocity);
 
-	if (source_boundry != 0)
-		set_lattice_target(pixel_coord, velocity_id, 
-			get_lattice_source(pixel_coord, inv_velocity_id) +
-			dirichlet_boundry_correction_term(inv_velocity_id, 1.0, source_boundry_velocity)
-		);
-	else 
-		set_lattice_target(pixel_coord, velocity_id, 
-			get_lattice_source(source_pixel_coord, velocity_id)
-		);
+	//if (source_boundry != 0)
+	//	set_lattice_target(pixel_coord, velocity_id, 
+	//		get_lattice_source(pixel_coord, inv_velocity_id) +
+	//		dirichlet_boundry_correction_term(inv_velocity_id, 1.0, source_boundry_velocity)
+	//	);
+	//else 
+	//	set_lattice_target(pixel_coord, velocity_id, 
+	//		get_lattice_source(source_pixel_coord, velocity_id)
+	//	);
 }

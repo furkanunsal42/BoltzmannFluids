@@ -24,16 +24,16 @@ void LBM::_compile_shaders()
 	for (auto& definition : definitions)
 		std::cout << "\t" << definition.first << " : " << definition.second << std::endl;
 
-	lbm2d_stream								= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "stream.comp"), definitions);
-	lbm2d_stream_thermal						= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "stream_thermal.comp"), definitions);
-	lbm2d_collide								= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "collide.comp"), definitions_plus_not_save);
-	lbm2d_collide_save							= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "collide.comp"), definitions_plus_save);
-	lbm2d_collide_with_precomputed_velocity		= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "collide_with_precomputed_velocity.comp"), definitions);
-	lbm2d_set_equilibrium_populations			= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "set_equilibrium_populations.comp"), definitions);
-	lbm2d_set_equilibrium_populations_thermal	= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "set_equilibrium_populations_thermal.comp"), definitions);
-	lbm2d_set_population						= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "set_population.comp"), definitions);
-	lbm2d_copy_population						= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "copy_population.comp"), definitions);
-	lbm2d_add_random_population					= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "add_random_population.comp"), definitions);
+	lbm_stream									= std::make_shared<ComputeProgram>(Shader(lbm_shader_directory / "stream.comp"), definitions);
+	lbm_stream_thermal							= std::make_shared<ComputeProgram>(Shader(lbm_shader_directory / "stream_thermal.comp"), definitions);
+	lbm_collide									= std::make_shared<ComputeProgram>(Shader(lbm_shader_directory / "collide.comp"), definitions_plus_not_save);
+	lbm_collide_save							= std::make_shared<ComputeProgram>(Shader(lbm_shader_directory / "collide.comp"), definitions_plus_save);
+	lbm_collide_with_precomputed_velocity		= std::make_shared<ComputeProgram>(Shader(lbm_shader_directory / "collide_with_precomputed_velocity.comp"), definitions);
+	lbm_set_equilibrium_populations				= std::make_shared<ComputeProgram>(Shader(lbm_shader_directory / "set_equilibrium_populations.comp"), definitions);
+	lbm_set_equilibrium_populations_thermal		= std::make_shared<ComputeProgram>(Shader(lbm_shader_directory / "set_equilibrium_populations_thermal.comp"), definitions);
+	lbm_set_population							= std::make_shared<ComputeProgram>(Shader(lbm_shader_directory / "set_population.comp"), definitions);
+	lbm_copy_population							= std::make_shared<ComputeProgram>(Shader(lbm_shader_directory / "copy_population.comp"), definitions);
+	lbm_add_random_population					= std::make_shared<ComputeProgram>(Shader(lbm_shader_directory / "add_random_population.comp"), definitions);
 
 	// renderer2d
 
@@ -757,7 +757,7 @@ void LBM::_initialize_fields_thermal_pass(
 //
 //	_compile_shaders();
 //
-//	ComputeProgram& kernel = *lbm2d_copy_population;
+//	ComputeProgram& kernel = *lbm_copy_population;
 //
 //	Buffer& lattice = *_get_lattice_source();
 //
@@ -1318,7 +1318,7 @@ void LBM::render3d_temperature(Camera& camera, int32_t sample_count)
 //{
 //	_compile_shaders();
 //
-//	ComputeProgram& kernel = *lbm2d_set_population;
+//	ComputeProgram& kernel = *lbm_set_population;
 //
 //	Buffer& lattice = *_get_lattice_source();
 //
@@ -1352,7 +1352,7 @@ void LBM::render3d_temperature(Camera& camera, int32_t sample_count)
 //{
 //	_compile_shaders();
 //
-//	ComputeProgram& kernel = *lbm2d_add_random_population;
+//	ComputeProgram& kernel = *lbm_add_random_population;
 //
 //	Buffer& lattice = *_get_lattice_source();
 //
@@ -1421,7 +1421,7 @@ void LBM::_stream()
 {
 	_compile_shaders();
 
-	ComputeProgram& kernel = *lbm2d_stream;
+	ComputeProgram& kernel = *lbm_stream;
 
 	if (is_lattice_texture3d) {
 		Texture3D& lattice_tex_source = *_get_lattice_tex_source();
@@ -1470,7 +1470,10 @@ void LBM::_stream()
 		kernel.update_uniform("intermolecular_interaction_strength", intermolecular_interaction_strength);
 	}
 
-	kernel.dispatch_thread(_get_voxel_count() * get_velocity_set_vector_count(), 1, 1);
+	if (is_lattice_texture3d)
+		kernel.dispatch_thread(resolution.x * get_velocity_set_vector_count(), resolution.y, resolution.z);
+	else 
+		kernel.dispatch_thread(_get_voxel_count() * get_velocity_set_vector_count(), 1, 1);
 
 	_swap_lattice_buffers();
 }
@@ -1479,7 +1482,7 @@ void LBM::_collide(bool save_macrsoscopic_results)
 {
 	_compile_shaders();
 
-	ComputeProgram& kernel = save_macrsoscopic_results ? *lbm2d_collide_save : *lbm2d_collide;
+	ComputeProgram& kernel = save_macrsoscopic_results ? *lbm_collide_save : *lbm_collide;
 
 	if (is_lattice_texture3d) {
 		Texture3D& lattice_tex_source = *_get_lattice_tex_source();
@@ -1538,7 +1541,10 @@ void LBM::_collide(bool save_macrsoscopic_results)
 			kernel.update_uniform_as_image("force_temperature_texture", *force_temperature_texture, 0);
 	}
 
-	kernel.dispatch_thread(_get_voxel_count(), 1, 1);
+	if (is_lattice_texture3d)
+		kernel.dispatch_thread(resolution.x, resolution.y, resolution.z);
+	else 
+		kernel.dispatch_thread(_get_voxel_count(), 1, 1);
 
 	_swap_lattice_buffers();
 	_swap_thermal_lattice_buffers();
@@ -1548,7 +1554,7 @@ void LBM::_collide_with_precomputed_velocities(Buffer& velocity_field)
 {
 	_compile_shaders();
 
-	ComputeProgram& kernel = *lbm2d_collide_with_precomputed_velocity;
+	ComputeProgram& kernel = *lbm_collide_with_precomputed_velocity;
 
 	Buffer& lattice_source = *_get_lattice_source();
 	Buffer& lattice_target = *_get_lattice_target();
@@ -1595,7 +1601,7 @@ void LBM::_set_populations_to_equilibrium(Buffer& density_field, Buffer& velocit
 {
 	_compile_shaders();
 
-	ComputeProgram& kernel = *lbm2d_set_equilibrium_populations;
+	ComputeProgram& kernel = *lbm_set_equilibrium_populations;
 
 
 	if (is_lattice_texture3d) {
@@ -1621,7 +1627,7 @@ void LBM::_stream_thermal()
 {
 	_compile_shaders();
 
-	ComputeProgram& kernel = *lbm2d_stream_thermal;
+	ComputeProgram& kernel = *lbm_stream_thermal;
 
 	Buffer& lattice_source = *_get_lattice_source();
 	Buffer& lattice_target = *_get_lattice_target();
@@ -1668,7 +1674,7 @@ void LBM::_set_populations_to_equilibrium_thermal(Buffer& temperature_field, Buf
 {
 	_compile_shaders();
 
-	ComputeProgram& kernel = *lbm2d_set_equilibrium_populations_thermal;
+	ComputeProgram& kernel = *lbm_set_equilibrium_populations_thermal;
 
 	Buffer& lattice_thermal = *_get_thermal_lattice_source();
 

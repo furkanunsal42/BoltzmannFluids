@@ -5,11 +5,11 @@
 #include "ComputeProgram.h"
 #include "Mesh.h"
 #include "Texture3D.h"
+#include "Camera.h"
 
 #include "memory"
 
 #include "vec3.hpp"
-
 class MarchingCubes {
 public:
 	MarchingCubes() = default;
