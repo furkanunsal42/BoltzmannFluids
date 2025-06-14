@@ -23,6 +23,7 @@ void demo2d::poiseuille_flow(LBM& solver) {
 		0.53f,
 		true,
 		false,
+		true,
 		VelocitySet::D2Q9,
 		FloatingPointAccuracy::fp32,
 		false
@@ -52,6 +53,7 @@ void demo2d::von_karman_street_set_velocity(LBM& solver) {
 		0.51f,
 		false,
 		true,
+		true,
 		VelocitySet::D2Q9,
 		FloatingPointAccuracy::fp32,
 		false
@@ -75,6 +77,7 @@ void demo2d::von_karman_street_periodic(LBM& solver) {
 		},
 		simulation_resolution,
 		0.51f,
+		true,
 		true,
 		true,
 		VelocitySet::D2Q9,
@@ -105,6 +108,7 @@ void demo2d::von_karman_street_inlet_boundry(LBM& solver) {
 		simulation_resolution,
 		0.60f,
 		false,
+		true,
 		true,
 		VelocitySet::D2Q9,
 		FloatingPointAccuracy::fp32,
@@ -139,6 +143,7 @@ void demo2d::von_karman_street_thin_jet(LBM& solver) {
 		0.515f,
 		false,
 		false,
+		true,
 		VelocitySet::D2Q9,
 		FloatingPointAccuracy::fp32,
 		false
@@ -170,6 +175,7 @@ void demo2d::von_karman_street_set_velocity_with_gravity(LBM& solver) {
 		0.51f,
 		false,
 		false,
+		true,
 		VelocitySet::D2Q9,
 		FloatingPointAccuracy::fp32,
 		false
@@ -201,6 +207,7 @@ void demo2d::rayleigh_benard_convection(LBM& solver) {
 		0.515f,
 		false,
 		false,
+		true,
 		VelocitySet::D2Q9,
 		FloatingPointAccuracy::fp32,
 		false
@@ -232,6 +239,7 @@ void demo2d::thermal_convection_tall(LBM& solver) {
 		0.515f,
 		false,
 		false,
+		true,
 		VelocitySet::D2Q9,
 		FloatingPointAccuracy::fp32,
 		false
@@ -274,6 +282,7 @@ void demo2d::multiphase_thermal_boiling(LBM& solver) {
 		0.60,
 		false,
 		false,
+		true,
 		VelocitySet::D2Q9,
 		FloatingPointAccuracy::fp32,
 		true
@@ -301,6 +310,7 @@ void demo2d::multiphase_humid_platform(LBM& solver) {
 		0.51,
 		false,
 		false,
+		true,
 		VelocitySet::D2Q9,
 		FloatingPointAccuracy::fp32,
 		true
@@ -329,6 +339,7 @@ void demo2d::multiphase_droplet_collision(LBM& solver) {
 		},
 		simulation_resolution,
 		0.52,
+		true,
 		true,
 		true,
 		VelocitySet::D2Q9,

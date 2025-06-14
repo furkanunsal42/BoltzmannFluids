@@ -42,7 +42,6 @@ public:
 		glm::vec3 force = glm::vec3(0);
 		float density = 1;
 		float temperature = referance_temperature;
-		float scalar_quantity = 0;
 		uint32_t boundry_id = not_a_boundry;
 	};
 	void initialize_fields(
@@ -51,6 +50,7 @@ public:
 		float relaxation_time,
 		bool periodic_x = true,
 		bool periodic_y = true,
+		bool periodic_z = true,
 		VelocitySet velocity_set = VelocitySet::D2Q9,
 		FloatingPointAccuracy fp_accuracy = FloatingPointAccuracy::fp32,
 		bool is_flow_multiphase = false

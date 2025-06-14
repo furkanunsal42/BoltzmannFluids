@@ -34,6 +34,7 @@ vec2 ray_intersect_aabb(vec3 bounds_min, vec3 bounds_max, vec3 ray_origin, vec3 
 }
 
 void main(){
+	vec3 scale = vec3(1, 1, 1);
 
 	vec3 world_space_camera_pos = (inverse_view * vec4(0, 0, 0, 1)).xyz;
 	vec3 world_space_view_direction = normalize(v_position.xyz - world_space_camera_pos);
@@ -53,11 +54,11 @@ void main(){
 	float step_length = 1.0 / sample_count;
 	vec3 current_position = object_space_begin;
 
-	float total_value = 0;
 	float current_depth = 0;
+	float total_value = 0;
 
 	while(current_depth < ray_info.y) {
-		float value = texture(volume, current_position + 0.5).a / 2;
+		float value = texture(volume, current_position / scale + 0.5).a / 1;
 		total_value += value * step_length;
 		current_depth += step_length;
 		current_position += object_space_direction * step_length;

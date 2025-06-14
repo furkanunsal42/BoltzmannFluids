@@ -66,7 +66,7 @@ void LBM::_compile_shaders()
 	plane_mesh = std::make_shared<Mesh>();
 	plane_mesh->load_model(plane_model);
 
-	glm::vec3 scale(1);
+	glm::vec3 scale(1, 1, 1);
 
 	SingleModel cube_model;
 	cube_model.verticies = {
@@ -394,7 +394,8 @@ void LBM::initialize_fields(
 	glm::ivec3 resolution, 
 	float relaxation_time, 
 	bool periodic_x, 
-	bool periodic_y, 
+	bool periodic_y,
+	bool periodic_z,
 	VelocitySet velocity_set, 
 	FloatingPointAccuracy fp_accuracy,
 	bool is_flow_multiphase
@@ -421,7 +422,7 @@ void LBM::initialize_fields(
 	_set_floating_point_accuracy(fp_accuracy);
 	_set_periodic_boundry_x(periodic_x);
 	_set_periodic_boundry_y(periodic_y);
-	_set_periodic_boundry_z(true);
+	_set_periodic_boundry_z(periodic_z);
 	_set_thermal_lattice_velocity_set(
 		get_VelocitySet_dimention(velocity_set) == 2 ? 
 		SimplifiedVelocitySet::D2Q5 : SimplifiedVelocitySet::D3Q7
@@ -876,6 +877,9 @@ void LBM::_generate_macroscopic_textures()
 			1,
 			0
 		);
+
+		velocity_density_texture->min_filter = Texture3D::SamplingFilter::NEAREST;
+		velocity_density_texture->mag_filter = Texture3D::SamplingFilter::NEAREST;
 	}
 
 	bool boundry_needs_init = boundry_texture == nullptr || boundry_texture->get_size() != resolution;
@@ -889,6 +893,7 @@ void LBM::_generate_macroscopic_textures()
 			1,
 			0
 		);
+
 	}
 
 	bool force_temperature_needs_init = force_temperature_texture == nullptr || force_temperature_texture->get_size() != resolution;
@@ -902,6 +907,9 @@ void LBM::_generate_macroscopic_textures()
 			1,
 			0
 		);
+
+		force_temperature_texture->min_filter = Texture3D::SamplingFilter::NEAREST;
+		force_temperature_texture->mag_filter = Texture3D::SamplingFilter::NEAREST;
 	}
 }
 
@@ -1119,8 +1127,9 @@ void LBM::render3d_density(Camera& camera, int32_t sample_count)
 	camera.update_matrixes();
 	camera.update_default_uniforms(program);
 
-	program.update_uniform("model", glm::identity<glm::mat4>());
-	program.update_uniform("inverse_model", glm::identity<glm::mat4>());
+	glm::mat4 model = glm::identity<glm::mat4>();
+	program.update_uniform("model", model);
+	program.update_uniform("inverse_model", glm::inverse(model));
 	program.update_uniform("inverse_view", glm::inverse(camera.view_matrix));
 	
 	program.update_uniform("sample_count", sample_count);
