@@ -60,14 +60,23 @@
 
 #define multiphase_flow 1
 
+#define lattice_is_texutre3d 1
+
+#define esoteric_pull 1
+
 #define id gl_GlobalInvocationID
 
+#if lattice_is_texutre3d == 0
 layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+#else 
+layout (local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
+#endif
 
 layout(std140, binding = 0) uniform velocity_set_buffer {
 	vec4[velocity_count] lattice_velocity_set;
 };
 
+#if lattice_is_texutre3d == 0
 layout(std430, binding = 1) buffer lattice_buffer_source {
 	float[] lattice_source;
 };
@@ -75,6 +84,10 @@ layout(std430, binding = 1) buffer lattice_buffer_source {
 layout(std430, binding = 2) buffer lattice_buffer_target {
 	float[] lattice_target;
 };
+#else
+layout(r16f, binding = 1) uniform image3D lattice_source;
+layout(r16f, binding = 2) uniform image3D lattice_target;
+#endif
 
 #if boundry_count > 1
 layout(std430, binding = 3) buffer boundries_buffer {
@@ -125,12 +138,30 @@ uniform float thermal_expension_coefficient;
 uniform float intermolecular_interaction_strength;
 #endif
 
+//////////////////////////////////////////
+// momentum density lattice functions
+
 uint coord_to_id(ivec3 pixel_coord){
 	return pixel_coord.z * lattice_resolution.y * lattice_resolution.x + pixel_coord.y * lattice_resolution.x + pixel_coord.x;
 }
 
-//////////////////////////////////////////
-// momentum density lattice functions
+uint id_to_address(uint voxel_id, uint population_id){
+	uint voxel_count = lattice_resolution.x * lattice_resolution.y * lattice_resolution.z; 
+	return population_id * voxel_count + voxel_id;
+	//return voxel_id * velocity_count + population_id;
+}
+
+uint coord_to_address(ivec3 pixel_coord, uint population_id){
+	return id_to_address(coord_to_id(pixel_coord), population_id);
+}
+
+uint id_to_address_thermal(uint voxel_id, uint population_id){
+	return voxel_id * thermal_velocity_count + population_id;
+}
+
+uint coord_to_address_thermal(ivec3 pixel_coord, uint population_id){
+	return id_to_address_thermal(coord_to_id(pixel_coord), population_id);
+}
 
 int get_inverse_lattice_population_id_index(int lattice_velocity_index){
 	if (lattice_velocity_index == 0 || lattice_velocity_index >= velocity_count)
@@ -140,20 +171,41 @@ int get_inverse_lattice_population_id_index(int lattice_velocity_index){
 	return is_odd ? lattice_velocity_index + 1 : lattice_velocity_index - 1;
 }
 
+ivec3 coord_to_tex3d(ivec3 pixel_coord, uint population_id){
+	return ivec3(lattice_resolution.x * population_id, 0, 0) + pixel_coord;
+	//return pixel_coord * ivec3(velocity_count, 1, 1) + ivec3(population_id, 0, 0);
+}
+
 float get_lattice_source(ivec3 pixel_coord, int velocity_index){
-	return lattice_source[coord_to_id(pixel_coord) * velocity_count + velocity_index];
+	#if lattice_is_texutre3d == 0
+	return lattice_source[coord_to_address(pixel_coord, velocity_index)];
+	#else
+	return imageLoad(lattice_source, coord_to_tex3d(pixel_coord, velocity_index)).x;
+	#endif
 }
 
 void set_lattice_source(ivec3 pixel_coord, int velocity_index, float value){
-	lattice_source[coord_to_id(pixel_coord) * velocity_count + velocity_index] = value;
+	#if lattice_is_texutre3d == 0
+	lattice_source[coord_to_address(pixel_coord, velocity_index)] = value;
+	#else
+	imageStore(lattice_source, coord_to_tex3d(pixel_coord, velocity_index), vec4(value));
+	#endif
 }
 
 float get_lattice_target(ivec3 pixel_coord, int velocity_index){
-	return lattice_target[coord_to_id(pixel_coord) * velocity_count + velocity_index];
+	#if lattice_is_texutre3d == 0
+	return lattice_target[coord_to_address(pixel_coord, velocity_index)];
+	#else
+	return imageLoad(lattice_target, coord_to_tex3d(pixel_coord, velocity_index)).x;
+	#endif
 }
 
 void set_lattice_target(ivec3 pixel_coord, int velocity_index, float value){
-	lattice_target[coord_to_id(pixel_coord) * velocity_count + velocity_index] = value;
+	#if lattice_is_texutre3d == 0
+	lattice_target[coord_to_address(pixel_coord, velocity_index)] = value;
+	#else
+	imageStore(lattice_target, coord_to_tex3d(pixel_coord, velocity_index), vec4(value));
+	#endif
 }
 
 vec3 get_lattice_velocity(int velocity_index){
@@ -260,19 +312,19 @@ int get_inverse_lattice_population_id_index_thermal(int thermal_lattice_velocity
 }
 
 float get_lattice_source_thermal(ivec3 pixel_coord, int thermal_velocity_index){
-	return thermal_lattice_source[coord_to_id(pixel_coord) * thermal_velocity_count + thermal_velocity_index];
+	return thermal_lattice_source[coord_to_address_thermal(pixel_coord, thermal_velocity_index)];
 }
 
 void set_lattice_source_thermal(ivec3 pixel_coord, int thermal_velocity_index, float value){
-	thermal_lattice_source[coord_to_id(pixel_coord) * thermal_velocity_count + thermal_velocity_index] = value;
+	thermal_lattice_source[coord_to_address_thermal(pixel_coord, thermal_velocity_index)] = value;
 }
 
 float get_lattice_target_thermal(ivec3 pixel_coord, int thermal_velocity_index){
-	return thermal_lattice_target[coord_to_id(pixel_coord) * thermal_velocity_count + thermal_velocity_index];
+	return thermal_lattice_target[coord_to_address_thermal(pixel_coord, thermal_velocity_index)];
 }
 
 void set_lattice_target_thermal(ivec3 pixel_coord, int thermal_velocity_index, float value){
-	thermal_lattice_target[coord_to_id(pixel_coord) * thermal_velocity_count + thermal_velocity_index] = value;
+	thermal_lattice_target[coord_to_address_thermal(pixel_coord, thermal_velocity_index)] = value;
 }
 
 vec3 get_lattice_velocity_thermal(int thermal_velocity_index){
@@ -448,19 +500,33 @@ float dirichlet_boundry_correction_term(int lattice_velocity_index, float local_
 }
 
 void main(){
+	
+	#if esoteric_pull == 1
+	return;
+	#endif
 
+	ivec3 pixel_coord;
+	#if lattice_is_texutre3d == 0
 	if (int(id.x) >= lattice_resolution.x * lattice_resolution.y * lattice_resolution.z * velocity_count)
 		return;
 
-	uint pixel_id = id.x / velocity_count;
-	int velocity_id = int(id.x % velocity_count);
-	int inv_velocity_id = get_inverse_lattice_population_id_index(velocity_id);
-	ivec3 pixel_coord = ivec3(
+	uint voxel_count = lattice_resolution.x * lattice_resolution.y * lattice_resolution.z;
+	uint pixel_id = id.x % voxel_count;
+	int velocity_id = int(id.x / voxel_count);
+	pixel_coord = ivec3(
 		pixel_id % lattice_resolution.x,
 		(pixel_id / lattice_resolution.x) % lattice_resolution.y,
 		(pixel_id / lattice_resolution.x) / lattice_resolution.y
 		);
+	#else
+	if (any(greaterThanEqual(id, lattice_resolution * ivec3(velocity_count, 1, 1))))
+		return;
 
+	pixel_coord = ivec3(id) % ivec3(lattice_resolution);
+	int velocity_id = int(id.x / lattice_resolution.x);
+	#endif
+
+	int inv_velocity_id = get_inverse_lattice_population_id_index(velocity_id);
 	int self_boundry = int(get_boundry(pixel_coord));
 	if (self_boundry != 0)
 		return;
@@ -471,7 +537,7 @@ void main(){
 	source_pixel_coord.x = positive_modulo(source_pixel_coord.x, lattice_resolution.x);
 	#else
 	if (source_pixel_coord.x < 0 || source_pixel_coord.x >= lattice_resolution.x) {
-		lattice_target[id.x] = 0.01;
+		set_lattice_target(pixel_coord, velocity_id, 0.01);
 		return;
 	}
 	#endif
@@ -480,7 +546,7 @@ void main(){
 	source_pixel_coord.y = positive_modulo(source_pixel_coord.y, lattice_resolution.y);
 	#else
 	if (source_pixel_coord.y < 0 || source_pixel_coord.y >= lattice_resolution.y) {
-		lattice_target[id.x] = 0.01;
+		set_lattice_target(pixel_coord, velocity_id, 0.01);
 		return;
 	}
 	#endif
@@ -489,12 +555,12 @@ void main(){
 	source_pixel_coord.z = positive_modulo(source_pixel_coord.z, lattice_resolution.z);
 	#else
 	if (source_pixel_coord.z < 0 || source_pixel_coord.z >= lattice_resolution.z) {
-		lattice_target[id.x] = 0.01;
+		set_lattice_target(pixel_coord, velocity_id, 0.01);
 		return;
 	}
 	#endif
 
-	uint source_pixel_id = coord_to_id(source_pixel_coord);
+	//uint source_pixel_id = coord_to_id(source_pixel_coord);
 
 	int source_boundry = int(get_boundry(source_pixel_coord));
 	object_info_s source_object = get_object_info(source_boundry);
@@ -509,10 +575,14 @@ void main(){
 
 	//lattice[pixel_id * velocity_count + population_id]		= value_b + dirichlet_boundry_correction_term(inv_population_id, 1.0, boundry_velocity);
 	//lattice[pixel_id * velocity_count + inv_population_id]	= value_a + dirichlet_boundry_correction_term(population_id, 1.0, boundry_velocity);
-	
+
 	if (source_boundry != 0)
-		lattice_target[id.x] = lattice_source[pixel_id * velocity_count + inv_velocity_id] +
-							   dirichlet_boundry_correction_term(inv_velocity_id, 1.0, source_boundry_velocity);
+		set_lattice_target(pixel_coord, velocity_id, 
+			get_lattice_source(pixel_coord, inv_velocity_id) +
+			dirichlet_boundry_correction_term(inv_velocity_id, 1.0, source_boundry_velocity)
+		);
 	else 
-		lattice_target[id.x] = lattice_source[source_pixel_id * velocity_count + velocity_id];
+		set_lattice_target(pixel_coord, velocity_id, 
+			get_lattice_source(source_pixel_coord, velocity_id)
+		);
 }

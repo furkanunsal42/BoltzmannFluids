@@ -3,6 +3,7 @@
 #include <memory>
 #include <stdint.h>
 #include <functional>
+#include <filesystem>
 
 #include "LBMConstants/VelocitySet.h"
 #include "LBMConstants/FloatingPointAccuracy.h"
@@ -87,11 +88,11 @@ public:
 	void render2d_forces();
 	void render2d_temperature();
 
-	void render3d_density(Camera& camera, int32_t sample_count = 256);
-	void render3d_velocity(Camera& camera, int32_t sample_count = 256);
-	void render3d_boundries(Camera& camera, int32_t sample_count = 256);
-	void render3d_forces(Camera& camera, int32_t sample_count = 256);
-	void render3d_temperature(Camera& camera, int32_t sample_count = 256);
+	void render3d_density(Camera& camera, int32_t sample_count = 128);
+	void render3d_velocity(Camera& camera, int32_t sample_count = 128);
+	void render3d_boundries(Camera& camera, int32_t sample_count = 128);
+	void render3d_forces(Camera& camera, int32_t sample_count = 128);
+	void render3d_temperature(Camera& camera, int32_t sample_count = 128);
 
 	std::shared_ptr<Texture3D> get_velocity_density_texture();
 	std::shared_ptr<Texture3D> get_boundry_texture();
@@ -117,6 +118,12 @@ public:
 	void set_relaxation_time(float relaxation_time);
  	void set_constant_force(glm::vec3 constant_force);
 	void set_intermolecular_interaction_strength(float value);
+
+	// high level visualization api
+	void save_current_tick_macroscopic(std::filesystem::path save_path);
+	void save_current_tick_mesoscropic(std::filesystem::path save_path);
+	void load_tick_macroscopic(std::filesystem::path save_path, int32_t target_tick);
+	void load_tick_mesoscropic(std::filesystem::path save_path, int32_t target_tick);
 
 	//void set_population(glm::ivec2 voxel_coordinate, int32_t population_index, float value);
 	//void set_population(glm::ivec2 voxel_coordinate_begin, glm::ivec2 voxel_coordinate_end, int32_t population_index, float value);
@@ -236,11 +243,17 @@ private:
 	void _set_populations_to_equilibrium_thermal(Buffer& temperature_field, Buffer& velocity_field);
 
 	// multiphase flow control flags
-	bool is_flow_multiphase = false;
+	bool is_flow_multiphase = true;
 	float intermolecular_interaction_strength = -6.0f;
 	void _set_is_flow_multiphase(bool value);
 
 	// device buffers
+	bool is_collide_esoteric = false;
+	bool is_lattice_texture3d = false;
+	Texture3D::ColorTextureFormat lattice_tex_internal_format = Texture3D::ColorTextureFormat::R16F;
+	
+	std::shared_ptr<Texture3D> lattice0_tex = nullptr;
+	std::shared_ptr<Texture3D> lattice1_tex = nullptr;
 	std::shared_ptr<Buffer> lattice0 = nullptr;
 	std::shared_ptr<Buffer> lattice1 = nullptr;
 	std::shared_ptr<Buffer> boundries = nullptr;
@@ -256,6 +269,8 @@ private:
 	bool is_lattice_0_is_source = true;
 	std::shared_ptr<Buffer> _get_lattice_source();
 	std::shared_ptr<Buffer> _get_lattice_target();
+	std::shared_ptr<Texture3D> _get_lattice_tex_source();
+	std::shared_ptr<Texture3D> _get_lattice_tex_target();
 	void _swap_lattice_buffers();
 
 	bool is_thermal_lattice_0_is_source = true;
@@ -275,16 +290,16 @@ private:
 
 	// kernels
 	bool is_programs_compiled = false;
-	std::shared_ptr<ComputeProgram> lbm2d_stream = nullptr;
-	std::shared_ptr<ComputeProgram> lbm2d_stream_thermal = nullptr;
-	std::shared_ptr<ComputeProgram> lbm2d_collide = nullptr;
-	std::shared_ptr<ComputeProgram> lbm2d_collide_save = nullptr;
-	std::shared_ptr<ComputeProgram> lbm2d_collide_with_precomputed_velocity = nullptr;
-	std::shared_ptr<ComputeProgram> lbm2d_set_equilibrium_populations = nullptr;
-	std::shared_ptr<ComputeProgram> lbm2d_set_equilibrium_populations_thermal = nullptr;
-	std::shared_ptr<ComputeProgram> lbm2d_set_population = nullptr;
-	std::shared_ptr<ComputeProgram> lbm2d_add_random_population = nullptr;
-	std::shared_ptr<ComputeProgram> lbm2d_copy_population = nullptr;
+	std::shared_ptr<ComputeProgram> lbm_stream = nullptr;
+	std::shared_ptr<ComputeProgram> lbm_stream_thermal = nullptr;
+	std::shared_ptr<ComputeProgram> lbm_collide = nullptr;
+	std::shared_ptr<ComputeProgram> lbm_collide_save = nullptr;
+	std::shared_ptr<ComputeProgram> lbm_collide_with_precomputed_velocity = nullptr;
+	std::shared_ptr<ComputeProgram> lbm_set_equilibrium_populations = nullptr;
+	std::shared_ptr<ComputeProgram> lbm_set_equilibrium_populations_thermal = nullptr;
+	std::shared_ptr<ComputeProgram> lbm_set_population = nullptr;
+	std::shared_ptr<ComputeProgram> lbm_add_random_population = nullptr;
+	std::shared_ptr<ComputeProgram> lbm_copy_population = nullptr;
 	
 	// renderers
 	std::shared_ptr<Program> program_render2d_density = nullptr;

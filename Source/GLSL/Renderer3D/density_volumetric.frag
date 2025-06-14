@@ -55,6 +55,11 @@ void main(){
 	vec3 current_position = object_space_begin;
 
 	float current_depth = 0;
+	
+	vec3 color = vec3(0);
+	float transmittance = 1;
+	float extinction_coefficient = 8;
+	vec3 current_light = vec3(0.5, 0.8, 1);
 
 	vec3 color = vec3(0.0);
     float transmittance = 1.0;

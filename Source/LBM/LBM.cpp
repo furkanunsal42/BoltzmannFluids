@@ -13,6 +13,10 @@ void LBM::_compile_shaders()
 	// simulation kernels
 
 	auto definitions = _generate_shader_macros();
+
+	auto definitions_plus_not_save = definitions;
+	definitions_plus_not_save.push_back(std::pair("save_macroscopic_variables", "0"));
+
 	auto definitions_plus_save = definitions;
 	definitions_plus_save.push_back(std::pair("save_macroscopic_variables", "1"));
 
@@ -20,16 +24,16 @@ void LBM::_compile_shaders()
 	for (auto& definition : definitions)
 		std::cout << "\t" << definition.first << " : " << definition.second << std::endl;
 
-	lbm2d_stream								= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "stream.comp"), definitions);
-	lbm2d_stream_thermal						= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "stream_thermal.comp"), definitions);
-	lbm2d_collide								= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "collide.comp"), definitions);
-	lbm2d_collide_save							= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "collide.comp"), definitions_plus_save);
-	lbm2d_collide_with_precomputed_velocity		= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "collide_with_precomputed_velocity.comp"), definitions);
-	lbm2d_set_equilibrium_populations			= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "set_equilibrium_populations.comp"), definitions);
-	lbm2d_set_equilibrium_populations_thermal	= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "set_equilibrium_populations_thermal.comp"), definitions);
-	lbm2d_set_population						= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "set_population.comp"), definitions);
-	lbm2d_copy_population						= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "copy_population.comp"), definitions);
-	lbm2d_add_random_population					= std::make_shared<ComputeProgram>(Shader(lbm2d_shader_directory / "add_random_population.comp"), definitions);
+	lbm_stream									= std::make_shared<ComputeProgram>(Shader(lbm_shader_directory / "stream.comp"), definitions);
+	lbm_stream_thermal							= std::make_shared<ComputeProgram>(Shader(lbm_shader_directory / "stream_thermal.comp"), definitions);
+	lbm_collide									= std::make_shared<ComputeProgram>(Shader(lbm_shader_directory / "collide.comp"), definitions_plus_not_save);
+	lbm_collide_save							= std::make_shared<ComputeProgram>(Shader(lbm_shader_directory / "collide.comp"), definitions_plus_save);
+	lbm_collide_with_precomputed_velocity		= std::make_shared<ComputeProgram>(Shader(lbm_shader_directory / "collide_with_precomputed_velocity.comp"), definitions);
+	lbm_set_equilibrium_populations				= std::make_shared<ComputeProgram>(Shader(lbm_shader_directory / "set_equilibrium_populations.comp"), definitions);
+	lbm_set_equilibrium_populations_thermal		= std::make_shared<ComputeProgram>(Shader(lbm_shader_directory / "set_equilibrium_populations_thermal.comp"), definitions);
+	lbm_set_population							= std::make_shared<ComputeProgram>(Shader(lbm_shader_directory / "set_population.comp"), definitions);
+	lbm_copy_population							= std::make_shared<ComputeProgram>(Shader(lbm_shader_directory / "copy_population.comp"), definitions);
+	lbm_add_random_population					= std::make_shared<ComputeProgram>(Shader(lbm_shader_directory / "add_random_population.comp"), definitions);
 
 	// renderer2d
 
@@ -216,12 +220,14 @@ void LBM::iterate_time(float target_tick_per_second)
 	if (target_tick_per_second <= 0 || total_ticks_elapsed < targeted_tick_count) {
 		
 		auto time_since_visual_update = std::chrono::system_clock::now() - last_visual_update;
-		bool should_update_visuals = first_iteration || std::chrono::duration_cast<std::chrono::milliseconds>(time_since_visual_update).count() > 1000.0 / 3;
+		bool should_update_visuals = first_iteration || std::chrono::duration_cast<std::chrono::milliseconds>(time_since_visual_update).count() > 1000.0 / 60;
 		if (should_update_visuals) last_visual_update = std::chrono::system_clock::now();
 
 		_collide(should_update_visuals);
-		_stream();
-
+		
+		if (!is_collide_esoteric)
+			_stream();
+		
 		if (is_flow_thermal)
 			_stream_thermal();
 
@@ -434,13 +440,13 @@ void LBM::initialize_fields(
 
 	std::shared_ptr<Buffer> density_field = nullptr;
 	std::shared_ptr<Buffer> velocity_field = nullptr;
-
+	
 	_initialize_fields_default_pass(
 		initialization_lambda,
 		density_field,
 		velocity_field
 	);
-
+	
 	_initialize_fields_boundries_pass(
 		initialization_lambda
 	);
@@ -448,17 +454,17 @@ void LBM::initialize_fields(
 	_initialize_fields_force_pass(
 		initialization_lambda
 	);
-
+	
 	_initialize_fields_thermal_pass(
 		initialization_lambda,
 		velocity_field
 	);
-
+	
 	int32_t relaxation_iteration_count = 0;
 	std::cout << "[LBM Info] _initialize_fields_default_pass() initialization of particle population distributions from given veloicty and density fields is initiated" << std::endl;
-
+	
 	_set_populations_to_equilibrium(*density_field, *velocity_field);
-
+	
 	for (int32_t i = 0; i < relaxation_iteration_count; i++) {
 		_collide_with_precomputed_velocities(*velocity_field);
 		//_apply_boundry_conditions(); //the book doesn't specitfy whether or not to enforce boundry conditions in initialization algorithm
@@ -468,7 +474,6 @@ void LBM::initialize_fields(
 	iterate_time();
 
 	std::cout << "[LBM Info] _initialize_fields_default_pass() fields initialization scheme completed with relaxation_iteration_count(" << relaxation_iteration_count << ")" << std::endl;
-
 }
 
 void LBM::_initialize_fields_default_pass(
@@ -755,7 +760,7 @@ void LBM::_initialize_fields_thermal_pass(
 //
 //	_compile_shaders();
 //
-//	ComputeProgram& kernel = *lbm2d_copy_population;
+//	ComputeProgram& kernel = *lbm_copy_population;
 //
 //	Buffer& lattice = *_get_lattice_source();
 //
@@ -781,12 +786,36 @@ void LBM::_generate_lattice_buffer()
 		get_velocity_set_vector_count() *
 		get_FloatingPointAccuracy_size_in_bytes(floating_point_accuracy);
 
-	lattice0 = std::make_shared<Buffer>(total_buffer_size_in_bytes);
-	lattice1 = std::make_shared<Buffer>(total_buffer_size_in_bytes);
+	if (is_lattice_texture3d) {
+		lattice0_tex = std::make_shared<Texture3D>(
+			resolution.x * get_velocity_set_vector_count(),
+			resolution.y,
+			resolution.z,
+			lattice_tex_internal_format,
+			1,
+			0
+		);
+		lattice1_tex = std::make_shared<Texture3D>(
+			resolution.x * get_velocity_set_vector_count(),
+			resolution.y,
+			resolution.z,
+			lattice_tex_internal_format,
+			1,
+			0
+		);
 
-	lattice0->clear(0.0f);
-	lattice1->clear(0.0f);
+		//lattice0_tex->clear(0.0f);
+		//lattice1_tex->clear(0.0f);
+	}
+	else {
+		lattice0 = std::make_shared<Buffer>(total_buffer_size_in_bytes);
+		lattice1 = std::make_shared<Buffer>(total_buffer_size_in_bytes);
 
+		//lattice0->clear(0.0f);
+		//lattice1->clear(0.0f);
+	}
+
+	
 	lattice_velocity_set_buffer = std::make_unique<UniformBuffer>();
 	lattice_velocity_set_buffer->push_variable_array(get_velocity_set_vector_count()); // a vec4 for every velocity direction
 
@@ -843,6 +872,16 @@ std::shared_ptr<Buffer> LBM::_get_lattice_source()
 std::shared_ptr<Buffer> LBM::_get_lattice_target()
 {
 	return is_lattice_0_is_source ? lattice1 : lattice0;
+}
+
+std::shared_ptr<Texture3D> LBM::_get_lattice_tex_source()
+{
+	return is_lattice_0_is_source ? lattice0_tex : lattice1_tex;
+}
+
+std::shared_ptr<Texture3D> LBM::_get_lattice_tex_target()
+{
+	return is_lattice_0_is_source ? lattice1_tex : lattice0_tex;
 }
 
 void LBM::_swap_lattice_buffers()
@@ -1290,7 +1329,7 @@ void LBM::render3d_temperature(Camera& camera, int32_t sample_count)
 //{
 //	_compile_shaders();
 //
-//	ComputeProgram& kernel = *lbm2d_set_population;
+//	ComputeProgram& kernel = *lbm_set_population;
 //
 //	Buffer& lattice = *_get_lattice_source();
 //
@@ -1324,7 +1363,7 @@ void LBM::render3d_temperature(Camera& camera, int32_t sample_count)
 //{
 //	_compile_shaders();
 //
-//	ComputeProgram& kernel = *lbm2d_add_random_population;
+//	ComputeProgram& kernel = *lbm_add_random_population;
 //
 //	Buffer& lattice = *_get_lattice_source();
 //
@@ -1383,6 +1422,8 @@ std::vector<std::pair<std::string, std::string>> LBM::_generate_shader_macros()
 		{"thermal_flow",			is_flow_thermal ? "1" : "0"},
 		{"velocity_set_thermal",	get_SimplifiedVelocitySet_to_macro(thermal_lattice_velocity_set)},
 		{"multiphase_flow",			is_flow_multiphase ? "1" : "0"},
+		{"lattice_is_texutre3d",	is_lattice_texture3d ? "1" : "0"},
+		{"esoteric_pull",			is_collide_esoteric ? "1" : "0"},
 	};
 
 	return definitions;
@@ -1392,12 +1433,23 @@ void LBM::_stream()
 {
 	_compile_shaders();
 
-	ComputeProgram& kernel = *lbm2d_stream;
+	ComputeProgram& kernel = *lbm_stream;
 
-	Buffer& lattice_source = *_get_lattice_source();
-	Buffer& lattice_target = *_get_lattice_target();
-	kernel.update_uniform_as_storage_buffer("lattice_buffer_source", lattice_source, 0);
-	kernel.update_uniform_as_storage_buffer("lattice_buffer_target", lattice_target, 0);
+	if (is_lattice_texture3d) {
+		Texture3D& lattice_tex_source = *_get_lattice_tex_source();
+		Texture3D& lattice_tex_target = *_get_lattice_tex_target();
+
+		kernel.update_uniform_as_image("lattice_source", lattice_tex_source, 0);
+		kernel.update_uniform_as_image("lattice_target", lattice_tex_target, 0);
+	}
+	else {
+		Buffer& lattice_source = *_get_lattice_source();
+		Buffer& lattice_target = *_get_lattice_target();
+
+		kernel.update_uniform_as_storage_buffer("lattice_buffer_source", lattice_source, 0);
+		kernel.update_uniform_as_storage_buffer("lattice_buffer_target", lattice_target, 0);
+	}
+
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 
 	kernel.update_uniform("lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3.0)));
@@ -1430,21 +1482,40 @@ void LBM::_stream()
 		kernel.update_uniform("intermolecular_interaction_strength", intermolecular_interaction_strength);
 	}
 
-	kernel.dispatch_thread(_get_voxel_count() * get_velocity_set_vector_count(), 1, 1);
+	if (is_lattice_texture3d)
+		kernel.dispatch_thread(resolution.x * get_velocity_set_vector_count(), resolution.y, resolution.z);
+	else 
+		kernel.dispatch_thread(_get_voxel_count() * get_velocity_set_vector_count(), 1, 1);
 
-	_swap_lattice_buffers();
+	if (!is_collide_esoteric)
+		_swap_lattice_buffers();
 }
 
 void LBM::_collide(bool save_macrsoscopic_results)
 {
 	_compile_shaders();
 
-	ComputeProgram& kernel = save_macrsoscopic_results ? *lbm2d_collide_save : *lbm2d_collide;
+	ComputeProgram& kernel = save_macrsoscopic_results ? *lbm_collide_save : *lbm_collide;
 
-	Buffer& lattice_source = *_get_lattice_source();
-	Buffer& lattice_target = *_get_lattice_target();
-	kernel.update_uniform_as_storage_buffer("lattice_buffer_source", lattice_source, 0);
-	kernel.update_uniform_as_storage_buffer("lattice_buffer_target", lattice_target, 0);
+	if (is_lattice_texture3d) {
+		Texture3D& lattice_tex_source = *_get_lattice_tex_source();
+		kernel.update_uniform_as_image("lattice_source", lattice_tex_source, 0);
+		
+		if (!is_collide_esoteric) {
+			Texture3D& lattice_tex_target = *_get_lattice_tex_target();
+			kernel.update_uniform_as_image("lattice_target", lattice_tex_target, 0);
+		}
+	}
+	else {
+		Buffer& lattice_source = *_get_lattice_source();
+		kernel.update_uniform_as_storage_buffer("lattice_buffer_source", lattice_source, 0);
+
+		if (!is_collide_esoteric) {
+			Buffer& lattice_target = *_get_lattice_target();
+			kernel.update_uniform_as_storage_buffer("lattice_buffer_target", lattice_target, 0);
+		}
+	}
+
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
 
 	kernel.update_uniform("lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3.0)));
@@ -1487,9 +1558,18 @@ void LBM::_collide(bool save_macrsoscopic_results)
 			kernel.update_uniform_as_image("force_temperature_texture", *force_temperature_texture, 0);
 	}
 
-	kernel.dispatch_thread(_get_voxel_count(), 1, 1);
+	if (is_lattice_texture3d)
+		kernel.dispatch_thread(resolution.x, resolution.y, resolution.z);
+	else 
+		kernel.dispatch_thread(_get_voxel_count(), 1, 1);
 
-	_swap_lattice_buffers();
+	if (is_collide_esoteric) {
+		kernel.update_uniform("is_time_step_odd", (get_total_ticks_elapsed() % 2 == 1) ? 1 : 0);
+	}
+
+	if (!is_collide_esoteric)
+		_swap_lattice_buffers();
+
 	_swap_thermal_lattice_buffers();
 }
 
@@ -1497,7 +1577,7 @@ void LBM::_collide_with_precomputed_velocities(Buffer& velocity_field)
 {
 	_compile_shaders();
 
-	ComputeProgram& kernel = *lbm2d_collide_with_precomputed_velocity;
+	ComputeProgram& kernel = *lbm_collide_with_precomputed_velocity;
 
 	Buffer& lattice_source = *_get_lattice_source();
 	Buffer& lattice_target = *_get_lattice_target();
@@ -1544,11 +1624,18 @@ void LBM::_set_populations_to_equilibrium(Buffer& density_field, Buffer& velocit
 {
 	_compile_shaders();
 
-	ComputeProgram& kernel = *lbm2d_set_equilibrium_populations;
+	ComputeProgram& kernel = *lbm_set_equilibrium_populations;
 
-	Buffer& lattice = *_get_lattice_source();
 
-	kernel.update_uniform_as_storage_buffer("lattice_buffer", lattice, 0);
+	if (is_lattice_texture3d) {
+		Texture3D& lattice_tex = *_get_lattice_tex_source();
+		kernel.update_uniform_as_image("lattice", lattice_tex, 0);
+	}
+	else {
+		Buffer& lattice = *_get_lattice_source();
+		kernel.update_uniform_as_storage_buffer("lattice_buffer", lattice, 0);
+	}
+
 	kernel.update_uniform_as_storage_buffer("density_buffer", density_field, 0);
 	kernel.update_uniform_as_storage_buffer("velocity_buffer", velocity_field, 0);
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
@@ -1563,7 +1650,7 @@ void LBM::_stream_thermal()
 {
 	_compile_shaders();
 
-	ComputeProgram& kernel = *lbm2d_stream_thermal;
+	ComputeProgram& kernel = *lbm_stream_thermal;
 
 	Buffer& lattice_source = *_get_lattice_source();
 	Buffer& lattice_target = *_get_lattice_target();
@@ -1610,7 +1697,7 @@ void LBM::_set_populations_to_equilibrium_thermal(Buffer& temperature_field, Buf
 {
 	_compile_shaders();
 
-	ComputeProgram& kernel = *lbm2d_set_equilibrium_populations_thermal;
+	ComputeProgram& kernel = *lbm_set_equilibrium_populations_thermal;
 
 	Buffer& lattice_thermal = *_get_thermal_lattice_source();
 
