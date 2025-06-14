@@ -70,6 +70,7 @@
 #endif
 
 #define lattice_is_texutre3d 1
+#define lattice_texture3d_internal_format r16f
 
 #define esoteric_pull 1
 
@@ -95,8 +96,8 @@ layout(std430, binding = 1) buffer lattice_buffer_source {
 	};
 #endif
 #else
-layout(r16f, binding = 1) uniform image3D lattice_source;
-layout(r16f, binding = 2) uniform image3D lattice_target;
+layout(lattice_texture3d_internal_format, binding = 1) uniform image3D lattice_source;
+layout(lattice_texture3d_internal_format, binding = 2) uniform image3D lattice_target;
 #endif
 
 
@@ -135,12 +136,12 @@ layout(std430, binding = 8) buffer thermal_lattice_buffer_target {
 #endif
 
 #if save_macroscopic_variables == 1
-	layout(rgba32f, binding = 0) uniform image3D velocity_density_texture;
+	layout(rgba32f, binding = 3) uniform image3D velocity_density_texture;
 	#if boundry_count > 1
-	layout(r8,		binding = 1) uniform image3D boundry_texture;
+	layout(r8,		binding = 4) uniform image3D boundry_texture;
 	#endif
 	#if forcing_scheme == 1 || thermal_flow == 1 || multiphase_flow == 1
-	layout(rgba32f, binding = 2) uniform image3D force_temperature_texture;
+	layout(rgba32f, binding = 5) uniform image3D force_temperature_texture;
 	#endif
 #endif
 
@@ -664,6 +665,11 @@ void main(){
 		set_lattice_target(pixel_coord, population_id, 
 			!velocity_out_of_limit_extreme ? update_value : stability_enforced_value /*stability_enforced_value*/
 		);
+
+		//set_lattice_target(pixel_coord, population_id, 
+		//	old_population
+		//);
+
 	}
 
 	#if thermal_flow == 1

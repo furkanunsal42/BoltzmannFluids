@@ -61,6 +61,7 @@
 #define multiphase_flow 1
 
 #define lattice_is_texutre3d 1
+#define lattice_texture3d_internal_format r16f
 
 #define esoteric_pull 1
 
@@ -85,8 +86,8 @@ layout(std430, binding = 2) buffer lattice_buffer_target {
 	float[] lattice_target;
 };
 #else
-layout(r16f, binding = 1) uniform image3D lattice_source;
-layout(r16f, binding = 2) uniform image3D lattice_target;
+layout(lattice_texture3d_internal_format, binding = 1) uniform image3D lattice_source;
+layout(lattice_texture3d_internal_format, binding = 2) uniform image3D lattice_target;
 #endif
 
 #if boundry_count > 1
@@ -567,9 +568,10 @@ void main(){
 	// include angular velocity term
 	vec3 source_boundry_velocity = source_object.velocity;
 
-	//// for debug
-	//if (pixel_coord == ivec2(100, 100) && velocity_id == 1){
-	//	lattice_target[id.x] = 32;
+	// for debug
+	//if (pixel_coord == ivec3(100, 100, 1) && velocity_id == 1){
+	//	set_lattice_target(pixel_coord, velocity_id, 32);
+	//	//lattice_target[id.x] = 32;
 	//	return;
 	//}
 

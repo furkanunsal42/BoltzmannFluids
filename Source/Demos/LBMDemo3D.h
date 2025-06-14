@@ -10,6 +10,7 @@ namespace demo3d {
 
 	void multiphase_humid_platform(LBM& solver);
 	void multiphase_droplet_collision(LBM& solver);
+	void multiphase_raindrop(LBM& solver);
 
 
 

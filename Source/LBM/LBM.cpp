@@ -217,14 +217,14 @@ void LBM::iterate_time(float target_tick_per_second)
 	}
 
 	size_t targeted_tick_count = target_tick_per_second * get_total_time_elapsed().count() / 1000.0f;
-	if (target_tick_per_second <= 0 || total_ticks_elapsed < targeted_tick_count) {
+	if (target_tick_per_second <= 0 || total_ticks_elapsed < targeted_tick_count || first_iteration) {
 		
 		auto time_since_visual_update = std::chrono::system_clock::now() - last_visual_update;
 		bool should_update_visuals = first_iteration || std::chrono::duration_cast<std::chrono::milliseconds>(time_since_visual_update).count() > 1000.0 / 60;
 		if (should_update_visuals) last_visual_update = std::chrono::system_clock::now();
 
 		_collide(should_update_visuals);
-		
+
 		if (!is_collide_esoteric)
 			_stream();
 		
@@ -461,7 +461,7 @@ void LBM::initialize_fields(
 	);
 	
 	int32_t relaxation_iteration_count = 0;
-	std::cout << "[LBM Info] _initialize_fields_default_pass() initialization of particle population distributions from given veloicty and density fields is initiated" << std::endl;
+	std::cout << "[LBM Info] initialize_fields() initialization of particle population distributions from given veloicty and density fields is initiated" << std::endl;
 	
 	_set_populations_to_equilibrium(*density_field, *velocity_field);
 	
@@ -471,9 +471,12 @@ void LBM::initialize_fields(
 		_stream();
 	}
 
+	density_field->release();
+	velocity_field->release();
+
 	iterate_time();
 
-	std::cout << "[LBM Info] _initialize_fields_default_pass() fields initialization scheme completed with relaxation_iteration_count(" << relaxation_iteration_count << ")" << std::endl;
+	std::cout << "[LBM Info] initialize_fields() fields initialization scheme completed with relaxation_iteration_count(" << relaxation_iteration_count << ")" << std::endl;
 }
 
 void LBM::_initialize_fields_default_pass(
@@ -510,7 +513,9 @@ void LBM::_initialize_fields_default_pass(
 				if (properties.boundry_id != 0)
 					properties.velocity = glm::vec3(0);
 
-				object_count = std::max(object_count, properties.boundry_id + 1);
+				if (properties.boundry_id >= objects_cpu.size())
+					objects_cpu.resize(properties.boundry_id + 1);
+				//object_count = std::max(object_count, properties.boundry_id + 1);
 
 				if (properties.force != constant_force)
 					_set_is_force_field_constant(false);
@@ -534,7 +539,6 @@ void LBM::_initialize_fields_default_pass(
 	velocity_buffer_data = nullptr;
 	density_buffer_data = nullptr;
 
-	objects_cpu.resize(object_count);
 
 	bool does_contain_boundry = object_count > 1;	// first object slot is indexed by non-boundry id (fluid)
 
@@ -795,21 +799,24 @@ void LBM::_generate_lattice_buffer()
 			1,
 			0
 		);
-		lattice1_tex = std::make_shared<Texture3D>(
-			resolution.x * get_velocity_set_vector_count(),
-			resolution.y,
-			resolution.z,
-			lattice_tex_internal_format,
-			1,
-			0
-		);
+		if (!is_collide_esoteric) {
+			lattice1_tex = std::make_shared<Texture3D>(
+				resolution.x * get_velocity_set_vector_count(),
+				resolution.y,
+				resolution.z,
+				lattice_tex_internal_format,
+				1,
+				0
+			);
+		}
 
 		//lattice0_tex->clear(0.0f);
 		//lattice1_tex->clear(0.0f);
 	}
 	else {
 		lattice0 = std::make_shared<Buffer>(total_buffer_size_in_bytes);
-		lattice1 = std::make_shared<Buffer>(total_buffer_size_in_bytes);
+		if (!is_collide_esoteric)
+			lattice1 = std::make_shared<Buffer>(total_buffer_size_in_bytes);
 
 		//lattice0->clear(0.0f);
 		//lattice1->clear(0.0f);
@@ -1423,6 +1430,7 @@ std::vector<std::pair<std::string, std::string>> LBM::_generate_shader_macros()
 		{"velocity_set_thermal",	get_SimplifiedVelocitySet_to_macro(thermal_lattice_velocity_set)},
 		{"multiphase_flow",			is_flow_multiphase ? "1" : "0"},
 		{"lattice_is_texutre3d",	is_lattice_texture3d ? "1" : "0"},
+		{"lattice_texture3d_internal_format", Texture3D::ColorTextureFormat_to_OpenGL_compute_Image_format(lattice_tex_internal_format)},
 		{"esoteric_pull",			is_collide_esoteric ? "1" : "0"},
 	};
 
