@@ -248,7 +248,7 @@ private:
 	void _set_is_flow_multiphase(bool value);
 
 	// device buffers
-	bool is_collide_esoteric = true;
+	bool is_collide_esoteric = false;
 	bool is_lattice_texture3d = false;
 	Texture3D::ColorTextureFormat lattice_tex_internal_format = Texture3D::ColorTextureFormat::R16F;
 	

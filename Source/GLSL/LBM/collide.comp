@@ -217,20 +217,32 @@ float get_lattice_source(ivec3 pixel_coord, int population_id){
 	#if esoteric_pull == 1
 	if (is_time_step_odd == 0){
 		// even time step
+		//reading_population_id = population_id;
+		//bool read_slide = (reading_population_id % 2 == 0);
+		//reading_pixel_coord = read_slide ? 
+		//	(pixel_coord - ivec3(get_lattice_vector(reading_population_id))) :
+		//	pixel_coord; 
+
+		// aa patterning
 		reading_population_id = population_id;
-		bool read_slide = (reading_population_id % 2 == 0);
-		reading_pixel_coord = read_slide ? 
-			(pixel_coord - ivec3(get_lattice_vector(reading_population_id))) :
-			pixel_coord; 
+		reading_pixel_coord = pixel_coord - ivec3(get_lattice_vector(reading_population_id));
+
 	} else {
 		// odd time step
+		//reading_population_id = get_inverse_lattice_population_id_index(population_id);
+		//bool read_slide = (reading_population_id % 2 == 1);
+		//reading_pixel_coord = read_slide ? 
+		//	(pixel_coord + ivec3(get_lattice_vector(reading_population_id))) :
+		//	pixel_coord;
+		
+		// aa patterning
 		reading_population_id = get_inverse_lattice_population_id_index(population_id);
-		bool read_slide = (reading_population_id % 2 == 1);
-		reading_pixel_coord = read_slide ? 
-			(pixel_coord + ivec3(get_lattice_vector(reading_population_id))) :
-			pixel_coord;
+		reading_pixel_coord = pixel_coord;
 	}
 	#endif // esoteric_pull
+
+	//if (any(equal(reading_pixel_coord, ivec3(0, 0, 0))) || any(equal(reading_pixel_coord, lattice_resolution-1)))
+	//	return 0.1;
 
 	#if lattice_is_texutre3d == 0
 	return lattice_source[coord_to_address(reading_pixel_coord, reading_population_id)];
@@ -247,20 +259,32 @@ void set_lattice_target(ivec3 pixel_coord, int population_id, float value){
 	#if esoteric_pull == 1
 	if (is_time_step_odd == 0){
 		// even time step
+		//writing_population_id = get_inverse_lattice_population_id_index(population_id);
+		//bool write_slide = (writing_population_id % 2 == 0);
+		//writing_pixel_coord = write_slide ? 
+		//	(pixel_coord - ivec3(get_lattice_vector(writing_population_id))) :
+		//	pixel_coord;
+
+		// aa patterning
 		writing_population_id = get_inverse_lattice_population_id_index(population_id);
-		bool write_slide = (writing_population_id % 2 == 0);
-		writing_pixel_coord = write_slide ? 
-			(pixel_coord - ivec3(get_lattice_vector(writing_population_id))) :
-			pixel_coord;
+		writing_pixel_coord = pixel_coord - ivec3(get_lattice_vector(writing_population_id));
+
 	} else {
 		// odd time step
+		//writing_population_id = population_id;
+		//bool write_slide = (writing_population_id % 2 == 1);
+		//writing_pixel_coord = write_slide ?
+		//	(pixel_coord + ivec3(get_lattice_vector(writing_population_id))) :
+		//	pixel_coord;
+
+		// aa patterning
 		writing_population_id = population_id;
-		bool write_slide = (writing_population_id % 2 == 1);
-		writing_pixel_coord = write_slide ?
-			(pixel_coord + ivec3(get_lattice_vector(writing_population_id))) :
-			pixel_coord;
+		writing_pixel_coord = pixel_coord;
 	}
 	#endif // esoteric_pull
+
+	//if (any(equal(writing_pixel_coord, ivec3(0, 0, 0))) || any(equal(writing_pixel_coord, lattice_resolution-1)))
+	//	return;
 
 	#if lattice_is_texutre3d == 0
 		#if esoteric_pull == 0
@@ -593,7 +617,6 @@ void main(){
 		return;
 	pixel_coord = ivec3(id);
 	#endif
-	
 
 	#if boundry_count > 1
 	uint boundry_id = get_boundry(pixel_coord);
@@ -655,6 +678,7 @@ void main(){
 			);
 	}
 	#endif
+
 
 	#if save_macroscopic_variables == 1
 		imageStore(velocity_density_texture, pixel_coord, vec4(velocity, density));

@@ -6,7 +6,7 @@
 
 int main() {
 
-	std::function<void(LBM&)> init_scenario = demo2d::von_karman_street_set_velocity;
+	std::function<void(LBM&)> init_scenario = demo3d::multiphase_droplet_collision;
 
 	WindowDescription desc;
 	desc.w_scale_framebuffer_size = false;

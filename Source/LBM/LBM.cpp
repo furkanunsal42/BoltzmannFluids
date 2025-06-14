@@ -224,7 +224,9 @@ void LBM::iterate_time(float target_tick_per_second)
 		if (should_update_visuals) last_visual_update = std::chrono::system_clock::now();
 
 		_collide(should_update_visuals);
-		_stream();
+		
+		if (!is_collide_esoteric)
+			_stream();
 		
 		if (is_flow_thermal)
 			_stream_thermal();
@@ -1476,7 +1478,8 @@ void LBM::_stream()
 	else 
 		kernel.dispatch_thread(_get_voxel_count() * get_velocity_set_vector_count(), 1, 1);
 
-	_swap_lattice_buffers();
+	if (!is_collide_esoteric)
+		_swap_lattice_buffers();
 }
 
 void LBM::_collide(bool save_macrsoscopic_results)
