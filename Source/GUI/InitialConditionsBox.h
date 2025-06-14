@@ -6,7 +6,7 @@
 #include <QVBoxLayout>
 #include <QGroupBox>
 
-class InitialConditionsBox : public QWidget
+class InitialConditionsBox : public QFrame
 {
     Q_OBJECT
 public:

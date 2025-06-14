@@ -145,13 +145,6 @@ MainWindow::MainWindow(QWidget *parent)
             auto label1 = new QLabel("box1", add_items_box);
             add_items_box->addWidget(label1);
         }
-        {
-            auto add_items_box2 = new CollapsibleBox("Add Items12", left_scroll_area);
-            left_panel_layout->addWidget(add_items_box2);
-
-            auto label2 = new QLabel("box2", add_items_box2);
-            add_items_box2->addWidget(label2);
-        }
 
         left_panel_layout->addStretch();
         main_splitter->addWidget(left_scroll_area);
@@ -247,28 +240,34 @@ MainWindow::MainWindow(QWidget *parent)
 
         auto scroll_content = new QWidget(right_scroll_area);
         auto scroll_layout = new QVBoxLayout(scroll_content);
-        scroll_layout->setContentsMargins(7, 7, 7, 7);
-        scroll_layout->setSpacing(2);
+        scroll_layout->setContentsMargins(10, 3, 3, 3);
+        scroll_layout->setSpacing(3);
 
-        auto box1 = new CollapsibleBox("Initial Conditions - 1", scroll_content);
-        box1->addWidget(new InitialConditionsBox());
-        scroll_layout->addWidget(box1);
-
-        auto box2 = new CollapsibleBox("Initial Conditions - 2", scroll_content);
-        box2->addWidget(new InitialConditionsBox());
-        box2->addWidget(new InitialConditionsBox());
-        scroll_layout->addWidget(box2);
-
-        auto box3 = new CollapsibleBox("Initial Conditions - 3", scroll_content);
-        box3->addWidget(new InitialConditionsBox());
-        box3->addWidget(new InitialConditionsBox());
-        box3->addWidget(new InitialConditionsBox());
-        scroll_layout->addWidget(box3);
+        auto initial_conditions_box = new CollapsibleBox("Initial Conditions - 1", scroll_content);
+        //initial_conditions_box->setObjectName("initial_conditions_box");
+        initial_conditions_box->addWidget(new InitialConditionsBox());
+        scroll_layout->addWidget(initial_conditions_box);
 
         scroll_layout->addStretch();
         scroll_content->setLayout(scroll_layout);
         right_scroll_area->setWidget(scroll_content);
         main_splitter->addWidget(right_scroll_area);
+
+        initial_conditions_box->setStyleSheet(
+            "background-color: rgb(65, 66, 67);"
+            "border: 1px solid rgb(65, 66, 67);"
+            "border-radius: 5px;"
+            "padding: 1px;"
+            );
+
+    //    qss_text +=
+    //        "#initial_conditions_box { "
+    //            "background-color: rgb(165, 66, 67);"
+    //            "border 1px solid rgb(165, 66, 67);"
+    //            "border-radius: 8px;"
+    //            "padding: 4px;"  // internal space so children don't leak
+    //        "}"
+    //        ;
     }
 
 
@@ -292,7 +291,8 @@ MainWindow::MainWindow(QWidget *parent)
         qss_text += "QStatusBar { "
                         "color: rgb(180, 181, 182); "
                         "background-color: rgb(60, 61, 62); "
-                    "}";
+                    "}"
+            ;
     }
 
     // === Apply StyleSheet ===

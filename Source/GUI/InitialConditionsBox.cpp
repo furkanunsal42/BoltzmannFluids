@@ -14,11 +14,13 @@
 #include <QScrollBar>
 
 InitialConditionsBox::InitialConditionsBox(QWidget* parent)
-    : QWidget(parent)
+    : QFrame(parent)
 {
     main_layout = new QVBoxLayout(this);
     main_layout->setAlignment(Qt::AlignTop);
     main_layout->addWidget(createInitialConditionsGroup());
+    main_layout->setContentsMargins(0,0,0,0);
+    main_layout->setSpacing(0);
 
     setStyleSheet(
     "InitialConditionsBox {"
@@ -52,11 +54,11 @@ InitialConditionsBox::InitialConditionsBox(QWidget* parent)
 
 QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
 {
-    auto group = new QGroupBox();
+    auto group = new QGroupBox(this);
 
-    auto layout = new QVBoxLayout();
-    layout->setSpacing(10);
-
+    auto layout = new QVBoxLayout(group);
+    layout->setContentsMargins(0,0,0,0);
+    layout->setSpacing(9);
 
     //// Box Label - Initial Conditions
     //auto box_label_initial_conditions = new QLabel("Initial Conditions");
@@ -64,127 +66,164 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
 
     // Gravity
     {
+        auto gravity_vertical = new QVBoxLayout(group);
+        gravity_vertical->setContentsMargins(0, 0, 0, 0);
+        gravity_vertical->setSpacing(0);
+        layout->addLayout(gravity_vertical);
+
         // Label
         auto gravity_label = new QLabel("Gravity");
-        layout->addWidget(gravity_label);
+        gravity_vertical->addWidget(gravity_label);
 
-        auto gravity_layout = new QHBoxLayout();
+        {   //X-Y-Z
+            auto gravity_horizontal = new QHBoxLayout();
+            gravity_horizontal->addStretch();
+            /// X
+            auto gravity_X_txt = new QLabel("x:");
+            gravity_horizontal->addWidget(gravity_X_txt);
+            auto gravity_X_box = new QDoubleSpinBox();
+            gravity_X_box->setRange(GRAVITY_MIN, GRAVITY_MAX);
+            gravity_X_box->setSingleStep(0.01);
+            gravity_horizontal->addWidget(gravity_X_box);
 
-        // X
-        auto gravity_X_txt = new QLabel("x:");
-        gravity_layout->addWidget(gravity_X_txt);
-        auto gravity_X_box = new QDoubleSpinBox();
-        gravity_X_box->setRange(GRAVITY_MIN, GRAVITY_MAX);
-        gravity_X_box->setSingleStep(0.01);
-        gravity_layout->addWidget(gravity_X_box);
+            /// Y
+            auto gravity_Y_txt = new QLabel("y:");
+            gravity_horizontal->addWidget(gravity_Y_txt);
+            auto gravity_Y_box = new QDoubleSpinBox();
+            gravity_Y_box->setRange(GRAVITY_MIN, GRAVITY_MAX);
+            gravity_Y_box->setSingleStep(0.01);
+            gravity_horizontal->addWidget(gravity_Y_box);
 
-        // Y
-        auto gravity_Y_txt = new QLabel("y:");
-        gravity_layout->addWidget(gravity_Y_txt);
-        auto gravity_Y_box = new QDoubleSpinBox();
-        gravity_Y_box->setRange(GRAVITY_MIN, GRAVITY_MAX);
-        gravity_Y_box->setSingleStep(0.01);
-        gravity_layout->addWidget(gravity_Y_box);
+            /// Z
+            auto gravity_Z_txt = new QLabel("z:");
+            gravity_horizontal->addWidget(gravity_Z_txt);
+            auto gravity_Z_box = new QDoubleSpinBox();
+            gravity_Z_box->setRange(GRAVITY_MIN, GRAVITY_MAX);
+            gravity_Z_box->setSingleStep(0.01);
+            gravity_horizontal->addWidget(gravity_Z_box);
 
-        // Z
-        auto gravity_Z_txt = new QLabel("z:");
-        gravity_layout->addWidget(gravity_Z_txt);
-        auto gravity_Z_box = new QDoubleSpinBox();
-        gravity_Z_box->setRange(GRAVITY_MIN, GRAVITY_MAX);
-        gravity_Z_box->setSingleStep(0.01);
-        gravity_layout->addWidget(gravity_Z_box);
-
-        gravity_layout->addStretch();
-        layout->addLayout(gravity_layout);
+            gravity_vertical->addLayout(gravity_horizontal);
+        }
     }
 
 
     // Initial Velocities
     {
+        auto initial_velocity_vertical = new QVBoxLayout(group);
+        initial_velocity_vertical->setContentsMargins(0, 0, 0, 0);
+        initial_velocity_vertical->setSpacing(0);
+        layout->addLayout(initial_velocity_vertical);
+
         // Label
         auto initial_velocity_label = new QLabel("Initial Velocity");
-        layout->addWidget(initial_velocity_label);
+        initial_velocity_vertical->addWidget(initial_velocity_label);
 
-        auto initial_velocity_layout = new QHBoxLayout();
-        // X
-        auto initial_velocity_X_txt = new QLabel("x:");
-        initial_velocity_layout->addWidget(initial_velocity_X_txt);
-        auto initial_velocity_X_box = new QDoubleSpinBox();
-        initial_velocity_X_box->setRange(INITIAL_VELOCITY_MIN, INITIAL_VELOCITY_MAX);
-        initial_velocity_X_box->setSingleStep(0.01);
-        initial_velocity_layout->addWidget(initial_velocity_X_box);
-        // Y
-        auto initial_velocity_Y_txt = new QLabel("y:");
-        initial_velocity_layout->addWidget(initial_velocity_Y_txt);
-        auto initial_velocity_Y_box = new QDoubleSpinBox();
-        initial_velocity_Y_box->setRange(INITIAL_VELOCITY_MIN, INITIAL_VELOCITY_MAX);
-        initial_velocity_Y_box->setSingleStep(0.01);
-        initial_velocity_layout->addWidget(initial_velocity_Y_box);
-        // Z
-        auto initial_velocity_Z_txt = new QLabel("z:");
-        initial_velocity_layout->addWidget(initial_velocity_Z_txt);
-        auto initial_velocity_Z_box = new QDoubleSpinBox();
-        initial_velocity_Z_box->setRange(INITIAL_VELOCITY_MIN, INITIAL_VELOCITY_MAX);
-        initial_velocity_Z_box->setSingleStep(0.01);
-        initial_velocity_layout->addWidget(initial_velocity_Z_box);
+        {   // X-Y-Z
+            auto initial_velocity_horizontal = new QHBoxLayout();
+            initial_velocity_horizontal->addStretch();
 
-        initial_velocity_layout->addStretch();
-        layout->addLayout(initial_velocity_layout);
+            /// X
+            auto initial_velocity_X_txt = new QLabel("x:");
+            initial_velocity_horizontal->addWidget(initial_velocity_X_txt);
+            auto initial_velocity_X_box = new QDoubleSpinBox();
+            initial_velocity_X_box->setRange(INITIAL_VELOCITY_MIN, INITIAL_VELOCITY_MAX);
+            initial_velocity_X_box->setSingleStep(0.01);
+            initial_velocity_horizontal->addWidget(initial_velocity_X_box);
+            /// Y
+            auto initial_velocity_Y_txt = new QLabel("y:");
+            initial_velocity_horizontal->addWidget(initial_velocity_Y_txt);
+            auto initial_velocity_Y_box = new QDoubleSpinBox();
+            initial_velocity_Y_box->setRange(INITIAL_VELOCITY_MIN, INITIAL_VELOCITY_MAX);
+            initial_velocity_Y_box->setSingleStep(0.01);
+            initial_velocity_horizontal->addWidget(initial_velocity_Y_box);
+            /// Z
+            auto initial_velocity_Z_txt = new QLabel("z:");
+            initial_velocity_horizontal->addWidget(initial_velocity_Z_txt);
+            auto initial_velocity_Z_box = new QDoubleSpinBox();
+            initial_velocity_Z_box->setRange(INITIAL_VELOCITY_MIN, INITIAL_VELOCITY_MAX);
+            initial_velocity_Z_box->setSingleStep(0.01);
+            initial_velocity_horizontal->addWidget(initial_velocity_Z_box);
+
+            initial_velocity_vertical->addLayout(initial_velocity_horizontal);
+        }
     }
 
-    // Densities
+    // Phase Selector
     {
-        auto density_layout = new QHBoxLayout();
+        auto phase_selector_vertical = new QVBoxLayout(group);
+        phase_selector_vertical->setContentsMargins(0, 0, 0, 0);
+        phase_selector_vertical->setSpacing(0);
 
-        // Label - Single Phase
-        auto density_label_single = new QLabel("Single Phase");
-        density_layout->addWidget(density_label_single);
+        // Phase Selector Label
+        auto phase_selsector_label = new QLabel("Phase Selector");
+        phase_selector_vertical->addWidget(phase_selsector_label);
 
-        // Single Phase Checkbox
-        auto density_single_phase_checkbox = new QCheckBox();
-        density_single_phase_checkbox->setChecked(true);
-        density_layout->addWidget(density_single_phase_checkbox);
+        // Singlephase
+        auto singlephase_horizontal = new QHBoxLayout(group);
+        singlephase_horizontal->setContentsMargins(20, 0, 0, 0);
+        singlephase_horizontal->setSpacing(0);
+        phase_selector_vertical->addLayout(singlephase_horizontal);
 
-        // Label - Multi Phase
-        auto density_label_multi = new QLabel("Multi Phase");
-        density_layout->addWidget(density_label_multi);
+        /// Singlephase Checkbox
+        auto singlephase_checkbox = new QCheckBox();
+        singlephase_checkbox->setChecked(true);
+        singlephase_horizontal->addWidget(singlephase_checkbox);
 
-        // Multi Phase Checkbox
-        auto density_multi_phase_checkbox = new QCheckBox();
-        density_layout->addWidget(density_multi_phase_checkbox);
+        /// SinglephasePhase Label
+        auto singlephase_label = new QLabel("Single Phase");
+        singlephase_horizontal->addWidget(singlephase_label);
+        singlephase_horizontal->addStretch();
+
+        // Multiphase
+        auto multiphase_horizontal = new QHBoxLayout(group);
+        multiphase_horizontal->setContentsMargins(20, 0, 0, 0);
+        multiphase_horizontal->setSpacing(0);
+        phase_selector_vertical->addLayout(multiphase_horizontal);
+
+        /// Multiphase Checkbox
+        auto multiphase_checkbox = new QCheckBox();
+        multiphase_horizontal->addWidget(multiphase_checkbox);
+
+        /// Multiphase Label
+        auto multiphase_label = new QLabel("Multi Phase");
+        multiphase_horizontal->addWidget(multiphase_label);
+        multiphase_horizontal->addStretch();
 
         // Mutual Exclusiveness
-        QObject::connect(density_single_phase_checkbox, &QCheckBox::toggled, [=](bool checked) {
-            if (checked) density_multi_phase_checkbox->setChecked(false);
-            if (!checked && !density_multi_phase_checkbox->isChecked()) density_single_phase_checkbox->setChecked(true);
+        QObject::connect(singlephase_checkbox, &QCheckBox::toggled, [=](bool checked) {
+            if (checked) multiphase_checkbox->setChecked(false);
+            if (!checked && !multiphase_checkbox->isChecked()) singlephase_checkbox->setChecked(true);
         });
-        QObject::connect(density_multi_phase_checkbox, &QCheckBox::toggled, [=](bool checked) {
-            if (checked) density_single_phase_checkbox->setChecked(false);
-            if (!checked && !density_single_phase_checkbox->isChecked()) density_multi_phase_checkbox->setChecked(true);
+        QObject::connect(multiphase_checkbox, &QCheckBox::toggled, [=](bool checked) {
+            if (checked) singlephase_checkbox->setChecked(false);
+            if (!checked && !singlephase_checkbox->isChecked()) multiphase_checkbox->setChecked(true);
         });
 
-        density_layout->addStretch();
-        layout->addLayout(density_layout);
+        layout->addLayout(phase_selector_vertical);
     }
 
     // Initial temperature
     {
-        auto initial_temprature_layout = new QHBoxLayout();
+        auto temprature_vertical = new QVBoxLayout(group);
+        temprature_vertical->setContentsMargins(0, 0, 0, 0);
+        temprature_vertical->setSpacing(0);
 
         // Initial Temprature Label
         auto initial_temprature_label = new QLabel("Initial Temperature");
-        initial_temprature_layout->addWidget(initial_temprature_label);
+        temprature_vertical->addWidget(initial_temprature_label);
+
+        auto initial_temprature_layout = new QHBoxLayout();
+        temprature_vertical->addLayout(initial_temprature_layout);
 
         // Initial Temprature Value
+        initial_temprature_layout->addStretch();
         auto initial_temprature_value = new QDoubleSpinBox();
         initial_temprature_value->setRange(INITIAL_TEMPRATURE_MIN, INITIAL_TEMPRATURE_MAX); // Example range for temperature
         initial_temprature_value->setSingleStep(0.1);
         initial_temprature_layout->addWidget(initial_temprature_value);
 
-        initial_temprature_layout->addStretch();
-        layout->addLayout(initial_temprature_layout);
+        layout->addLayout(temprature_vertical);
     }
-
 
     group->setLayout(layout);
     return group;
