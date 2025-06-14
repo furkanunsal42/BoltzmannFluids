@@ -225,11 +225,11 @@ void LBM::iterate_time(float target_tick_per_second)
 
 		_collide(should_update_visuals);
 
-		if (!is_collide_esoteric)
-			_stream();
-		
-		if (is_flow_thermal)
-			_stream_thermal();
+		//if (!is_collide_esoteric)
+		//	_stream();
+		//
+		//if (is_flow_thermal)
+		//	_stream_thermal();
 
 		total_ticks_elapsed++;
 	}

@@ -195,11 +195,11 @@ ivec3 coord_to_tex3d(ivec3 pixel_coord, uint population_id){
 }
 
 int get_inverse_lattice_population_id_index(int lattice_population_id){
-	if (lattice_population_id == 0 || lattice_population_id >= velocity_count)
-		return 0;
+	//if (lattice_population_id == 0 || lattice_population_id >= velocity_count)
+	//	return 0;
 
 	bool is_odd = lattice_population_id % 2 == 1;
-	return is_odd ? lattice_population_id + 1 : lattice_population_id - 1;
+	return max(is_odd ? lattice_population_id + 1 : lattice_population_id - 1, 0);
 }
 
 vec3 get_lattice_vector(int population_id){
@@ -662,15 +662,26 @@ void main(){
 		float stability_enforced_value = 
 			equilibrium_velocity; 
 
-		set_lattice_target(pixel_coord, population_id, 
-			!velocity_out_of_limit_extreme ? update_value : stability_enforced_value /*stability_enforced_value*/
-		);
-
 		//set_lattice_target(pixel_coord, population_id, 
-		//	old_population
+		//	!velocity_out_of_limit_extreme ? update_value : stability_enforced_value /*stability_enforced_value*/
 		//);
 
+		//set_lattice_target(pixel_coord, population_id, 
+		//	update_value
+		//);
+
+
+		set_lattice_target(pixel_coord, population_id, 
+			old_population
+		);
+
 	}
+
+	//// for debug
+	//if (pixel_coord.x == 500){
+	//	set_lattice_target(pixel_coord, 7, 32);
+	//}
+
 
 	#if thermal_flow == 1
 	for (int population_id = 0; population_id < thermal_velocity_count; population_id++){
@@ -684,7 +695,6 @@ void main(){
 			);
 	}
 	#endif
-
 
 	#if save_macroscopic_variables == 1
 		imageStore(velocity_density_texture, pixel_coord, vec4(velocity, density));

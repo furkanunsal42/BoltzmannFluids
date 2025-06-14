@@ -6,7 +6,7 @@
 
 int main() {
 
-	std::function<void(LBM&)> init_scenario = demo3d::multiphase_droplet_collision;
+	std::function<void(LBM&)> init_scenario = demo2d::von_karman_street_periodic;
 
 	WindowDescription desc;
 	desc.w_scale_framebuffer_size = false;
@@ -70,7 +70,7 @@ int main() {
 	auto last_ticks_print = std::chrono::system_clock::now();
 	auto update_function = [&](double deltatime) {
 		if (!pause) {
-			solver.iterate_time(0);
+			solver.iterate_time(50);
 
 			if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - last_ticks_print).count() >= 1000) {
 				last_ticks_print = std::chrono::system_clock::now();

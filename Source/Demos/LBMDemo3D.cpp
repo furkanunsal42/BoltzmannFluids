@@ -93,7 +93,7 @@ void demo3d::multiphase_humid_platform(LBM& solver)
 
 void demo3d::multiphase_droplet_collision(LBM& solver)
 {
-	glm::ivec3 simulation_resolution(720, 720, 720);
+	glm::ivec3 simulation_resolution(256, 256, 256);
 	solver.clear_boundry_properties();
 
 	solver.initialize_fields(
