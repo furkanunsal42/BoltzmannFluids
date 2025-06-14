@@ -61,11 +61,6 @@ void main(){
 	float extinction_coefficient = 8;
 	vec3 current_light = vec3(0.5, 0.8, 1);
 
-	vec3 color = vec3(0.0);
-    float transmittance = 1.0;
-	float extinction_coefficient = 8;
-	vec3 current_light = vec3(0.5, 0.8, 1);
-
 	while(current_depth < ray_info.y) {
 		float value = texture(volume, current_position / scale + 0.5).a;
 		transmittance *= exp(-value * extinction_coefficient * step_length); 
