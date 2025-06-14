@@ -62,6 +62,8 @@
 
 #define lattice_is_texutre3d 1
 
+#define esoteric_pull 1
+
 #define id gl_GlobalInvocationID
 
 #if lattice_is_texutre3d == 0
@@ -499,8 +501,11 @@ float dirichlet_boundry_correction_term(int lattice_velocity_index, float local_
 
 void main(){
 	
-	ivec3 pixel_coord;
+	#if esoteric_pull == 1
+	return;
+	#endif
 
+	ivec3 pixel_coord;
 	#if lattice_is_texutre3d == 0
 	if (int(id.x) >= lattice_resolution.x * lattice_resolution.y * lattice_resolution.z * velocity_count)
 		return;
@@ -571,13 +576,13 @@ void main(){
 	//lattice[pixel_id * velocity_count + population_id]		= value_b + dirichlet_boundry_correction_term(inv_population_id, 1.0, boundry_velocity);
 	//lattice[pixel_id * velocity_count + inv_population_id]	= value_a + dirichlet_boundry_correction_term(population_id, 1.0, boundry_velocity);
 
-	//if (source_boundry != 0)
-	//	set_lattice_target(pixel_coord, velocity_id, 
-	//		get_lattice_source(pixel_coord, inv_velocity_id) +
-	//		dirichlet_boundry_correction_term(inv_velocity_id, 1.0, source_boundry_velocity)
-	//	);
-	//else 
-	//	set_lattice_target(pixel_coord, velocity_id, 
-	//		get_lattice_source(source_pixel_coord, velocity_id)
-	//	);
+	if (source_boundry != 0)
+		set_lattice_target(pixel_coord, velocity_id, 
+			get_lattice_source(pixel_coord, inv_velocity_id) +
+			dirichlet_boundry_correction_term(inv_velocity_id, 1.0, source_boundry_velocity)
+		);
+	else 
+		set_lattice_target(pixel_coord, velocity_id, 
+			get_lattice_source(source_pixel_coord, velocity_id)
+		);
 }

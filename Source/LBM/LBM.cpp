@@ -1411,7 +1411,8 @@ std::vector<std::pair<std::string, std::string>> LBM::_generate_shader_macros()
 		{"thermal_flow",			is_flow_thermal ? "1" : "0"},
 		{"velocity_set_thermal",	get_SimplifiedVelocitySet_to_macro(thermal_lattice_velocity_set)},
 		{"multiphase_flow",			is_flow_multiphase ? "1" : "0"},
-		{"lattice_is_texutre3d",	is_lattice_texture3d ? "1" : "0"}
+		{"lattice_is_texutre3d",	is_lattice_texture3d ? "1" : "0"},
+		{"esoteric_pull",			is_collide_esoteric ? "1" : "0"},
 	};
 
 	return definitions;
@@ -1486,17 +1487,21 @@ void LBM::_collide(bool save_macrsoscopic_results)
 
 	if (is_lattice_texture3d) {
 		Texture3D& lattice_tex_source = *_get_lattice_tex_source();
-		Texture3D& lattice_tex_target = *_get_lattice_tex_target();
-		
 		kernel.update_uniform_as_image("lattice_source", lattice_tex_source, 0);
-		kernel.update_uniform_as_image("lattice_target", lattice_tex_target, 0);
+		
+		if (!is_collide_esoteric) {
+			Texture3D& lattice_tex_target = *_get_lattice_tex_target();
+			kernel.update_uniform_as_image("lattice_target", lattice_tex_target, 0);
+		}
 	}
 	else {
 		Buffer& lattice_source = *_get_lattice_source();
-		Buffer& lattice_target = *_get_lattice_target();
-
 		kernel.update_uniform_as_storage_buffer("lattice_buffer_source", lattice_source, 0);
-		kernel.update_uniform_as_storage_buffer("lattice_buffer_target", lattice_target, 0);
+
+		if (!is_collide_esoteric) {
+			Buffer& lattice_target = *_get_lattice_target();
+			kernel.update_uniform_as_storage_buffer("lattice_buffer_target", lattice_target, 0);
+		}
 	}
 
 	kernel.update_uniform_as_uniform_buffer("velocity_set_buffer", *lattice_velocity_set_buffer, 0);
@@ -1546,7 +1551,13 @@ void LBM::_collide(bool save_macrsoscopic_results)
 	else 
 		kernel.dispatch_thread(_get_voxel_count(), 1, 1);
 
-	_swap_lattice_buffers();
+	if (is_collide_esoteric) {
+		kernel.update_uniform("is_time_step_odd", (get_total_ticks_elapsed() % 2 == 1) ? 1 : 0);
+	}
+
+	if (!is_collide_esoteric)
+		_swap_lattice_buffers();
+
 	_swap_thermal_lattice_buffers();
 }
 
