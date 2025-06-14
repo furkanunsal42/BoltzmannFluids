@@ -66,7 +66,7 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
 
     // Gravity
     {
-        auto gravity_vertical = new QVBoxLayout(group);
+        auto gravity_vertical = new QVBoxLayout();
         gravity_vertical->setContentsMargins(0, 0, 0, 0);
         gravity_vertical->setSpacing(0);
         layout->addLayout(gravity_vertical);
@@ -109,7 +109,7 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
 
     // Initial Velocities
     {
-        auto initial_velocity_vertical = new QVBoxLayout(group);
+        auto initial_velocity_vertical = new QVBoxLayout();
         initial_velocity_vertical->setContentsMargins(0, 0, 0, 0);
         initial_velocity_vertical->setSpacing(0);
         layout->addLayout(initial_velocity_vertical);
@@ -150,7 +150,7 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
 
     // Phase Selector
     {
-        auto phase_selector_vertical = new QVBoxLayout(group);
+        auto phase_selector_vertical = new QVBoxLayout();
         phase_selector_vertical->setContentsMargins(0, 0, 0, 0);
         phase_selector_vertical->setSpacing(0);
 
@@ -159,7 +159,7 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
         phase_selector_vertical->addWidget(phase_selsector_label);
 
         // Singlephase
-        auto singlephase_horizontal = new QHBoxLayout(group);
+        auto singlephase_horizontal = new QHBoxLayout();
         singlephase_horizontal->setContentsMargins(20, 0, 0, 0);
         singlephase_horizontal->setSpacing(0);
         phase_selector_vertical->addLayout(singlephase_horizontal);
@@ -175,7 +175,7 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
         singlephase_horizontal->addStretch();
 
         // Multiphase
-        auto multiphase_horizontal = new QHBoxLayout(group);
+        auto multiphase_horizontal = new QHBoxLayout();
         multiphase_horizontal->setContentsMargins(20, 0, 0, 0);
         multiphase_horizontal->setSpacing(0);
         phase_selector_vertical->addLayout(multiphase_horizontal);
@@ -204,7 +204,7 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
 
     // Initial temperature
     {
-        auto temprature_vertical = new QVBoxLayout(group);
+        auto temprature_vertical = new QVBoxLayout();
         temprature_vertical->setContentsMargins(0, 0, 0, 0);
         temprature_vertical->setSpacing(0);
 

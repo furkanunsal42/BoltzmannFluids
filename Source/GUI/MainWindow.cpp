@@ -190,14 +190,15 @@ MainWindow::MainWindow(QWidget *parent)
 
             //wrapper = new QT_LBMWrapper
 
-            middle_vertical_layout->addWidget(render_box);
+            middle_vertical_layout->addWidget(render_box , 1); // Renderbox ->growable
         }
         {
             // --- Timeline ---
-            auto timeline = new Timeline(1000, middle_splitter_one);
-            timeline->setMinimumHeight(50);
-            auto action = new QAction();
-            timeline->addAction(action);
+            this->timeline = new Timeline(1000, middle_splitter_one);
+            timeline->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+            qDebug() << "Constructing Timeline, this:" << this;         ////////////////////
+            this->timeline->setMinimumHeight(75);
+            middle_vertical_layout->addWidget(timeline, 0); // Timeline  ->fixed size
         }
         {
             // Application Output
@@ -207,7 +208,8 @@ MainWindow::MainWindow(QWidget *parent)
             application_output->setFrameStyle(QFrame::StyledPanel | QFrame::Raised);
             application_output->setMinimumHeight(100);
 
-            middle_vertical_layout->addWidget(application_output);
+            middle_vertical_layout->addWidget(application_output, 0);  // App output ->fixed size
+
 
             qss_text += "QTextEdit {"
                         "background-color: rgb(51, 52, 53); "
@@ -302,6 +304,12 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::update_timeline(int current_frame)
+{
+    qDebug() << "Calling set_frame on Timeline:" << this;
+    this->timeline->set_frame(current_frame);
 }
 
 void MainWindow::on_actionNew_Project_triggered()

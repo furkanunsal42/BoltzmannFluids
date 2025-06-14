@@ -3,6 +3,10 @@
 
 #include <QWidget>
 
+
+class TimelineRuler;
+class QLineEdit;
+
 class Timeline : public QWidget
 {
     Q_OBJECT
@@ -18,8 +22,8 @@ public:
     void set_frame(int frame);
     int get_current_frame() const;
 
-    int get_max_frame() const;
-    void set_max_frame(int new_max_frame);
+    int get_frame_max() const;
+    void set_frame_max(int new_max_frame);
 
 signals:
     void frame_changed(int frame);
@@ -33,9 +37,12 @@ protected:
     void mousePressEvent(QMouseEvent* event) override;
 
 private:
-    int _frame;
-    int _max_frame;
+    TimelineRuler* _ruler;
+    QLineEdit* frame_display_text = nullptr;
+
+    int _frame      = 0;
     int start_frame = 0;
+    int _frame_max  = 10000;
     bool _running = false;
 
 };

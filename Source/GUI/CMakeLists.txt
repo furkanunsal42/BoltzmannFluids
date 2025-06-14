@@ -36,6 +36,8 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         LBMWrapper.h
         LBMWrapper.cpp
         Timeline.cpp
+        TimelineRuler.h
+        TimelineRuler.cpp
 
     )
 # Define target properties for Android with Qt 6 as:

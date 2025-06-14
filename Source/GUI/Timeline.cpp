@@ -1,13 +1,14 @@
 #include "Timeline.h"
+#include "TimelineRuler.h"
 
 #include <QPushButton>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
-#include <QTextEdit>
+#include <QLineEdit>
 #include <QLabel>
 
 Timeline::Timeline(int max_frame, QWidget *parent)
-    :_max_frame(max_frame), QWidget(parent)
+    :_frame_max(max_frame), QWidget(parent)
 {
 
     auto layout = new QVBoxLayout(this);
@@ -25,7 +26,6 @@ Timeline::Timeline(int max_frame, QWidget *parent)
     auto frame_layout = new QHBoxLayout(frame);
     frame_layout->setContentsMargins(6, 3, 6, 3);
     frame_layout->setSpacing(0);
-//    frame_layout->setAlignment(Qt::AlignHCenter);
 
     // --- Row 0 ---
     // Centered Buttons
@@ -71,21 +71,18 @@ Timeline::Timeline(int max_frame, QWidget *parent)
 
     auto frame_display_layout = new QHBoxLayout(frame_display_box);
     frame_display_layout->setAlignment(Qt::AlignRight);
-    frame_display_layout->setContentsMargins(3, 1, 0, 1);
+    frame_display_layout->setContentsMargins(2, 2, 3, 2);
     frame_display_layout->setSpacing(3);
 
     auto frame_display_label = new QLabel("Frame");
-    frame_display_label->setMaximumWidth(40);
+    frame_display_label->setMaximumWidth(45);
     frame_display_label->setAlignment(Qt::AlignRight);
-    frame_display_label->setContentsMargins(0, 3, 0, 0);
+    frame_display_label->setContentsMargins(0, 1, 0, 0);
     frame_display_layout->addWidget(frame_display_label);
 
-    auto frame_display_text = new QTextEdit("0", frame_display_box);            // TODO: change to QSpinBox maybe
-    frame_display_text->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    frame_display_text->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    frame_display_text = new QLineEdit("10", frame_display_box);                 // TODO: change to QSpinBox maybe
     frame_display_text->setMaximumSize(42, 22);
     frame_display_layout->addWidget(frame_display_text);
-
 
     frame_layout->addSpacerItem(new QSpacerItem(90, 0)); // Invisible space item
     frame_layout->addStretch();
@@ -94,14 +91,14 @@ Timeline::Timeline(int max_frame, QWidget *parent)
     frame_layout->addWidget(frame_display_box);
 
 
-    // (--- Row:2 ---
+    // --- Row:2 ---
     // Timeline ruler
     {
-        auto ruler_area = new QWidget(this);
-        layout->addWidget(ruler_area);
+        _ruler = new TimelineRuler(this);
+        _ruler->set_frame_range(0, 10000);
+        layout->addWidget(_ruler);
 
     }
-
 
 
     setStyleSheet(
@@ -119,21 +116,26 @@ Timeline::Timeline(int max_frame, QWidget *parent)
             "border-radius: 4px;"
         "}"
         "QPushButton::hover {"
-            "background-color: rgb(111, 112, 113);"
+            "background-color: rgb(131, 132, 133);"
             "border-radius: 4px;"
         "}"
         "#frame_display_box {"
             "background-color: rgb(91, 92, 93);"
             "border-radius: 2px;"
         "}"
-        "QTextEdit {"
-            "background-color: rgb(91, 92, 93);"
-            "border: 0px solid;"
-            "border-radius: 4px;"
+        "QLabel {"
+            "border: none;"
+            "color: rgb(230, 230, 230);"
         "}"
-        "QTextEdit::hover {"
-        "background-color: rgb(111, 112, 113);"
-        "border-radius: 4px;"
+        "QLineEdit {"
+            "border: none;"
+            "color: rgb(230, 230, 230);"
+            "background-color: rgb(111, 112, 113);"
+        "}"
+        "QLineEdit:hover {"
+            "border: none;"
+            "color: rgb(230, 230, 230);"
+            "background-color: rgb(131, 132, 133);"
         "}"
         );
 
@@ -152,6 +154,35 @@ void Timeline::pause()
 void Timeline::stop()
 {
 
+}
+
+int Timeline::get_current_frame() const
+{
+    return _frame;
+}
+
+void Timeline::set_frame(int frame)
+{
+    _frame = frame;
+
+    if (frame_display_text)
+        frame_display_text->setText(QString::number(frame));
+
+    if (_ruler)
+        _ruler->update_timeline(_frame);
+
+    emit frame_changed(_frame);
+}
+
+
+int Timeline::get_frame_max() const
+{
+    return _frame_max;
+}
+
+void Timeline::set_frame_max(int new_max_frame)
+{
+    _frame_max = new_max_frame;
 }
 
 void Timeline::paintEvent(QPaintEvent *event)
