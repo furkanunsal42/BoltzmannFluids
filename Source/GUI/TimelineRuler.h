@@ -29,9 +29,10 @@ private:
     int _frame_begin    = 0;    // usually 0
     int _frame_end      = 10000;// limit value for simulation to stop
 
-    QVector<int> _ticks;
     QVector<QString> _labels;
+    QVector<int> _ticks;
 
+    QString label;
 };
 
 #endif // TIMELINERULER_H

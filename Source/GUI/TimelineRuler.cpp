@@ -8,10 +8,9 @@ TimelineRuler::TimelineRuler(QWidget *parent)
 {
     setMinimumHeight(40);
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    setContentsMargins(10,0,10,0);
 
     _recompute_ruler();
-
-
 }
 
 void TimelineRuler::update_timeline(int current_frame)
@@ -34,29 +33,30 @@ void TimelineRuler::paintEvent(QPaintEvent*) {
     QPen pen(Qt::lightGray);
     p.setPen(pen);
 
-    int h = height();
-    int w = width();
+    int h = height()-1;
+    int w = width()-10;
+
     p.drawLine(0, h - 1, w, h - 1);
 
-    for (int i = 0; i < _ticks.size(); ++i) {
-        int f   = _ticks[i];
-        QString label = _labels[i];
-        // normalize position
-        float t = float(f - _frame_begin) / float(_frame_end - _frame_begin);
-        int   x = int(t * w);
-        // tick
-        p.drawLine(x, h - 1, x, h - 7);
-        // label
-        p.drawText(x + 2, h - 9, label);
+    int max_step_count = 10;
+    float step_width = w / (max_step_count);
+    float step_magnitude = (_frame_end - _frame_begin) / max_step_count;
+    float step_x = 0;
+    for (int step_index = 0; step_index <= max_step_count ; step_index++) {
+
+        step_x = step_width * step_index;
+        p.drawLine(step_x, (h-1), step_x, (h-7));
+
+        this->label = (QString::number(step_index * step_magnitude));
+        p.drawText(step_x, h - 10, label);
+
     }
-    // optionally draw current-frame marker:
     if (_frame_current >= _frame_begin && _frame_current <= _frame_end) {
-        float t = float(_frame_current - _frame_begin) / float(_frame_end - _frame_begin);
-        int   x = int(t * w);
-        QPen red(Qt::red);
-        p.setPen(red);
-        p.drawLine(x, 0, x, h);
-    }
+            QPen red(Qt::red);
+            p.setPen(red);
+            float line_x = (w * _frame_current) / (_frame_end - _frame_begin);
+            p.drawLine(line_x, 0, line_x, h);
+        }
 }
 
 

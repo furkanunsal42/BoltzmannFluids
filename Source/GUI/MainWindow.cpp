@@ -196,7 +196,6 @@ MainWindow::MainWindow(QWidget *parent)
             // --- Timeline ---
             this->timeline = new Timeline(1000, middle_splitter_one);
             timeline->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-            qDebug() << "Constructing Timeline, this:" << this;         ////////////////////
             this->timeline->setMinimumHeight(75);
             middle_vertical_layout->addWidget(timeline, 0); // Timeline  ->fixed size
         }
@@ -308,7 +307,6 @@ MainWindow::~MainWindow()
 
 void MainWindow::update_timeline(int current_frame)
 {
-    qDebug() << "Calling set_frame on Timeline:" << this;
     this->timeline->set_frame(current_frame);
 }
 

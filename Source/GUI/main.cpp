@@ -1,7 +1,6 @@
 #include "MainWindow.h"
 
 #include <QApplication>
-
 #include <QTimer>
 
 int main(int argc, char *argv[])
@@ -11,9 +10,17 @@ int main(int argc, char *argv[])
     MainWindow w;
     w.show();
 
+    auto timer = new QTimer();
+    int frame = 3000;
 
-    QTimer::singleShot(0, &w, [&w]() {
-        w.update_timeline(50);
+    QTimer::singleShot(0, &w, [&w, &timer, &frame]() {
+        timer->setInterval(1000 / 60);
+        timer->start();
+
+        QObject::connect(timer, &QTimer::timeout, [&w, &frame] {
+            frame+= 1;
+            w.update_timeline(frame);
+        });
     });
 
     return a.exec();
