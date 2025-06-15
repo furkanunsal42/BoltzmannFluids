@@ -1,0 +1,98 @@
+#<compute shader>
+
+#version 460 core
+
+#define volume_internal_format r32f
+#define volume_type image3D
+
+#define compute_verticies 1
+#define compute_indicies 1
+
+#define id gl_GlobalInvocationID
+
+
+layout(binding = 0) uniform indicies_look_up_table {
+    ivec4[256*5] look_up_table;
+};
+
+layout(volume_internal_format, binding = 0) uniform volume_type volume;
+
+#if compute_verticies == 1
+layout(std430, binding = 0) buffer vertex_buffer {
+	float[] verticies;
+};
+#endif
+
+#if compute_indicies == 1
+layout(std430, binding = 1) buffer index_buffer {
+	uint[] indicies;
+};
+#endif
+
+uniform ivec3 volume_resolution;
+uniform float threshold;
+
+#if compute_verticies == 1
+uniform vec3 mesh_scale;
+#endif
+
+layout (local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
+
+void main(){
+	if (any(greaterThanEqual(ivec3(id), volume_resolution + ivec3(1))))
+		return;
+
+    uint voxel_id = 
+        id.z * volume_resolution.x * volume_resolution.y +
+        id.y * volume_resolution.x +
+        id.x;
+    
+    #if compute_verticies == 1
+    
+    vec3 vertex = vec3(-0.5) + vec3(1) * vec3(id) / volume_resolution;
+    vertex *= mesh_scale;
+    verticies[voxel_id * 3 + 0] = vertex.x;
+    verticies[voxel_id * 3 + 1] = vertex.y;
+    verticies[voxel_id * 3 + 2] = vertex.z;
+    
+    #endif
+
+    if (any(greaterThanEqual(ivec3(id), volume_resolution)))
+		return;
+
+    #if compute_indicies == 1
+    bool v000 = imageLoad(volume, ivec3(id + ivec3(0, 0, 0))).x >= threshold;
+    bool v001 = imageLoad(volume, ivec3(id + ivec3(0, 0, 1))).x >= threshold;
+    bool v010 = imageLoad(volume, ivec3(id + ivec3(0, 1, 0))).x >= threshold;
+    bool v011 = imageLoad(volume, ivec3(id + ivec3(0, 1, 1))).x >= threshold;
+    bool v100 = imageLoad(volume, ivec3(id + ivec3(1, 0, 0))).x >= threshold;
+    bool v101 = imageLoad(volume, ivec3(id + ivec3(1, 0, 1))).x >= threshold;
+    bool v110 = imageLoad(volume, ivec3(id + ivec3(1, 1, 0))).x >= threshold;
+    bool v111 = imageLoad(volume, ivec3(id + ivec3(1, 1, 1))).x >= threshold;
+
+    int case_code = 0;
+    case_code = case_code << 1 | (v111 ? 1 : 0);
+    case_code = case_code << 1 | (v110 ? 1 : 0);
+    case_code = case_code << 1 | (v101 ? 1 : 0);
+    case_code = case_code << 1 | (v100 ? 1 : 0);
+    case_code = case_code << 1 | (v011 ? 1 : 0);
+    case_code = case_code << 1 | (v010 ? 1 : 0);
+    case_code = case_code << 1 | (v001 ? 1 : 0);
+    case_code = case_code << 1 | (v000 ? 1 : 0);
+
+
+    const uint max_index_count_per_voxel = 15;
+
+    uint index_buffer_begin = voxel_id * max_index_count_per_voxel;
+
+    for(int i = 0; i < 5; i++){
+        ivec3 index = ivec3(look_up_table[case_code]);
+        if (index.x == -1)
+            break;
+        
+        indicies[index_buffer_begin + i*3 + 0] = index.x;
+        indicies[index_buffer_begin + i*3 + 1] = index.y;
+        indicies[index_buffer_begin + i*3 + 2] = index.z;
+    }
+    #endif
+}

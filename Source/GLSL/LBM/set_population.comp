@@ -34,6 +34,22 @@
 	#error "other floating point systems than fp32 aren't supported"
 #endif
 
+#define D2Q5 4
+#define D3Q7 5
+
+#define thermal_flow 1
+#define velocity_set_thermal D2Q5
+
+#if velocity_set_thermal == D2Q5
+	#define thermal_velocity_count 5
+#elif velocity_set_thermal == D3Q7
+	#define thermal_velocity_count 7
+#else
+	#error "thermal_velocity_set is not supported"
+#endif
+
+#define multiphase_flow 1
+
 #define id gl_GlobalInvocationID
 
 layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
@@ -42,7 +58,7 @@ layout(std430, binding = 0) buffer lattice_buffer {
 	float[] lattice;
 };
 
-uniform ivec2 lattice_resolution;
+uniform ivec3 lattice_resolution;
 
 uniform ivec2 lattice_region_begin;
 uniform ivec2 lattice_region_end;
@@ -51,7 +67,7 @@ uniform int population_id;
 uniform float value;
 
 void main(){
-	ivec2 begin = min(min(lattice_region_begin, lattice_region_end), lattice_resolution);
+	ivec2 begin = min(min(lattice_region_begin, lattice_region_end), lattice_resolution.xy);
 	ivec2 end = max(max(lattice_region_begin, lattice_region_end), ivec2(0));
 	
 	int begin_id = begin.y * lattice_resolution.x + begin.x;
