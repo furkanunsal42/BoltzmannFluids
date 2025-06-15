@@ -662,18 +662,18 @@ void main(){
 		float stability_enforced_value = 
 			equilibrium_velocity; 
 
-		//set_lattice_target(pixel_coord, population_id, 
-		//	!velocity_out_of_limit_extreme ? update_value : stability_enforced_value /*stability_enforced_value*/
-		//);
+		set_lattice_target(pixel_coord, population_id, 
+			!velocity_out_of_limit_extreme ? update_value : stability_enforced_value /*stability_enforced_value*/
+		);
 
 		//set_lattice_target(pixel_coord, population_id, 
 		//	update_value
 		//);
 
 
-		set_lattice_target(pixel_coord, population_id, 
-			old_population
-		);
+		//set_lattice_target(pixel_coord, population_id, 
+		//	old_population
+		//);
 
 	}
 

@@ -225,11 +225,11 @@ void LBM::iterate_time(float target_tick_per_second)
 
 		_collide(should_update_visuals);
 
-		//if (!is_collide_esoteric)
-		//	_stream();
-		//
-		//if (is_flow_thermal)
-		//	_stream_thermal();
+		if (!is_collide_esoteric)
+			_stream();
+		
+		if (is_flow_thermal)
+			_stream_thermal();
 
 		total_ticks_elapsed++;
 	}
@@ -502,8 +502,6 @@ void LBM::_initialize_fields_default_pass(
 
 	_set_is_flow_thermal(false);
 	
-	uint32_t object_count = 1;
-
 	for (int32_t z = 0; z < resolution.z; z++) {
 		for (int32_t y = 0; y < resolution.y; y++) {
 			for (int32_t x = 0; x < resolution.x; x++) {
@@ -515,7 +513,6 @@ void LBM::_initialize_fields_default_pass(
 
 				if (properties.boundry_id >= objects_cpu.size())
 					objects_cpu.resize(properties.boundry_id + 1);
-				//object_count = std::max(object_count, properties.boundry_id + 1);
 
 				if (properties.force != constant_force)
 					_set_is_force_field_constant(false);
@@ -540,16 +537,16 @@ void LBM::_initialize_fields_default_pass(
 	density_buffer_data = nullptr;
 
 
-	bool does_contain_boundry = object_count > 1;	// first object slot is indexed by non-boundry id (fluid)
+	bool does_contain_boundry = objects_cpu.size() > 1;	// first object slot is indexed by non-boundry id (fluid)
 
 	// bits per boudnry can only be 1, 2, 4, 8 to not cause a boundry spanning over 2 bytes
-	_set_bits_per_boundry(std::exp2(std::ceil(std::log2f(std::ceil(std::log2f(object_count))))));
+	_set_bits_per_boundry(std::exp2(std::ceil(std::log2f(std::ceil(std::log2f(objects_cpu.size()))))));
 	if (bits_per_boundry > 8) {
-		std::cout << "[LBM Error] _initialize_fields_default_pass() is called but too many objects are defined, maximum of 255 bits are possible but number of objets were: " << object_count << std::endl;
+		std::cout << "[LBM Error] _initialize_fields_default_pass() is called but too many objects are defined, maximum of 255 bits are possible but number of objets were: " << objects_cpu.size() << std::endl;
 		ASSERT(false);
 	}
 	
-	std::cout << "[LBM Info] _initialize_fields_default_pass() is called and " << object_count << " boundry types are defined" << std::endl;
+	std::cout << "[LBM Info] _initialize_fields_default_pass() is called and " << objects_cpu.size() << " boundry types are defined" << std::endl;
 	std::cout << "[LBM Info] _initialize_fields_default_pass() is called and " << bits_per_boundry << " bits per voxel is allocated for boundries" << std::endl;
 	
 	if (is_forcing_scheme && is_force_field_constant)
