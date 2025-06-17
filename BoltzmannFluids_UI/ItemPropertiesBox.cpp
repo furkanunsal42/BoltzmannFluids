@@ -3,7 +3,6 @@
 
 #include <QGroupBox>
 #include <QVBoxLayout>
-#include <cfloat>
 #include <qlineedit.h>
 
 void enum_to_qstring(Type& type, QLabel* _string) ;
@@ -14,7 +13,7 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
     auto main_layout = new QVBoxLayout(this);
     main_layout->setAlignment(Qt::AlignTop);
     main_layout->setContentsMargins(0,0,0,0);
-    main_layout->setSpacing(9);
+    main_layout->setSpacing(10);
     setLayout(main_layout);
 
     QString item_properties_qss;
@@ -300,6 +299,54 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
         size_horizontal->addWidget(size_Z_box);
 
         size_vertical->addLayout(size_horizontal);
+    }
+    {
+        // Item temperature
+        auto item_temprature_vertical = new QVBoxLayout();
+        main_layout->addLayout(item_temprature_vertical);
+        item_temprature_vertical->setContentsMargins(0, 0, 0, 0);
+        item_temprature_vertical->setSpacing(0);
+
+        // Label
+        auto item_temprature_label = new QLabel("Item Temperature");
+        item_temprature_vertical->addWidget(item_temprature_label);
+
+        auto item_temprature_layout = new QHBoxLayout();
+        item_temprature_vertical->addLayout(item_temprature_layout);
+
+        // Value
+        auto item_temprature_value = new QDoubleSpinBox();
+        item_temprature_value->setMinimumWidth(50);
+        item_temprature_value->setDecimals(DECIMAL_COUNT);
+        item_temprature_value->setRange(INITIAL_TEMPRATURE_MIN, INITIAL_TEMPRATURE_MAX); // Example range for temperature
+        item_temprature_value->setSingleStep(0.1);
+        item_temprature_layout->addWidget(item_temprature_value);
+        item_temprature_layout->addStretch();
+    }
+
+    {
+        // Effective density
+        auto effective_densityvertical = new QVBoxLayout();
+        main_layout->addLayout(effective_densityvertical);
+        effective_densityvertical->setContentsMargins(0, 0, 0, 0);
+        effective_densityvertical->setSpacing(0);
+
+        // Label
+        auto effective_density_label = new QLabel("Effective Density");
+        effective_densityvertical->addWidget(effective_density_label);
+
+        auto effective_density_layout = new QHBoxLayout();
+        effective_densityvertical->addLayout(effective_density_layout);
+
+        // Value
+        auto effective_density_value = new QDoubleSpinBox();
+        effective_density_value->setMinimumWidth(50);
+        effective_density_value->setDecimals(DECIMAL_COUNT);
+        effective_density_value->setRange(INITIAL_TEMPRATURE_MIN, INITIAL_TEMPRATURE_MAX); // Example range for temperature
+        effective_density_value->setSingleStep(0.1);
+        effective_density_layout->addWidget(effective_density_value);
+        effective_density_layout->addStretch();
+
     }
 
     main_layout->update();

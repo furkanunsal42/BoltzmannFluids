@@ -42,6 +42,9 @@ private:
     QDoubleSpinBox* size_Y_box;
     QDoubleSpinBox* size_Z_box;
 
+    QDoubleSpinBox* temperature;
+    QDoubleSpinBox* effective_density;
+
     QGroupBox* createInitialConditionsGroup();
 
     bool is_item_selected = false;

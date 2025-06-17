@@ -59,7 +59,7 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
 
     auto layout = new QVBoxLayout(group);
     layout->setContentsMargins(0,0,0,0);
-    layout->setSpacing(9);
+    layout->setSpacing(10);
 
     //// Box Label - Initial Conditions
     //auto box_label_initial_conditions = new QLabel("Initial Conditions");
@@ -124,10 +124,10 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
 
         {   // X-Y-Z
             auto initial_velocity_horizontal = new QHBoxLayout();
-            initial_velocity_horizontal->addStretch();
+            //initial_velocity_horizontal->addStretch();
 
             /// X
-            auto initial_velocity_X_txt = new QLabel("x:");
+            auto initial_velocity_X_txt = new QLabel("X:");
             initial_velocity_horizontal->addWidget(initial_velocity_X_txt);
             auto initial_velocity_X_box = new QDoubleSpinBox();
             initial_velocity_X_box->setDecimals(DECIMAL_COUNT);
@@ -135,7 +135,7 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
             initial_velocity_X_box->setSingleStep(0.01);
             initial_velocity_horizontal->addWidget(initial_velocity_X_box);
             /// Y
-            auto initial_velocity_Y_txt = new QLabel("y:");
+            auto initial_velocity_Y_txt = new QLabel("Y:");
             initial_velocity_horizontal->addWidget(initial_velocity_Y_txt);
             auto initial_velocity_Y_box = new QDoubleSpinBox();
             initial_velocity_Y_box->setDecimals(DECIMAL_COUNT);
@@ -143,7 +143,7 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
             initial_velocity_Y_box->setSingleStep(0.01);
             initial_velocity_horizontal->addWidget(initial_velocity_Y_box);
             /// Z
-            auto initial_velocity_Z_txt = new QLabel("z:");
+            auto initial_velocity_Z_txt = new QLabel("Z:");
             initial_velocity_horizontal->addWidget(initial_velocity_Z_txt);
             auto initial_velocity_Z_box = new QDoubleSpinBox();
             initial_velocity_Z_box->setDecimals(DECIMAL_COUNT);
@@ -223,12 +223,12 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
         temprature_vertical->addLayout(initial_temprature_layout);
 
         // Initial Temprature Value
-        initial_temprature_layout->addStretch();
         auto initial_temprature_value = new QDoubleSpinBox();
         initial_temprature_value->setDecimals(DECIMAL_COUNT);
         initial_temprature_value->setRange(INITIAL_TEMPRATURE_MIN, INITIAL_TEMPRATURE_MAX); // Example range for temperature
         initial_temprature_value->setSingleStep(0.1);
         initial_temprature_layout->addWidget(initial_temprature_value);
+        initial_temprature_layout->addStretch();
 
         layout->addLayout(temprature_vertical);
     }
