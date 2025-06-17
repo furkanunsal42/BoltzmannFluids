@@ -39,6 +39,6 @@ CollapsibleBox::CollapsibleBox(const QString &title, QWidget *parent)
     });
 }
 
-void CollapsibleBox::addWidget(QWidget *widget) {
+void CollapsibleBox::add_widget(QWidget *widget) {
     content_area_layout->addWidget(widget);
 }

@@ -4,23 +4,24 @@
 #include <QLabel>
 #include <QSpinBox>
 #include <QCheckBox>
-
+#include <QGroupBox>
 #include <QToolButton>
 #include <QIcon>
 #include <QStyle>
 #include <QPixmap>
 #include <QFrame>
-
+#include <QVBoxLayout>
 #include <QScrollBar>
 
 InitialConditionsBox::InitialConditionsBox(QWidget* parent)
     : QFrame(parent)
 {
-    main_layout = new QVBoxLayout(this);
+    auto main_layout = new QVBoxLayout(this);
     main_layout->setAlignment(Qt::AlignTop);
     main_layout->addWidget(createInitialConditionsGroup());
     main_layout->setContentsMargins(0,0,0,0);
     main_layout->setSpacing(0);
+    setLayout(main_layout);
 
     setStyleSheet(
     "InitialConditionsBox {"
@@ -79,25 +80,28 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
             auto gravity_horizontal = new QHBoxLayout();
             gravity_horizontal->addStretch();
             /// X
-            auto gravity_X_txt = new QLabel("x:");
+            auto gravity_X_txt = new QLabel("X:");
             gravity_horizontal->addWidget(gravity_X_txt);
             auto gravity_X_box = new QDoubleSpinBox();
+            gravity_X_box->setDecimals(DECIMAL_COUNT);
             gravity_X_box->setRange(GRAVITY_MIN, GRAVITY_MAX);
             gravity_X_box->setSingleStep(0.01);
             gravity_horizontal->addWidget(gravity_X_box);
 
             /// Y
-            auto gravity_Y_txt = new QLabel("y:");
+            auto gravity_Y_txt = new QLabel("Y:");
             gravity_horizontal->addWidget(gravity_Y_txt);
             auto gravity_Y_box = new QDoubleSpinBox();
+            gravity_Y_box->setDecimals(DECIMAL_COUNT);
             gravity_Y_box->setRange(GRAVITY_MIN, GRAVITY_MAX);
             gravity_Y_box->setSingleStep(0.01);
             gravity_horizontal->addWidget(gravity_Y_box);
 
             /// Z
-            auto gravity_Z_txt = new QLabel("z:");
+            auto gravity_Z_txt = new QLabel("Z:");
             gravity_horizontal->addWidget(gravity_Z_txt);
             auto gravity_Z_box = new QDoubleSpinBox();
+            gravity_Z_box->setDecimals(DECIMAL_COUNT);
             gravity_Z_box->setRange(GRAVITY_MIN, GRAVITY_MAX);
             gravity_Z_box->setSingleStep(0.01);
             gravity_horizontal->addWidget(gravity_Z_box);
@@ -126,6 +130,7 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
             auto initial_velocity_X_txt = new QLabel("x:");
             initial_velocity_horizontal->addWidget(initial_velocity_X_txt);
             auto initial_velocity_X_box = new QDoubleSpinBox();
+            initial_velocity_X_box->setDecimals(DECIMAL_COUNT);
             initial_velocity_X_box->setRange(INITIAL_VELOCITY_MIN, INITIAL_VELOCITY_MAX);
             initial_velocity_X_box->setSingleStep(0.01);
             initial_velocity_horizontal->addWidget(initial_velocity_X_box);
@@ -133,6 +138,7 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
             auto initial_velocity_Y_txt = new QLabel("y:");
             initial_velocity_horizontal->addWidget(initial_velocity_Y_txt);
             auto initial_velocity_Y_box = new QDoubleSpinBox();
+            initial_velocity_Y_box->setDecimals(DECIMAL_COUNT);
             initial_velocity_Y_box->setRange(INITIAL_VELOCITY_MIN, INITIAL_VELOCITY_MAX);
             initial_velocity_Y_box->setSingleStep(0.01);
             initial_velocity_horizontal->addWidget(initial_velocity_Y_box);
@@ -140,6 +146,7 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
             auto initial_velocity_Z_txt = new QLabel("z:");
             initial_velocity_horizontal->addWidget(initial_velocity_Z_txt);
             auto initial_velocity_Z_box = new QDoubleSpinBox();
+            initial_velocity_Z_box->setDecimals(DECIMAL_COUNT);
             initial_velocity_Z_box->setRange(INITIAL_VELOCITY_MIN, INITIAL_VELOCITY_MAX);
             initial_velocity_Z_box->setSingleStep(0.01);
             initial_velocity_horizontal->addWidget(initial_velocity_Z_box);
@@ -218,6 +225,7 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
         // Initial Temprature Value
         initial_temprature_layout->addStretch();
         auto initial_temprature_value = new QDoubleSpinBox();
+        initial_temprature_value->setDecimals(DECIMAL_COUNT);
         initial_temprature_value->setRange(INITIAL_TEMPRATURE_MIN, INITIAL_TEMPRATURE_MAX); // Example range for temperature
         initial_temprature_value->setSingleStep(0.1);
         initial_temprature_layout->addWidget(initial_temprature_value);

@@ -13,17 +13,28 @@ class Timeline : public QWidget
 
 public:
 
-    explicit Timeline(int max_frame = 10000, QWidget* parent = nullptr);
+    explicit Timeline(QWidget* parent = nullptr, int max_frame = 10000);
 
     void start();
     void pause();
     void stop();
 
-    void set_frame(int frame);
-    int get_current_frame() const;
+    void set_frame_range(int begin, int end);
+
+    bool is_running() const;
+    void set_running(bool value);
+
+    void set_frame_current(int frame);
+    int get_frame_current() const;
+
+    int get_frame_begin() const;
+    void set_frame_begin(int new_frame_begin);
 
     int get_frame_max() const;
     void set_frame_max(int new_max_frame);
+
+    int get_frame_simulation_duration() const;
+    void set_frame_simulation_duration(int new_frame_simulation_duration);
 
 signals:
     void frame_changed(int frame);
@@ -32,18 +43,16 @@ signals:
     void stop_signal();
     //void finish_signal();
 
-protected:
-    void paintEvent(QPaintEvent* event) override;
-    void mousePressEvent(QMouseEvent* event) override;
-
 private:
-    TimelineRuler* _ruler;
+    TimelineRuler* _ruler;  // Todo: make private
     QLineEdit* frame_display_text = nullptr;
 
-    int _frame      = 0;
-    int start_frame = 0;
-    int _frame_max  = 10000;
     bool _running = false;
+
+    int _frame_current  = 0;
+    int _frame_begin    = 0;
+    int _frame_end      = 10000;
+    int _frame_simulation_duration = 0;
 
 };
 

@@ -22,15 +22,9 @@ public:
     ~MainWindow();
 
     void update_timeline(int current_frame);
-
-private slots:
-
-    void on_actionNew_Project_triggered();
-
+    Timeline* timeline;
 
 private:
-
-    Timeline* timeline;
 
     Ui::MainWindow *ui;
 

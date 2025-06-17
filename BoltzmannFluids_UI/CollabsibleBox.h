@@ -7,13 +7,15 @@
 #include <QVBoxLayout>
 #include <QScrollArea>
 
-class CollapsibleBox : public QWidget {
+class CollapsibleBox : public QWidget
+{
     Q_OBJECT
+
 public:
 
-    CollapsibleBox(const QString &title = "", QWidget *parent = nullptr);
+    explicit CollapsibleBox(const QString &title = "", QWidget *parent = nullptr);
 
-    void addWidget(QWidget *widget);
+    void add_widget(QWidget *widget);
 
 private:
     QToolButton* header_button;

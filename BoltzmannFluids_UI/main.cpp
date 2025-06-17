@@ -3,29 +3,29 @@
 #include <QApplication>
 #include <QTimer>
 
-//#include <GraphicsCortex.h>
-#include <LBM/LBM.h>
+#include "Timeline.h"
+#include "TimelineRuler.h"
 
 int main(int argc, char *argv[])
 {
- 
     QApplication a(argc, argv);
 
     MainWindow w;
     w.show();
 
-    //auto timer = new QTimer();
-    //int frame = 3000;
+    auto timer = new QTimer();
+    int frame = 0;
 
-    //QTimer::singleShot(0, &w, [&w, &timer, &frame]() {
-    //    timer->setInterval(1000 / 60);
-    //    timer->start();
+    QTimer::singleShot(0, &w, [&w, &timer, &frame]() {
+        timer->setInterval(1000 / 60*2);
+        timer->start();
 
-    //    QObject::connect(timer, &QTimer::timeout, [&w, &frame] {
-    //        frame+= 1;
-    //        w.update_timeline(frame);
-    //    });
-    //});
+
+        QObject::connect(timer, &QTimer::timeout, [&w, &frame] {
+            frame+= 1;
+            w.update_timeline(frame);
+        });
+    });
 
     return a.exec();
 }

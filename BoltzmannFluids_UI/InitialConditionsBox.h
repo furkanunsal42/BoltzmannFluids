@@ -1,10 +1,9 @@
 #ifndef R_GHTSIDEPANEL_H
 #define R_GHTSIDEPANEL_H
 
-#include <QWidget>
+#include <QFrame>
 
-#include <QVBoxLayout>
-#include <QGroupBox>
+class QGroupBox;
 
 class InitialConditionsBox : public QFrame
 {
@@ -14,8 +13,6 @@ public:
     explicit InitialConditionsBox(QWidget* parent = nullptr);
 
 private:
-
-    QVBoxLayout* main_layout;
 
     QGroupBox* createInitialConditionsGroup();
 

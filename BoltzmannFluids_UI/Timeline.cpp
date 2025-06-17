@@ -7,8 +7,8 @@
 #include <QLineEdit>
 #include <QLabel>
 
-Timeline::Timeline(int max_frame, QWidget *parent)
-    :_frame_max(max_frame), QWidget(parent)
+Timeline::Timeline(QWidget *parent, int max_frame)
+    :QWidget(parent), _frame_end(max_frame)
 {
 
     auto layout = new QVBoxLayout(this);
@@ -41,25 +41,34 @@ Timeline::Timeline(int max_frame, QWidget *parent)
     start_pause_button->setIconSize(QSize(20, 20));
     center_buttons_layout->addWidget(start_pause_button);
 
-
-    QObject::connect(start_pause_button, &QPushButton::clicked, this, [this, start_icon, start_pause_button, pause_icon]() {
-        _running = !_running;
-
-        if (!_running) {
-            start_pause_button->setIcon(start_icon);
-            emit start_signal();
-        }
-        else {
-            start_pause_button->setIcon(pause_icon);
-            emit pause_signal();
-        }
-    });
-
     auto stop_button = new QPushButton(center_buttons_widget);
     auto stop_icon = QIcon(":/qt_icons/white_stop.png");
     stop_button->setIcon(stop_icon);
     stop_button->setIconSize(QSize(20, 20));
     center_buttons_layout->addWidget(stop_button);
+
+    QObject::connect(start_pause_button, &QPushButton::clicked, this,
+                     [this, start_icon, pause_icon, start_pause_button]() {
+                         _running = !_running;
+
+                         if (_running) {
+                             start_pause_button->setIcon(pause_icon);
+                             start();
+                             emit start_signal();
+                         } else {
+                             start_pause_button->setIcon(start_icon);
+                             pause();
+                             emit pause_signal();
+                         }
+                     });
+
+    QObject::connect(stop_button, &QPushButton::clicked, this,
+                     [this, stop_button, start_pause_button, start_icon]() {
+                         stop();
+                         emit stop_signal();
+                         _running = false;
+                         start_pause_button->setIcon(start_icon);
+                     });
 
 
     // Frame count displayer
@@ -94,9 +103,8 @@ Timeline::Timeline(int max_frame, QWidget *parent)
     // --- Row:2 ---
     // Timeline ruler
     {
-        _ruler = new TimelineRuler(this);
-        _ruler->set_frame_range(0, 10000);
-        layout->addWidget(_ruler);
+        this->_ruler = new TimelineRuler(this, this);
+        layout->addWidget(this->_ruler);
 
     }
 
@@ -143,56 +151,87 @@ Timeline::Timeline(int max_frame, QWidget *parent)
 
 void Timeline::start()
 {
-
+    if (!_running)
+        _running = true;
 }
 
 void Timeline::pause()
 {
-
+    if (_running)
+        _running = true;
 }
 
 void Timeline::stop()
 {
-
+    if (_running)
+        _running = true;
 }
 
-int Timeline::get_current_frame() const
+int Timeline::get_frame_current() const
 {
-    return _frame;
+    return _frame_current;
 }
 
-void Timeline::set_frame(int frame)
+void Timeline::set_frame_current(int frame)
 {
-    _frame = frame;
+    _frame_current = frame;
 
     if (frame_display_text)
         frame_display_text->setText(QString::number(frame));
 
-    if (_ruler)
-        _ruler->update_timeline(_frame);
+    this->_ruler->update();
+    //if (this->_ruler)
+    //    this->_ruler->update_timeline(_frame_current);
 
-    emit frame_changed(_frame);
+    emit frame_changed(_frame_current);
 }
 
+int Timeline::get_frame_begin() const
+{
+    return _frame_begin;
+}
+
+void Timeline::set_frame_begin(int new_frame_begin)
+{
+    _frame_begin = new_frame_begin;
+}
 
 int Timeline::get_frame_max() const
 {
-    return _frame_max;
+    return _frame_end;
 }
 
 void Timeline::set_frame_max(int new_max_frame)
 {
-    _frame_max = new_max_frame;
+    _frame_end = new_max_frame;
 }
 
-void Timeline::paintEvent(QPaintEvent *event)
+int Timeline::get_frame_simulation_duration() const
 {
-
+    return _frame_simulation_duration;
 }
 
-void Timeline::mousePressEvent(QMouseEvent *event)
+void Timeline::set_frame_simulation_duration(int new_frame_simulation_duration)
 {
-
+    _frame_simulation_duration = new_frame_simulation_duration;
 }
+
+bool Timeline::is_running() const
+{
+    return _running;
+}
+
+void Timeline::set_running(bool value)
+{
+    _running = value;
+}
+
+void Timeline::set_frame_range(int begin, int end)
+{
+    _frame_begin = begin;
+    _frame_end = end;
+}
+
+
 
 
