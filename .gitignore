@@ -2,3 +2,6 @@
 *.user
 *.filters
 *.dll
+/build
+GraphicsCortex/Dependencies/assimp/lib/assimp-vc143-mt.lib
+GraphicsCortex/Dependencies/assimp/lib_debug/assimp-vc143-mtd.lib
