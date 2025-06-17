@@ -249,7 +249,7 @@ private:
 
 	// device buffers
 	bool is_collide_esoteric = false;
-	bool is_lattice_texture3d = false;
+	bool is_lattice_texture3d = true;
 	Texture3D::ColorTextureFormat lattice_tex_internal_format = Texture3D::ColorTextureFormat::R16F;
 	
 	std::shared_ptr<Texture3D> lattice0_tex = nullptr;

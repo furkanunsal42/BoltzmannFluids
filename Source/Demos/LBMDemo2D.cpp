@@ -1,7 +1,7 @@
 #include "LBMDemo2D.h"
 
 void demo2d::poiseuille_flow(LBM& solver) {
-	glm::ivec3 simulation_resolution(1024, 128, 32);
+	glm::ivec3 simulation_resolution(1024, 128, 1);
 	solver.clear_boundry_properties();
 	solver.set_boundry_properties(1, glm::vec3(1, 0, 0) / 16.0f);
 	solver.set_boundry_properties(2, glm::vec3(0, 0, 0) / 16.0f);
