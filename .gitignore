@@ -5,3 +5,4 @@
 *.qtvscr
 *.obj
 /Source/GUI/build
+/build
