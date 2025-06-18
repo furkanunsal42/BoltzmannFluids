@@ -23,9 +23,9 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
+    // Setup
     ui->setupUi(this);
     QString qss_text;
-
     this->resize(main_window_width, main_window_height);
 
     // *** Menu Bar ***
