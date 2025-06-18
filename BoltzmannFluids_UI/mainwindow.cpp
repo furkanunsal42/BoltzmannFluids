@@ -37,13 +37,6 @@ MainWindow::MainWindow(QWidget *parent)
     main_layout->setContentsMargins(0, 0, 0, 0);
     main_layout->setSpacing(0);
 
-    auto* effect = new QGraphicsDropShadowEffect();
-    effect->setBlurRadius(0);              // No blur
-    effect->setOffset(1, 1);               // Tiny offset
-    effect->setColor(QColor(0, 0, 0, 160)); // Slightly transparent black
-    label->setGraphicsEffect(effect);
-
-
     qss_text += "QWidget { "
                     "background-color: rgb(50, 51, 52); "
                     "color: rgb(180, 181, 182); "
