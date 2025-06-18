@@ -261,7 +261,7 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
         auto item_temprature_value = new SmartDoubleSpinBox();
         item_temprature_value->setValue(1.00);
         item_temprature_vertical->addWidget(item_temprature_value);
-        item_temprature_vertical->addSpacing(140);
+        item_temprature_vertical->addSpacing(0);
     }
 
     {
@@ -284,7 +284,7 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
         auto effective_density_value = new SmartDoubleSpinBox();
         effective_density_value->setValue(1.00);
         effective_density_vertical->addWidget(effective_density_value);
-        effective_density_vertical->addSpacing(140);
+        effective_density_vertical->addSpacing(0);
 
     }
 
@@ -323,7 +323,7 @@ void ItemPropertiesBox::update_styles()
                 "background-color: rgb(85, 86, 87);"
             "}"
             "ItemPropertiesBox QDoubleSpinBox:hover {"
-                "background-color: rgb(110, 111, 112);"
+                "background-color: rgb(105, 106, 107);"
             "}"
             );
         velocity_translation_X_box->setEnabled(true);
@@ -359,7 +359,7 @@ void ItemPropertiesBox::update_styles()
                 "background-color: rgb(65, 66, 67);"
             "}"
             "ItemPropertiesBox QDoubleSpinBox:hover {"
-                "background-color: rgb(110, 111, 112);"
+                "background-color: rgb(105, 106, 107);"
             "}"
             );
         velocity_translation_X_box->setEnabled(false);

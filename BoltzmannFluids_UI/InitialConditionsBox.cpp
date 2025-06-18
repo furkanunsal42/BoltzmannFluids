@@ -31,7 +31,7 @@ InitialConditionsBox::InitialConditionsBox(QWidget* parent)
         "background-color: rgb(85, 86, 87);"
     "}"
     "InitialConditionsBox QDoubleSpinBox:hover {"
-        "background-color: rgb(110, 111, 112);"
+        "background-color: rgb(105, 106, 107);"
     "}"
     "InitialConditionsBox QLabel {"
         "font-weight: bold;"
@@ -50,6 +50,14 @@ InitialConditionsBox::InitialConditionsBox(QWidget* parent)
         "border: 1px solid rgb(80, 81, 82);"
         "background-color: rgb(85, 86, 87);"
     "}"
+    "InitialConditionsBox QComboBox:hover {"
+        "color: rgb(225, 226, 227);"
+        "border: 1px solid rgb(80, 81, 82);"
+        "background-color: rgb(105, 106, 107);"
+    "}"
+    //"InitialConditionsBox QAbstractItemView {"
+    //    "background-color: rgb(85, 86, 87);"
+    //"}"
         );
 
 }
@@ -260,7 +268,6 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
     /// Value
     thermal_relaxation_time_vertical->addSpacing(53);
     thermal_relaxation_time = new SmartDoubleSpinBox();
-    thermal_relaxation_time->setValue(1.00);
     thermal_relaxation_time_vertical->addWidget(thermal_relaxation_time);
     //thermal_relaxation_time_vertical->addStretch();
     thermal_relaxation_time_vertical->addSpacing(0);
@@ -362,8 +369,66 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
 
     });
 
+    {
+    // *** Boundary Conditions ***
+    // Boundary X
+    auto boundary_X_vertical = new QHBoxLayout();
+    layout->addLayout(boundary_X_vertical);
+    boundary_X_vertical->setContentsMargins(0, 0, 0, 0);
+    boundary_X_vertical->setSpacing(0);
 
-    // Walls
+    /// Label
+    auto boundary_X_label = new QLabel("Boundary X");
+    boundary_X_vertical->addWidget(boundary_X_label);
+
+    /// Value
+    boundary_X_vertical->addSpacing(75);
+    boundary_X = new QComboBox();
+    boundary_X->addItems({"Periodic Wall", "Solid Wall", "Open Boundary"});
+    boundary_X_vertical->addWidget(boundary_X);
+    boundary_X->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    //floating_point_accuracy_vertical->addStretch();
+    boundary_X_vertical->addSpacing(0);
+
+    // Boundary Y
+    auto boundary_Y_vertical = new QHBoxLayout();
+    layout->addLayout(boundary_Y_vertical);
+    boundary_Y_vertical->setContentsMargins(0, 0, 0, 0);
+    boundary_Y_vertical->setSpacing(0);
+
+    /// Label
+    auto boundary_Y_label = new QLabel("Boundary Y");
+    boundary_Y_vertical->addWidget(boundary_Y_label);
+
+    /// Value
+    boundary_Y_vertical->addSpacing(75);
+    boundary_Y = new QComboBox();
+    boundary_Y->addItems({"Periodic Wall", "Solid Wall", "Open Boundary"});
+    boundary_Y_vertical->addWidget(boundary_Y);
+    boundary_Y->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    //floating_point_accuracy_vertical->addStretch();
+    boundary_Y_vertical->addSpacing(0);
+
+    // Boundary Z
+    auto boundary_Z_vertical = new QHBoxLayout();
+    layout->addLayout(boundary_Z_vertical);
+    boundary_Z_vertical->setContentsMargins(0, 0, 0, 0);
+    boundary_Z_vertical->setSpacing(0);
+
+    /// Label
+    auto boundary_Z_label = new QLabel("Boundary Z");
+    boundary_Z_vertical->addWidget(boundary_Z_label);
+
+    /// Value
+    boundary_Z_vertical->addSpacing(75);
+    boundary_Z = new QComboBox();
+    boundary_Z->addItems({"Periodic Wall", "Solid Wall", "Open Boundary"});
+    boundary_Z_vertical->addWidget(boundary_Z);
+    boundary_Z->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    //floating_point_accuracy_vertical->addStretch();
+    boundary_Z_vertical->addSpacing(0);
+
+    }
 
 
     return group;
@@ -386,7 +451,7 @@ void enable_widget(QWidget* widget, QLabel* label)
 
     if (qobject_cast<QDoubleSpinBox*>(widget)) {
         style = "QDoubleSpinBox { " + style + " }"
-                "QDoubleSpinBox:hover { background-color: rgb(110, 111, 112); }";
+                "QDoubleSpinBox:hover { background-color: rgb(105, 106, 107); }";
     }
 
     widget->setStyleSheet(style);

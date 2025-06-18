@@ -45,9 +45,9 @@ private:
 
     SmartDoubleSpinBox* intermoleculer_interaction_strength;
 
-    QComboBox* wall_component_X;
-    QComboBox* wall_component_Y;
-    QComboBox* wall_component_Z;
+    QComboBox* boundary_X;
+    QComboBox* boundary_Y;
+    QComboBox* boundary_Z;
 
 };
 

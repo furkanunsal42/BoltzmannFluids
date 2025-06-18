@@ -50,12 +50,61 @@ AddableItem& AddableItemModel::item_at(int index) {
 AddItemsBox::AddItemsBox(QWidget *parent)
     :QWidget(parent)
 {
-    auto main_layout = new QVBoxLayout(this);
-    setLayout(main_layout);
+    auto outer_layout = new QVBoxLayout(this);
+    outer_layout->setContentsMargins(0, 0, 0, 0);
+    outer_layout->setSpacing(0);
+
+    auto frame = new QFrame(this);
+    outer_layout->addWidget(frame);
+    frame->setFrameShape(QFrame::StyledPanel);
+    setStyleSheet(
+        "QFrame {"
+            "background-color: rgb(65, 66, 67); "
+            "border: 1px solid rgb(65, 66, 67);"
+            "border-radius: 5px;"
+        "}"
+        "QPushButton {"
+            "color: rgb(225, 226, 227);"
+            "background-color: rgb(90, 91, 92);"
+            "border: 1px solid rgb(70, 71, 72);"
+            "border-radius: 5px;"
+            "padding: 6px 12px;"
+            "font-weight: bold;"
+        "}"
+        "QPushButton:hover {"
+            "background-color: rgb(105, 106 ,107);"
+        "}"
+        "QPushButton:pressed {"
+            "background-color: rgb(70, 71, 72);"
+        "}"
+        "QListView {"
+            "color: rgb(225, 226, 227);"
+            "background-color: rgb(65, 66, 67);"
+            "border: 0px solid rgb(65, 66, 67);"
+            "outline: 0;"   // Remove dotted focus border
+        "}"
+        "QListView::item {"
+            "padding: 3px;"
+            "border: 1px solid rgb(65, 66, 67);"
+            "background-color: rgb(70, 71, 72);"
+        "}"
+        "QListView::item:selected {"
+            "background-color: rgb(90, 91, 92);"
+            "color: white;"
+        "}"
+        "QListView::item:hover {"
+            "background-color: rgb(80, 81, 82);"
+        "}"
+        );
+
+    auto inner_layout = new QVBoxLayout(frame);
+    frame->setLayout(inner_layout);
+    //inner_layout->setContentsMargins(0, 0, 0, 0);
+    //inner_layout->setSpacing(0);
 
     {   // "Add - Delete" buttons
         auto button_layout = new QHBoxLayout;
-        main_layout->addLayout(button_layout);
+        inner_layout->addLayout(button_layout);
 
         _add_button = new QPushButton("Add", this);
         button_layout->addWidget(_add_button);
@@ -66,9 +115,9 @@ AddItemsBox::AddItemsBox(QWidget *parent)
 
     _model = new AddableItemModel(this);
     _items_list = new QListView(this);
+    inner_layout->addWidget(_items_list);
     _items_list->setSelectionMode(QAbstractItemView::SingleSelection);
     _items_list->setSelectionBehavior(QAbstractItemView::SelectRows);   // or SelectItems
-    main_layout->addWidget(_items_list);
 
 
     // Default items
@@ -111,10 +160,5 @@ AddItemsBox::AddItemsBox(QWidget *parent)
         }
     });
 
-    setStyleSheet(
-        "QWidget {"
-            "color: rgb(225, 226, 227);"
-        "}"
-        );
 
 }
