@@ -79,11 +79,13 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
     velocity_set_vertical->addWidget(velocity_set_label);
 
     /// Value
-    velocity_set_vertical->addSpacing(10);
+    velocity_set_vertical->addSpacing(126);
     velocity_set = new QComboBox();
     velocity_set->addItems({"D2Q9", "D3Q15", "D3Q19", "D3Q27"});
     velocity_set_vertical->addWidget(velocity_set);
-    velocity_set_vertical->addStretch();
+    velocity_set->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    //velocity_set_vertical->addStretch();
+    velocity_set_vertical->addSpacing(0);
 
 
     // Floating Point accuracy
@@ -93,15 +95,17 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
     floating_point_accuracy_vertical->setSpacing(0);
 
     /// Label
-    auto floating_point_accuracy_label = new QLabel("Floating Point accuracy");
+    auto floating_point_accuracy_label = new QLabel("Floating Point Accuracy");
     floating_point_accuracy_vertical->addWidget(floating_point_accuracy_label);
 
     /// Value
-    floating_point_accuracy_vertical->addSpacing(10);
+    floating_point_accuracy_vertical->addSpacing(62);
     floating_point_accuracy = new QComboBox();
-    floating_point_accuracy->addItems({"D2Q9", "D3Q15", "D3Q19", "D3Q27"});
+    floating_point_accuracy->addItems({"16-Bit", "32-Bit"});
     floating_point_accuracy_vertical->addWidget(floating_point_accuracy);
-    floating_point_accuracy_vertical->addStretch();
+    floating_point_accuracy->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    //floating_point_accuracy_vertical->addStretch();
+    floating_point_accuracy_vertical->addSpacing(0);
 
 
     //Resolution
@@ -117,7 +121,7 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
     auto resolution_horizontal = new QHBoxLayout();
     resolution->addLayout(resolution_horizontal);
     /// X
-    resolution_horizontal->addSpacing(5);
+    resolution_horizontal->addSpacing(10);
     auto resolution_X_txt = new QLabel("X:");
     resolution_horizontal->addWidget(resolution_X_txt);
     resolution_X_value = new SmartDoubleSpinBox();
@@ -138,24 +142,6 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
     resolution_horizontal->addWidget(resolution_Z_value);
 
 
-    // Relaxation Time
-    auto relaxation_time_vertical = new QHBoxLayout();
-    layout->addLayout(relaxation_time_vertical);
-    relaxation_time_vertical->setContentsMargins(0, 0, 0, 0);
-    relaxation_time_vertical->setSpacing(0);
-
-    /// Label
-    auto relaxation_time_label = new QLabel("Relaxation Time");
-    relaxation_time_vertical->addWidget(relaxation_time_label);
-
-    /// Value
-    relaxation_time_vertical->addSpacing(10);
-    relaxation_time = new SmartDoubleSpinBox();
-    relaxation_time->setValue(1.00);
-    relaxation_time_vertical->addWidget(relaxation_time);
-    relaxation_time_vertical->addStretch();
-
-
     // Gravity
     auto gravity_vertical = new QVBoxLayout();
     gravity_vertical->setContentsMargins(0, 0, 0, 0);
@@ -169,7 +155,7 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
     auto gravity_horizontal = new QHBoxLayout();
     gravity_vertical->addLayout(gravity_horizontal);
     /// X
-    gravity_horizontal->addSpacing(5);
+    gravity_horizontal->addSpacing(10);
     auto gravity_X_txt = new QLabel("X:");
     gravity_horizontal->addWidget(gravity_X_txt);
     gravity_X_value = new SmartDoubleSpinBox();
@@ -205,7 +191,7 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
     initial_velocity_vertical->addLayout(initial_velocity_horizontal);
 
     /// X
-    initial_velocity_horizontal->addSpacing(5);
+    initial_velocity_horizontal->addSpacing(10);
     auto initial_velocity_X_txt = new QLabel("X:");
     initial_velocity_horizontal->addWidget(initial_velocity_X_txt);
     initial_velocity_X_value = new SmartDoubleSpinBox();
@@ -224,22 +210,41 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
     initial_velocity_horizontal->addWidget(initial_velocity_Z_value);
 
 
+    // Relaxation Time
+    auto relaxation_time_vertical = new QHBoxLayout();
+    layout->addLayout(relaxation_time_vertical);
+    relaxation_time_vertical->setContentsMargins(0, 0, 0, 0);
+    relaxation_time_vertical->setSpacing(0);
+
+    /// Label
+    auto relaxation_time_label = new QLabel("Relaxation Time");
+    relaxation_time_vertical->addWidget(relaxation_time_label);
+
+    /// Value
+    relaxation_time_vertical->addSpacing(102);
+    relaxation_time = new SmartDoubleSpinBox();
+    relaxation_time->setValue(1.00);
+    relaxation_time_vertical->addWidget(relaxation_time);
+    //    relaxation_time_vertical->addStretch();
+    relaxation_time_vertical->addSpacing(0);
+
+
     // Initial temperature
     auto initial_temprature_vertical = new QHBoxLayout();
     layout->addLayout(initial_temprature_vertical);
     initial_temprature_vertical->setContentsMargins(0, 0, 0, 0);
     initial_temprature_vertical->setSpacing(0);
-
     /// Label
     auto initial_temprature_label = new QLabel("Initial Temperature");
     initial_temprature_vertical->addWidget(initial_temprature_label);
 
     /// Value
-    initial_temprature_vertical->addSpacing(10);
+    initial_temprature_vertical->addSpacing(85);
     initial_temprature_value = new SmartDoubleSpinBox();
     initial_temprature_value->setValue(1.00);
     initial_temprature_vertical->addWidget(initial_temprature_value);
-    initial_temprature_vertical->addStretch();
+    initial_temprature_vertical->addSpacing(0);
+//    initial_temprature_vertical->addStretch();
 
 
     // Thermal Relaxation Time
@@ -253,11 +258,12 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
     thermal_relaxation_time_vertical->addWidget(thermal_relaxation_time_label);
 
     /// Value
-    thermal_relaxation_time_vertical->addSpacing(10);
+    thermal_relaxation_time_vertical->addSpacing(53);
     thermal_relaxation_time = new SmartDoubleSpinBox();
     thermal_relaxation_time->setValue(1.00);
     thermal_relaxation_time_vertical->addWidget(thermal_relaxation_time);
-    thermal_relaxation_time_vertical->addStretch();
+    //thermal_relaxation_time_vertical->addStretch();
+    thermal_relaxation_time_vertical->addSpacing(0);
 
 
     // Thermal Extension Coefficient
@@ -271,10 +277,11 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
     thermal_extension_coefficient_vertical->addWidget(thermal_extension_coefficient_label);
 
     /// Value
-    thermal_extension_coefficient_vertical->addSpacing(10);
+    thermal_extension_coefficient_vertical->addSpacing(19);
     thermal_extension_coefficient = new SmartDoubleSpinBox();
     thermal_extension_coefficient_vertical->addWidget(thermal_extension_coefficient);
-    thermal_extension_coefficient_vertical->addStretch();
+    //thermal_extension_coefficient_vertical->addStretch();
+    thermal_extension_coefficient_vertical->addSpacing(0);
 
 
     // Phase Selector
@@ -330,11 +337,12 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
     intermoleculer_interaction_strength_vertical->addWidget(intermoleculer_interaction_strength_label);
 
     /// Value
-    intermoleculer_interaction_strength_vertical->addSpacing(10);
+    intermoleculer_interaction_strength_vertical->addSpacing(0);
     intermoleculer_interaction_strength = new SmartDoubleSpinBox();
     disable_widget(intermoleculer_interaction_strength, intermoleculer_interaction_strength_label);
     intermoleculer_interaction_strength_vertical->addWidget(intermoleculer_interaction_strength);
-    intermoleculer_interaction_strength_vertical->addStretch();
+    //intermoleculer_interaction_strength_vertical->addStretch();
+    intermoleculer_interaction_strength_vertical->setSpacing(0);
 
     /// Phase settings
     QObject::connect(singlephase_checkbox, &QCheckBox::toggled, this, [=](bool checked) {
@@ -353,6 +361,9 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
         enable_widget(intermoleculer_interaction_strength, intermoleculer_interaction_strength_label);
 
     });
+
+
+    // Walls
 
 
     return group;

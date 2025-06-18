@@ -26,8 +26,8 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
         name_vertical->setSpacing(0);
         main_layout->addLayout(name_vertical);
 
-        name_label = new QLabel("BoltzmannFluids");
-        name_vertical->addWidget(name_label);
+      //  name_label = new QLabel("BoltzmannFluids");
+      //  name_vertical->addWidget(name_label);         // TODO: use when add scene collection
 
         type_label = new QLabel("Object Type");
         name_vertical->addWidget(type_label);
@@ -261,7 +261,7 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
         auto item_temprature_value = new SmartDoubleSpinBox();
         item_temprature_value->setValue(1.00);
         item_temprature_vertical->addWidget(item_temprature_value);
-        item_temprature_vertical->addStretch();
+        item_temprature_vertical->addSpacing(140);
     }
 
     {
@@ -284,12 +284,11 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
         auto effective_density_value = new SmartDoubleSpinBox();
         effective_density_value->setValue(1.00);
         effective_density_vertical->addWidget(effective_density_value);
-        effective_density_vertical->addStretch();
+        effective_density_vertical->addSpacing(140);
 
     }
 
     main_layout->update();
-
     update_styles();
 
 }
@@ -392,7 +391,7 @@ void ItemPropertiesBox::update_property_fields()
     if (!item)
         return;
 
-    name_label->setText(item->name);
+    //name_label->setText(item->name);
     enum_to_qstring(item->type, type_label);
 
     position_X_box->setValue(item->position.x());
