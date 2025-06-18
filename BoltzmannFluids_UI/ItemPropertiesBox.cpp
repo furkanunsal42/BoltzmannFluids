@@ -1,9 +1,10 @@
 #include "ItemPropertiesBox.h"
 #include "SmartDoubleSpinBox.h"
+#include "AddItemsBox.h"
 
 #include <QGroupBox>
 #include <QVBoxLayout>
-#include <qlineedit.h>
+#include <QLabel>
 
 void enum_to_qstring(Type& type, QLabel* _string);
 
@@ -15,8 +16,6 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
     main_layout->setContentsMargins(0,0,0,0);
     main_layout->setSpacing(10);
     setLayout(main_layout);
-
-    QString item_properties_qss;
 
     /// Initialize AddableItem "item"
     item = new AddableItem(QString("Object"), Type::CUBE, QIcon());
@@ -45,19 +44,22 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
         velocity_translation_vertical->addWidget(velocity_translation_label);
 
         auto velocity_translation_horizontal = new QHBoxLayout();
-        velocity_translation_horizontal->addStretch();
+//        velocity_translation_horizontal->addStretch();
 
         /// X
+        velocity_translation_horizontal->addSpacing(5);
         auto velocity_translation_X_txt = new QLabel("X:");
         velocity_translation_horizontal->addWidget(velocity_translation_X_txt);
         velocity_translation_X_box = new SmartDoubleSpinBox();
         velocity_translation_horizontal->addWidget(velocity_translation_X_box);
         /// Y
+        velocity_translation_horizontal->addSpacing(5);
         auto velocity_translation_Y_txt = new QLabel("Y:");
         velocity_translation_horizontal->addWidget(velocity_translation_Y_txt);
         velocity_translation_Y_box = new SmartDoubleSpinBox();
         velocity_translation_horizontal->addWidget(velocity_translation_Y_box);
         /// Z
+        velocity_translation_horizontal->addSpacing(5);
         auto velocity_translation_Z_txt = new QLabel("Z:");
         velocity_translation_horizontal->addWidget(velocity_translation_Z_txt);
         velocity_translation_Z_box = new SmartDoubleSpinBox();
@@ -77,20 +79,22 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
         velocity_angular_vertical->addWidget(velocity_angular_label);
 
         auto velocity_angular_horizontal = new QHBoxLayout();
-        velocity_angular_horizontal->addStretch();
 
         /// X
+        velocity_angular_horizontal->addSpacing(5);
         auto velocity_angular_X_txt = new QLabel("X:");
         velocity_angular_horizontal->addWidget(velocity_angular_X_txt);
         velocity_angular_X_box = new SmartDoubleSpinBox();
         velocity_angular_X_box->setSingleStep(0.01);
         velocity_angular_horizontal->addWidget(velocity_angular_X_box);
         /// Y
+        velocity_angular_horizontal->addSpacing(5);
         auto velocity_angular_Y_txt = new QLabel("Y:");
         velocity_angular_horizontal->addWidget(velocity_angular_Y_txt);
         velocity_angular_Y_box = new SmartDoubleSpinBox();
         velocity_angular_horizontal->addWidget(velocity_angular_Y_box);
         /// Z
+        velocity_angular_horizontal->addSpacing(5);
         auto velocity_angular_Z_txt = new QLabel("Z:");
         velocity_angular_horizontal->addWidget(velocity_angular_Z_txt);
         velocity_angular_Z_box = new SmartDoubleSpinBox();
@@ -111,19 +115,21 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
         center_of_mass__vertical->addWidget(center_of_mass_label);
 
         auto center_of_mass_horizontal = new QHBoxLayout();
-        center_of_mass_horizontal->addStretch();
 
         /// X
+        center_of_mass_horizontal->addSpacing(5);
         auto center_of_mass_X_txt = new QLabel("X:");
         center_of_mass_horizontal->addWidget(center_of_mass_X_txt);
         center_of_mass_X_box = new SmartDoubleSpinBox();
         center_of_mass_horizontal->addWidget(center_of_mass_X_box);
         /// Y
+        center_of_mass_horizontal->addSpacing(5);
         auto center_of_mass_Y_txt = new QLabel("Y:");
         center_of_mass_horizontal->addWidget(center_of_mass_Y_txt);
         center_of_mass_Y_box = new SmartDoubleSpinBox();
         center_of_mass_horizontal->addWidget(center_of_mass_Y_box);
         /// Z
+        center_of_mass_horizontal->addSpacing(5);
         auto center_of_mass_Z_txt = new QLabel("Z:");
         center_of_mass_horizontal->addWidget(center_of_mass_Z_txt);
         center_of_mass_Z_box = new SmartDoubleSpinBox();
@@ -144,19 +150,21 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
         position_vertical->addWidget(position_label);
 
         auto position_horizontal = new QHBoxLayout();
-        position_horizontal->addStretch();
 
         /// X
+        position_horizontal->addSpacing(5);
         auto position_X_txt = new QLabel("X:");
         position_horizontal->addWidget(position_X_txt);
         position_X_box = new SmartDoubleSpinBox();
         position_horizontal->addWidget(position_X_box);
         /// Y
+        position_horizontal->addSpacing(5);
         auto position_Y_txt = new QLabel("Y:");
         position_horizontal->addWidget(position_Y_txt);
         position_Y_box = new SmartDoubleSpinBox();
         position_horizontal->addWidget(position_Y_box);
         /// Z
+        position_horizontal->addSpacing(5);
         auto position_Z_txt = new QLabel("Z:");
         position_horizontal->addWidget(position_Z_txt);
         position_Z_box = new SmartDoubleSpinBox();
@@ -176,19 +184,21 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
         rotation_vertical->addWidget(rotation_label);
 
         auto rotation_horizontal = new QHBoxLayout();
-        rotation_horizontal->addStretch();
 
         /// X
+        rotation_horizontal->addSpacing(5);
         auto rotation_X_txt = new QLabel("X:");
         rotation_horizontal->addWidget(rotation_X_txt);
         rotation_X_box = new SmartDoubleSpinBox();
         rotation_horizontal->addWidget(rotation_X_box);
         /// Y
+        rotation_horizontal->addSpacing(5);
         auto rotation_Y_txt = new QLabel("Y:");
         rotation_horizontal->addWidget(rotation_Y_txt);
         rotation_Y_box = new SmartDoubleSpinBox();
         rotation_horizontal->addWidget(rotation_Y_box);
         /// Z
+        rotation_horizontal->addSpacing(5);
         auto rotation_Z_txt = new QLabel("Z:");
         rotation_horizontal->addWidget(rotation_Z_txt);
         rotation_Z_box = new SmartDoubleSpinBox();
@@ -209,19 +219,21 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
         size_vertical->addWidget(size_label);
 
         auto size_horizontal = new QHBoxLayout();
-        size_horizontal->addStretch();
 
         /// X
+        size_horizontal->addSpacing(5);
         auto size_X_txt = new QLabel("X:");
         size_horizontal->addWidget(size_X_txt);
         size_X_box = new SmartDoubleSpinBox();
         size_horizontal->addWidget(size_X_box);
         /// Y
+        size_horizontal->addSpacing(5);
         auto size_Y_txt = new QLabel("Y:");
         size_horizontal->addWidget(size_Y_txt);
         size_Y_box = new SmartDoubleSpinBox();
         size_horizontal->addWidget(size_Y_box);
         /// Z
+        size_horizontal->addSpacing(5);
         auto size_Z_txt = new QLabel("Z:");
         size_horizontal->addWidget(size_Z_txt);
         size_Z_box = new SmartDoubleSpinBox();
@@ -247,6 +259,7 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
         // Value
         item_temprature_vertical->addSpacing(10);
         auto item_temprature_value = new SmartDoubleSpinBox();
+        item_temprature_value->setValue(1.00);
         item_temprature_vertical->addWidget(item_temprature_value);
         item_temprature_vertical->addStretch();
     }
@@ -269,6 +282,7 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
         // Value
         effective_density_vertical->addSpacing(17);
         auto effective_density_value = new SmartDoubleSpinBox();
+        effective_density_value->setValue(1.00);
         effective_density_vertical->addWidget(effective_density_value);
         effective_density_vertical->addStretch();
 
@@ -282,8 +296,6 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
 
 void ItemPropertiesBox::set_selected_item(AddableItem& new_item)
 {
-    qDebug() << "[ItemPropertiesBox] set_selected_item called for" << new_item.name;
-
     item = &new_item;
     is_item_selected = true;
     update_property_fields();
@@ -292,8 +304,6 @@ void ItemPropertiesBox::set_selected_item(AddableItem& new_item)
 
 void ItemPropertiesBox::reset_selected_item()
 {
-    qDebug() << "[ItemPropertiesBox] reset_selected_item called";
-
     is_item_selected = false;
     update_property_fields();
     update_styles();

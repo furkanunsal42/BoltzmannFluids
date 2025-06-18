@@ -3,7 +3,6 @@
 
 #include <QWidget>
 
-
 class TimelineRuler;
 class QLineEdit;
 

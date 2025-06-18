@@ -1,22 +1,21 @@
 #include "MainWindow.h"
 #include "./ui_MainWindow.h"
-
-#include <QTextEdit>
-#include <QOpenGLWidget>
-#include <QStatusBar>
-#include <QHBoxLayout>
-#include <QVBoxLayout>
-#include <QFrame>
-#include <QSplitter>
-#include <QScrollArea>
-#include <QLabel>
-
+#include "AddItemsBox.h"
 #include "InitialConditionsBox.h"
 #include "CollabsibleBox.h"
 #include "UI_Config.h"
 #include "Timeline.h"
 #include "ItemPropertiesBox.h"
 #include "MenuBar.h"
+
+#include <QTextEdit>
+#include <QOpenGLWidget>
+#include <QStatusBar>
+#include <QHBoxLayout>
+#include <QFrame>
+#include <QSplitter>
+#include <QScrollArea>
+#include <QGraphicsDropShadowEffect>
 
 
 MainWindow::MainWindow(QWidget *parent)
@@ -37,6 +36,13 @@ MainWindow::MainWindow(QWidget *parent)
     auto main_layout = new QHBoxLayout(central_widget);
     main_layout->setContentsMargins(0, 0, 0, 0);
     main_layout->setSpacing(0);
+
+    auto* effect = new QGraphicsDropShadowEffect();
+    effect->setBlurRadius(0);              // No blur
+    effect->setOffset(1, 1);               // Tiny offset
+    effect->setColor(QColor(0, 0, 0, 160)); // Slightly transparent black
+    label->setGraphicsEffect(effect);
+
 
     qss_text += "QWidget { "
                     "background-color: rgb(50, 51, 52); "

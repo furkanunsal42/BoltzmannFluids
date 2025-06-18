@@ -2,7 +2,6 @@
 #include "TimelineRuler.h"
 
 #include <QPushButton>
-#include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QLineEdit>
 #include <QLabel>

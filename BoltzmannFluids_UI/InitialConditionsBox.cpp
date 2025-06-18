@@ -1,18 +1,10 @@
 #include "InitialConditionsBox.h"
-#include "UI_Config.h"
 #include "SmartDoubleSpinBox.h"
 
 #include <QLabel>
-#include <QSpinBox>
 #include <QCheckBox>
 #include <QGroupBox>
-#include <QToolButton>
-#include <QIcon>
-#include <QStyle>
-#include <QPixmap>
-#include <QFrame>
 #include <QVBoxLayout>
-#include <QScrollBar>
 
 InitialConditionsBox::InitialConditionsBox(QWidget* parent)
     : QFrame(parent)
@@ -65,6 +57,8 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
     //auto box_label_initial_conditions = new QLabel("Initial Conditions");
     //layout->addWidget(box_label_initial_conditions);
 
+    //Resolution
+
     // Gravity
     {
         auto gravity_vertical = new QVBoxLayout();
@@ -78,27 +72,26 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
 
         {   //X-Y-Z
             auto gravity_horizontal = new QHBoxLayout();
-            //gravity_horizontal->addStretch();
             /// X
             gravity_horizontal->addSpacing(5);
             auto gravity_X_txt = new QLabel("X:");
             gravity_horizontal->addWidget(gravity_X_txt);
-            auto gravity_X_box = new SmartDoubleSpinBox();
-            gravity_horizontal->addWidget(gravity_X_box);
+            gravity_X_value = new SmartDoubleSpinBox();
+            gravity_horizontal->addWidget(gravity_X_value);
 
             /// Y
             gravity_horizontal->addSpacing(5);
             auto gravity_Y_txt = new QLabel("Y:");
             gravity_horizontal->addWidget(gravity_Y_txt);
-            auto gravity_Y_box = new SmartDoubleSpinBox();
-            gravity_horizontal->addWidget(gravity_Y_box);
+            gravity_Y_value = new SmartDoubleSpinBox();
+            gravity_horizontal->addWidget(gravity_Y_value);
 
             /// Z
             gravity_horizontal->addSpacing(5);
             auto gravity_Z_txt = new QLabel("Z:");
             gravity_horizontal->addWidget(gravity_Z_txt);
-            auto gravity_Z_box = new SmartDoubleSpinBox();
-            gravity_horizontal->addWidget(gravity_Z_box);
+            gravity_Z_value = new SmartDoubleSpinBox();
+            gravity_horizontal->addWidget(gravity_Z_value);
 
             gravity_vertical->addLayout(gravity_horizontal);
         }
@@ -124,20 +117,20 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
             initial_velocity_horizontal->addSpacing(5);
             auto initial_velocity_X_txt = new QLabel("X:");
             initial_velocity_horizontal->addWidget(initial_velocity_X_txt);
-            auto initial_velocity_X_box = new SmartDoubleSpinBox();
-            initial_velocity_horizontal->addWidget(initial_velocity_X_box);
+            initial_velocity_X_value = new SmartDoubleSpinBox();
+            initial_velocity_horizontal->addWidget(initial_velocity_X_value);
             /// Y
             initial_velocity_horizontal->addSpacing(5);
             auto initial_velocity_Y_txt = new QLabel("Y:");
             initial_velocity_horizontal->addWidget(initial_velocity_Y_txt);
-            auto initial_velocity_Y_box = new SmartDoubleSpinBox();
-            initial_velocity_horizontal->addWidget(initial_velocity_Y_box);
+            initial_velocity_Y_value = new SmartDoubleSpinBox();
+            initial_velocity_horizontal->addWidget(initial_velocity_Y_value);
             /// Z
             initial_velocity_horizontal->addSpacing(5);
             auto initial_velocity_Z_txt = new QLabel("Z:");
             initial_velocity_horizontal->addWidget(initial_velocity_Z_txt);
-            auto initial_velocity_Z_box = new SmartDoubleSpinBox();
-            initial_velocity_horizontal->addWidget(initial_velocity_Z_box);
+            initial_velocity_Z_value = new SmartDoubleSpinBox();
+            initial_velocity_horizontal->addWidget(initial_velocity_Z_value);
 
             initial_velocity_vertical->addLayout(initial_velocity_horizontal);
         }
@@ -160,7 +153,7 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
         phase_selector_vertical->addLayout(singlephase_horizontal);
 
         /// Singlephase Checkbox
-        auto singlephase_checkbox = new QCheckBox();
+        singlephase_checkbox = new QCheckBox();
         singlephase_checkbox->setChecked(true);
         singlephase_horizontal->addWidget(singlephase_checkbox);
 
@@ -176,7 +169,7 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
         phase_selector_vertical->addLayout(multiphase_horizontal);
 
         /// Multiphase Checkbox
-        auto multiphase_checkbox = new QCheckBox();
+        multiphase_checkbox = new QCheckBox();
         multiphase_horizontal->addWidget(multiphase_checkbox);
 
         /// Multiphase Label
@@ -185,11 +178,11 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
         multiphase_horizontal->addStretch();
 
         // Mutual Exclusiveness
-        QObject::connect(singlephase_checkbox, &QCheckBox::toggled, [=](bool checked) {
+        QObject::connect(singlephase_checkbox, &QCheckBox::toggled, this, [=](bool checked) {
             if (checked) multiphase_checkbox->setChecked(false);
             if (!checked && !multiphase_checkbox->isChecked()) singlephase_checkbox->setChecked(true);
         });
-        QObject::connect(multiphase_checkbox, &QCheckBox::toggled, [=](bool checked) {
+        QObject::connect(multiphase_checkbox, &QCheckBox::toggled, this, [=](bool checked) {
             if (checked) singlephase_checkbox->setChecked(false);
             if (!checked && !singlephase_checkbox->isChecked()) multiphase_checkbox->setChecked(true);
         });
@@ -212,7 +205,8 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
 
         // Initial Temprature Value
         temprature_vertical->addSpacing(10);
-        auto initial_temprature_value = new SmartDoubleSpinBox();
+        initial_temprature_value = new SmartDoubleSpinBox();
+        initial_temprature_value->setValue(1.00);
         temprature_vertical->addWidget(initial_temprature_value);
         temprature_vertical->addStretch();
 
