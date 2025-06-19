@@ -496,7 +496,8 @@ void Viewport3D::keyPressEvent(QKeyEvent *event)
             edit_apply();
         break;
     case Qt::Key_Escape:
-        edit_cancel();
+        if (is_edit_happening() && can_edit)
+            edit_cancel();
         break;
 
     case Qt::Key_1:
