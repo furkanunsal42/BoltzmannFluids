@@ -45,9 +45,28 @@ private:
 
     SmartDoubleSpinBox* intermoleculer_interaction_strength;
 
+
     QComboBox* boundary_X;
     QComboBox* boundary_Y;
     QComboBox* boundary_Z;
+
+    SmartDoubleSpinBox* boundary_X_temprature;
+    SmartDoubleSpinBox* boundary_X_effective_density;
+    SmartDoubleSpinBox* boundary_X_velocity_translation_X_box;
+    SmartDoubleSpinBox* boundary_X_velocity_translation_Y_box;
+    SmartDoubleSpinBox* boundary_X_velocity_translation_Z_box;
+
+    SmartDoubleSpinBox* boundary_Y_temprature;
+    SmartDoubleSpinBox* boundary_Y_effective_density;
+    SmartDoubleSpinBox* boundary_Y_velocity_translation_X_box;
+    SmartDoubleSpinBox* boundary_Y_velocity_translation_Y_box;
+    SmartDoubleSpinBox* boundary_Y_velocity_translation_Z_box;
+
+    SmartDoubleSpinBox* boundary_Z_temprature;
+    SmartDoubleSpinBox* boundary_Z_effective_density;
+    SmartDoubleSpinBox* boundary_Z_velocity_translation_X_box;
+    SmartDoubleSpinBox* boundary_Z_velocity_translation_Y_box;
+    SmartDoubleSpinBox* boundary_Z_velocity_translation_Z_box;
 
 };
 
