@@ -49,6 +49,7 @@ void Viewport3D::edit_cancel()
 {
     auto& BoltzmannFluids = Application::get();
     auto& object = BoltzmannFluids.simulation->objects[selected_object];
+
     emit edit_applied_signal(object.transform);
 
     is_editing = false;
@@ -86,7 +87,7 @@ void Viewport3D::edit_apply()
     auto& object = BoltzmannFluids.simulation->objects[selected_object];
     glm::mat4 editing_matrix = edit_compute_matrix();
     glm::mat4 composed_matrix = get_EditMode_type(active_edit_mode) == Translate ?
-                                    editing_matrix * object.transform :
+                                    editing_matrix * object.transform:
                                     object.transform * editing_matrix;
 
     object.transform = composed_matrix;
@@ -183,14 +184,7 @@ void Viewport3D::initializeGL()
     auto& BoltzmannFluids = Application::get();
     BoltzmannFluids.simulation = std::make_shared<SimulationController>();
 
-    BoltzmannFluids.simulation->add_object(
-        "object",
-        SimulationController::Cube,
-        glm::rotate(glm::identity<glm::mat4>(), 0.0f, glm::vec3(1, 0, 0))
-        );
-
-    BoltzmannFluids.simulation->lbm_solver = std::make_shared<LBM>();
-    demo3d::multiphase_droplet_collision(*BoltzmannFluids.simulation->lbm_solver);
+    BoltzmannFluids.simulation->start_simulation();
 
     camera.mouse_sensitivity = 0.2;
 
@@ -260,6 +254,8 @@ void Viewport3D::render_objects(Camera& camera, bool render_to_object_texture){
 
             renderer.update_uniform("blend_color", blend_color);
         }
+
+        std::cout << "rendeirng object id" << object.first << std::endl;
 
         if (meshes.find(object.second.mesh_id) == meshes.end()){
 

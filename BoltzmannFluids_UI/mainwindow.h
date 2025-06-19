@@ -12,6 +12,7 @@ class MainWindow;
 QT_END_NAMESPACE
 
 class Timeline;
+class InitialConditionsBox;
 
 class MainWindow : public QMainWindow
 {
@@ -26,6 +27,7 @@ public:
     void update_timeline(int current_frame);
     Timeline* timeline = nullptr;
     Viewport3D* viewport = nullptr;
+    InitialConditionsBox* initial_conditions = nullptr;
 
 private:
 

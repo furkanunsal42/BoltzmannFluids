@@ -27,7 +27,7 @@ signals:
 
     void edit_applied_signal(glm::mat4 composed_matrix);
 
-protected:
+public:
     virtual void initializeGL();
     virtual void resizeGL(int w, int h);
     virtual void paintGL();
@@ -84,8 +84,12 @@ protected:
     // object selecting
     std::shared_ptr<Framebuffer> framebuffer = nullptr;
     std::shared_ptr<Texture2D> object_id_texture = nullptr;
-    Texture2D::ColorTextureFormat object_id_texture_format = Texture2D::ColorTextureFormat::R16F;
+    std::shared_ptr<Texture2D> default_color_texture = nullptr;
+    std::shared_ptr<Texture2D> default_depthstencil_texture = nullptr;
 
+    Texture2D::ColorTextureFormat object_id_texture_format = Texture2D::ColorTextureFormat::R16F;
+    Texture2D::ColorTextureFormat default_color_texture_format          = Texture2D::ColorTextureFormat::RGBA8;
+    Texture2D::DepthStencilTextureFormat default_depthstencil_texture_format   = Texture2D::DepthStencilTextureFormat::DEPTH_COMPONENT32F;
 
     // camera controller
     virtual void mousePressEvent(QMouseEvent *event);

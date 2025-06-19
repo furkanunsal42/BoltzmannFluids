@@ -16,6 +16,12 @@ public:
     // solvers
     std::shared_ptr<LBM> lbm_solver = nullptr;
     std::shared_ptr<Window> gl_context = nullptr;
+    void start_simulation();
+    void iterate_time(float target_tick_per_seconds);
+    void initialize_lbm_from_panel(LBM& lbm);
+
+    bool is_first_iteration_happened = false;
+    bool is_paused = true;
 
     // simulation modes
     enum SimulationMode {
@@ -78,8 +84,6 @@ public:
     std::unordered_map<int32_t, std::shared_ptr<Mesh>> imported_meshes;
 
 private:
-
-    void initialize();
 
     int32_t next_object_id = 1;
     int32_t next_mesh_id = 1;

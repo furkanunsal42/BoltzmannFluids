@@ -1,5 +1,6 @@
 #include "Timeline.h"
 #include "TimelineRuler.h"
+#include "application.h"
 
 #include <QPushButton>
 #include <QVBoxLayout>
@@ -48,17 +49,28 @@ Timeline::Timeline(QWidget *parent, int max_frame)
 
     QObject::connect(start_pause_button, &QPushButton::clicked, this,
                      [this, start_icon, pause_icon, start_pause_button]() {
+                        Application& BoltzmannFluids = Application::get();
+                        auto simulation = BoltzmannFluids.simulation;
+
                          _running = !_running;
 
                          if (_running) {
                              start_pause_button->setIcon(pause_icon);
                              start();
+                             if (simulation != nullptr){
+                                 simulation->is_paused = false;
+                             }
                              emit start_signal();
                          } else {
                              start_pause_button->setIcon(start_icon);
                              pause();
+                             if (simulation != nullptr){
+                                 simulation->is_paused = true;
+                             }
                              emit pause_signal();
                          }
+
+
                      });
 
     QObject::connect(stop_button, &QPushButton::clicked, this,

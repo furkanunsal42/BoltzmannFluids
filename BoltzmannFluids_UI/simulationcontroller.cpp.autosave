@@ -150,6 +150,7 @@ void SimulationController::initialize_lbm_from_panel(LBM &lbm)
 
             properties.force = gravity;
             properties.density = 1;
+            
 
 
             properties.density = 0.056;

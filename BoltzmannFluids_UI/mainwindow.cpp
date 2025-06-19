@@ -284,7 +284,8 @@ MainWindow::MainWindow(QWidget *parent)
     /// Initial Conditions Box
     auto initial_conditions_box = new CollapsibleBox("Initial Conditions - 1", right_scroll_content);
     //initial_conditions_box->setObjectName("initial_conditions_box");
-    initial_conditions_box->add_widget(new InitialConditionsBox(initial_conditions_box));
+    initial_conditions = new InitialConditionsBox(initial_conditions_box);
+    initial_conditions_box->add_widget(initial_conditions);
     scroll_layout->addWidget(initial_conditions_box);
 
     initial_conditions_box->setStyleSheet(

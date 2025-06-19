@@ -43,5 +43,17 @@ int main(int argc, char *argv[])
         });
     });
 
+    auto simulation_timer = new QTimer();
+    QTimer::singleShot(0, &BoltzmannFluids.main_window, [&]() {
+        simulation_timer->setInterval(1000 / 1000.0);
+        simulation_timer->start();
+
+        QObject::connect(simulation_timer, &QTimer::timeout, [&] {
+            if (BoltzmannFluids.simulation != nullptr && BoltzmannFluids.simulation->lbm_solver != nullptr && !BoltzmannFluids.simulation->is_paused){
+                BoltzmannFluids.simulation->iterate_time(0);
+            }
+        });
+    });
+
     return a.exec();
 }

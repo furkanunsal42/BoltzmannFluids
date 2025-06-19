@@ -36,8 +36,8 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
         name_label = new QLabel("BoltzmannFluids");
         name_vertical->addWidget(name_label);         // TODO: use when add scene collection
 
-      //  type_label = new QLabel("Object Type");
-      //  name_vertical->addWidget(type_label);
+        //  type_label = new QLabel("Object Type");
+        //  name_vertical->addWidget(type_label);
     }
 
     {   /// Veocity Translation
@@ -51,7 +51,7 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
         velocity_translation_vertical->addWidget(velocity_translation_label);
 
         auto velocity_translation_horizontal = new QHBoxLayout();
-//        velocity_translation_horizontal->addStretch();
+        //        velocity_translation_horizontal->addStretch();
 
         /// X
         velocity_translation_horizontal->addSpacing(5);
@@ -306,6 +306,7 @@ void ItemPropertiesBox::set_selected_item(int32_t selected_object_id)
 void ItemPropertiesBox::reset_selected_item()
 {
     update_styles();
+    std::cout << "reset" << std::endl;
 }
 
 void ItemPropertiesBox::edit_applying(glm::mat4 matrix)
@@ -322,17 +323,17 @@ void ItemPropertiesBox::update_styles()
     if (viewport->selected_object != SimulationController::not_an_object) {
         setStyleSheet(
             "ItemPropertiesBox QLabel {"
-                "font-weight: bold;"
-                "background-color: rgb(65, 66, 67);"
-                "color: rgb(225, 226, 227);"
+            "font-weight: bold;"
+            "background-color: rgb(65, 66, 67);"
+            "color: rgb(225, 226, 227);"
             "}"
             "ItemPropertiesBox QDoubleSpinBox {"
-                "color: rgb(225, 226, 227);"
-                "border: 1px solid rgb(80, 81, 82);"
-                "background-color: rgb(85, 86, 87);"
+            "color: rgb(225, 226, 227);"
+            "border: 1px solid rgb(80, 81, 82);"
+            "background-color: rgb(85, 86, 87);"
             "}"
             "ItemPropertiesBox QDoubleSpinBox:hover {"
-                "background-color: rgb(105, 106, 107);"
+            "background-color: rgb(105, 106, 107);"
             "}"
             );
         velocity_translation_X_box->setEnabled(true);
@@ -354,21 +355,23 @@ void ItemPropertiesBox::update_styles()
         size_X_box->setEnabled(true);
         size_Y_box->setEnabled(true);
         size_Z_box->setEnabled(true);
+
+        update_property_fields(simulation->objects[viewport->selected_object].transform);
     }
     else {
         setStyleSheet(
             "ItemPropertiesBox QLabel {"
-                "font-weight: bold;"
-                "background-color: rgb(65, 66, 67);"
-                "color: rgb(165, 166, 167);"
+            "font-weight: bold;"
+            "background-color: rgb(65, 66, 67);"
+            "color: rgb(165, 166, 167);"
             "}"
             "ItemPropertiesBox QDoubleSpinBox {"
-                "color: rgb(165, 166, 167);"
-                "border: 1px solid rgb(60, 61, 62);"
-                "background-color: rgb(65, 66, 67);"
+            "color: rgb(165, 166, 167);"
+            "border: 1px solid rgb(60, 61, 62);"
+            "background-color: rgb(65, 66, 67);"
             "}"
             "ItemPropertiesBox QDoubleSpinBox:hover {"
-                "background-color: rgb(105, 106, 107);"
+            "background-color: rgb(105, 106, 107);"
             "}"
             );
         velocity_translation_X_box->setEnabled(false);
@@ -392,7 +395,9 @@ void ItemPropertiesBox::update_styles()
         size_Y_box->setEnabled(false);
         size_Z_box->setEnabled(false);
 
+        update_property_fields(glm::identity<glm::mat4>());
     }
+
 }
 
 void ItemPropertiesBox::update_property_fields(glm::mat4 matrix)
@@ -404,12 +409,15 @@ void ItemPropertiesBox::update_property_fields(glm::mat4 matrix)
     if (simulation == nullptr)
         return;
 
-    if(simulation->objects.find(viewport->selected_object) == simulation->objects.end())
-        return;
+    if(simulation->objects.find(viewport->selected_object) == simulation->objects.end()){
+        name_label->setText(QString(QString::fromStdString("")));
+    }else{
+        int32_t selected_object = viewport->selected_object;
+        name_label->setText(QString(QString::fromStdString(simulation->objects[selected_object].name)));
 
-    int32_t selected_object = viewport->selected_object;
+    }
 
-    name_label->setText(QString(QString::fromStdString(simulation->objects[selected_object].name)));
+
     //enum_to_qstring(item->type, type_label);
 
     glm::mat4 transform = matrix;
@@ -466,26 +474,15 @@ void ItemPropertiesBox::create_connections()
         if (viewport->is_edit_happening())
             return;
 
-
-        glm::vec3 scale;
-        glm::quat rotation;
-        glm::vec3 translation;
-        glm::vec3 skew;
-        glm::vec4 perspective;
-        glm::decompose(simulation->objects[viewport->selected_object].transform, scale, rotation, translation, skew, perspective);
-
-        std::cout <<"translation" <<translation.x << std::endl;
-
         glm::quat rotation_new(glm::vec3(rotation_X_box->value(), rotation_Y_box->value(), rotation_Z_box->value()));
         glm::vec3 translation_new(position_X_box->value(), position_Y_box->value(), position_Z_box->value());
         glm::vec3 scale_new(glm::vec3(size_X_box->value(), size_Y_box->value(), size_Z_box->value()));
 
         std::cout <<"translation new: " <<translation_new.x << std::endl;
 
-       // glm::mat4 transform = recompose(scale, rotation, translation, skew, perspective);
+        // glm::mat4 transform = recompose(scale, rotation, translation, skew, perspective);
 
-        glm::mat4 transform = glm::scale((glm::translate(glm::identity<glm::mat4>(), translation_new) * glm::mat4_cast(rotation_new)), scale_new);
-        std::cout << "translation: "<< translation.x << std::endl;
+        glm::mat4 transform = glm::scale((glm::translate(glm::identity<glm::mat4>(), translation_new)), scale_new) * glm::mat4_cast(rotation_new);
 
 
         simulation->objects[viewport->selected_object].transform = transform;
