@@ -10,6 +10,7 @@
 #include "Viewport3D.h"
 #include "application.h"
 #include "SmartDoubleSpinBox.h"
+#include "TextEditStreamBuffer.h"
 
 #include <QTextEdit>
 #include <QOpenGLWidget>
@@ -205,8 +206,6 @@ MainWindow::MainWindow(QWidget *parent)
     /// Rendering Box
     viewport = new Viewport3D(middle_splitter);
     viewport->setMinimumSize(100, 100);
-
-
     middle_splitter->addWidget(viewport); // Renderbox ->growable
 
 
@@ -215,12 +214,20 @@ MainWindow::MainWindow(QWidget *parent)
     timeline->setMinimumHeight(75);
     middle_splitter->addWidget(timeline);
 
+
     auto application_output = new QTextEdit();
     application_output->setReadOnly(true);
     application_output->setText("Welcome to the BoltzmannFluids");
     application_output->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
     application_output->setMinimumHeight(100);
     middle_splitter->addWidget(application_output);
+
+    /**/
+    static TextEditStreamBuf* text_edit_buf = new TextEditStreamBuf(application_output);
+    static std::ostream custom_cout(text_edit_buf);
+
+    std::cout.rdbuf(custom_cout.rdbuf());
+    /**/
 
     // Set sizes and behavior
     middle_splitter->setSizes({render_box_height, timeline_height, application_output_height});
@@ -236,8 +243,6 @@ MainWindow::MainWindow(QWidget *parent)
 
 
     /// Connect Viewport3D to item_properties_box
-    //QObject::connect(add_items_box, &AddItemsBox::item_deselected, item_properties_box, &ItemPropertiesBox::reset_selected_item);
-    //QObject::connect(add_items_box, &AddItemsBox::item_selected, item_properties_box, &ItemPropertiesBox::set_selected_item);
     QObject::connect(viewport, &Viewport3D::item_selected_signal, item_properties_box, &ItemPropertiesBox::set_selected_item);
     QObject::connect(viewport, &Viewport3D::item_deselected_signal, item_properties_box, &ItemPropertiesBox::reset_selected_item);
     QObject::connect(viewport, &Viewport3D::edit_applied_signal, item_properties_box, &ItemPropertiesBox::edit_applying);
@@ -248,14 +253,7 @@ MainWindow::MainWindow(QWidget *parent)
         auto& viewport = BoltzmannFluids.main_window.viewport;
 
         item_properties_box->create_connections();
-//        QObject::connect(item_properties_box->velocity_translation_X_box, &SmartDoubleSpinBox::valueChanged,
-//                         [=](double value) {
-//                             if (!viewport || !simulation) return;
-//                             int selected = viewport->selected_object;
-//                             if (selected >= 0 && selected < simulation->objects.size()) {
-//                                 simulation->objects[selected].velocity_translational.x = value;
-//                             }
-//                         });
+
     });
 
     // --- Right Panel ---
