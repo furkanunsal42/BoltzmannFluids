@@ -14,18 +14,18 @@ public:
 	MeshRasterizer3D() = default;
 
 	void rasterize(Mesh& mesh,
-		glm::mat4 model_matrix,
-		Texture3D& target_texture, 
-		glm::vec4 filled_value = glm::vec4(1),
-		glm::vec4 blank_value = glm::vec4(0)
+		Texture3D& target_texture,
+		glm::mat4 model_matrix = glm::identity<glm::mat4>()
 	);
 
 private:
-	void compile_shaders();
+	void compile_shaders(Texture3D::ColorTextureFormat texture_format);
 	bool is_compiled = false;
+	Texture3D::ColorTextureFormat compiled_format = Texture3D::ColorTextureFormat::RGB10_A2UI;
 
 	std::shared_ptr<Framebuffer> framebuffer = nullptr;
 	std::shared_ptr<Program> mesh_renderer = nullptr;
 	std::shared_ptr<ComputeProgram> raster_unifier = nullptr;
+	std::shared_ptr<ComputeProgram> copy_to_3d = nullptr;
 
 };

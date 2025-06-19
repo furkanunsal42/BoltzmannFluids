@@ -276,14 +276,14 @@ int main() {
 	Window window(desc);
 
 	std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>(
-		Asset("C:/dev/BoltzmannFluids/BoltzmannFluids_UI/Models/UnitSphere.fbx").load_mesh()
+		Asset("C:/dev/GraphicsCortex/GraphicsCortex/Models/teducar/source/teduCar.fbx").load_mesh()
 	);
 	
 	Framebuffer fb;
 	Texture3D texture(256, 256, 256, Texture3D::ColorTextureFormat::RGBA8, 1, 0);
 	MeshRasterizer3D rasterizer;
 
-	rasterizer.rasterize(*mesh, glm::identity<glm::mat4>(), texture);
+	rasterizer.rasterize(*mesh, texture, glm::scale(glm::identity<glm::mat4>(), glm::vec3(0.005)));
 
 	int32_t z = 0;
 
