@@ -81,19 +81,19 @@ void SimulationController::initialize_lbm_from_panel(LBM &lbm)
     glm::ivec3 resolution = glm::ivec3(
         panel->resolution_X_value->value(),
         panel->resolution_Y_value->value(),
-        panel->resolution_Z_value->value(),
+        panel->resolution_Z_value->value()
         );
 
     glm::vec3 gravity = glm::vec3(
         panel->gravity_X_value->value(),
         panel->gravity_Y_value->value(),
-        panel->gravity_Z_value->value(),
+        panel->gravity_Z_value->value()
         );
 
     glm::vec3 initial_velocity = glm::vec3(
         panel->initial_velocity_X_value->value(),
         panel->initial_velocity_Y_value->value(),
-        panel->initial_velocity_Z_value->value(),
+        panel->initial_velocity_Z_value->value()
         );
 
     float relaxation_time = panel->relaxation_time->value();
@@ -118,7 +118,7 @@ void SimulationController::initialize_lbm_from_panel(LBM &lbm)
         glm::vec3(
         panel->boundary_X_velocity_translation_X_box->value(),
         panel->boundary_X_velocity_translation_Y_box->value(),
-        panel->boundary_X_velocity_translation_Z_box->value(),
+        panel->boundary_X_velocity_translation_Z_box->value()
         );
 
     float boundry_y_temperature = panel->boundary_Y_temprature->value();
@@ -127,7 +127,7 @@ void SimulationController::initialize_lbm_from_panel(LBM &lbm)
         glm::vec3(
             panel->boundary_Y_velocity_translation_X_box->value(),
             panel->boundary_Y_velocity_translation_Y_box->value(),
-            panel->boundary_Y_velocity_translation_Z_box->value(),
+            panel->boundary_Y_velocity_translation_Z_box->value()
             );
 
     float boundry_z_temperature = panel->boundary_Z_temprature->value();
@@ -136,7 +136,7 @@ void SimulationController::initialize_lbm_from_panel(LBM &lbm)
         glm::vec3(
             panel->boundary_Z_velocity_translation_X_box->value(),
             panel->boundary_Z_velocity_translation_Y_box->value(),
-            panel->boundary_Z_velocity_translation_Z_box->value(),
+            panel->boundary_Z_velocity_translation_Z_box->value()
             );
 
     lbm_solver->clear_boundry_properties();
@@ -166,17 +166,17 @@ void SimulationController::initialize_lbm_from_panel(LBM &lbm)
 
             if (coordinate.x == 0 && wall_x)
                 properties.boundry_id = 1;
-            if (coordinate.x == solver.get_resolution().x - 1 && wall_x)
+            if (coordinate.x == lbm_solver->get_resolution().x - 1 && wall_x)
                 properties.boundry_id = 1;
 
             if (coordinate.y == 0 && wall_y)
                 properties.boundry_id = 2;
-            if (coordinate.y == solver.get_resolution().y - 1 && wall_y)
+            if (coordinate.y == lbm_solver->get_resolution().y - 1 && wall_y)
                 properties.boundry_id = 2;
 
             if (coordinate.z == 0 && wall_z)
                 properties.boundry_id = 3;
-            if (coordinate.z == solver.get_resolution().z - 1 && wall_z)
+            if (coordinate.z == lbm_solver->get_resolution().z - 1 && wall_z)
                 properties.boundry_id = 3;
 
         },

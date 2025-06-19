@@ -14,6 +14,8 @@
 #include <QGroupBox>
 #include <QVBoxLayout>
 #include <QLabel>
+#include <QCheckBox>
+
 
 void enum_to_qstring(Type& type, QLabel* _string);
 
@@ -38,6 +40,56 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
 
         //  type_label = new QLabel("Object Type");
         //  name_vertical->addWidget(type_label);
+    }
+
+
+    {   /// Is Boundary
+        auto is_boundary_horizontal = new QHBoxLayout();
+        is_boundary_horizontal->setContentsMargins(0, 0, 0, 0);
+        is_boundary_horizontal->setSpacing(0);
+        main_layout->addLayout(is_boundary_horizontal);
+
+        auto is_boundary_label = new QLabel("Is Boundary");
+        is_boundary_horizontal->addWidget(name_label);
+
+        is_boundary= new QCheckBox(is_boundary_label);
+        is_boundary->setChecked(false);
+        is_boundary_horizontal->addWidget(is_boundary);
+    }
+
+    {   /// Force
+        auto force_vertical = new QVBoxLayout();
+        force_vertical->setContentsMargins(0, 0, 0, 0);
+        force_vertical->setSpacing(0);
+        main_layout->addLayout(force_vertical);
+
+        // Label
+        auto force_label = new QLabel("Force");
+        force_vertical->addWidget(force_label);
+
+        auto force_horizontal = new QHBoxLayout();
+        //velocity_translation_horizontal->addStretch();
+
+        /// X
+        force_horizontal->addSpacing(5);
+        auto force_X_txt = new QLabel("X:");
+        force_horizontal->addWidget(force_X_txt);
+        force_X= new SmartDoubleSpinBox();
+        force_horizontal->addWidget(force_X);
+        /// Y
+        force_horizontal->addSpacing(5);
+        auto force_Y_txt = new QLabel("Y:");
+        force_horizontal->addWidget(force_Y_txt);
+        force_Y = new SmartDoubleSpinBox();
+        force_horizontal->addWidget(force_Y);
+        /// Z
+        force_horizontal->addSpacing(5);
+        auto force_Z_txt = new QLabel("Z:");
+        force_horizontal->addWidget(force_Z_txt);
+        force_Z= new SmartDoubleSpinBox();
+        force_horizontal->addWidget(force_Z);
+
+        force_vertical->addLayout(force_horizontal);
     }
 
     {   /// Veocity Translation

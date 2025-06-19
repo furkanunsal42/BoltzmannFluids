@@ -115,7 +115,6 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
     //floating_point_accuracy_vertical->addStretch();
     floating_point_accuracy_vertical->addSpacing(0);
 
-
     //Resolution
     auto resolution = new QVBoxLayout();
     resolution->setContentsMargins(0, 0, 0, 0);
@@ -280,7 +279,7 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
     thermal_extension_coefficient_vertical->setSpacing(0);
 
     /// Label
-    auto thermal_extension_coefficient_label = new QLabel("Thermal Relaxation Coefficient");
+    auto thermal_extension_coefficient_label = new QLabel("Thermal Extension Coefficient");
     thermal_extension_coefficient_vertical->addWidget(thermal_extension_coefficient_label);
 
     /// Value

@@ -5,6 +5,7 @@
 #include <QWidget>
 
 class QLabel;
+class QCheckBox;
 class AddableItem;
 class QGroupBox;
 class SmartDoubleSpinBox;
@@ -20,17 +21,26 @@ public:
     void create_connections();
 
 
-    SmartDoubleSpinBox* velocity_translation_X_box;
-private:
+//private:
 
     QLabel* name_label;
     QLabel* type_label;
 
+    QCheckBox* is_boundary;
+
+    SmartDoubleSpinBox* force_X;
+    SmartDoubleSpinBox* force_Y;
+    SmartDoubleSpinBox* force_Z;
+
+
+    SmartDoubleSpinBox* velocity_translation_X_box;
     SmartDoubleSpinBox* velocity_translation_Y_box;
     SmartDoubleSpinBox* velocity_translation_Z_box;
+
     SmartDoubleSpinBox* velocity_angular_X_box;
     SmartDoubleSpinBox* velocity_angular_Y_box;
     SmartDoubleSpinBox* velocity_angular_Z_box;
+
     SmartDoubleSpinBox* center_of_mass_X_box;
     SmartDoubleSpinBox* center_of_mass_Y_box;
     SmartDoubleSpinBox* center_of_mass_Z_box;
@@ -38,9 +48,11 @@ private:
     SmartDoubleSpinBox* position_X_box;
     SmartDoubleSpinBox* position_Y_box;
     SmartDoubleSpinBox* position_Z_box;
+
     SmartDoubleSpinBox* rotation_X_box;
     SmartDoubleSpinBox* rotation_Y_box;
     SmartDoubleSpinBox* rotation_Z_box;
+
     SmartDoubleSpinBox* size_X_box;
     SmartDoubleSpinBox* size_Y_box;
     SmartDoubleSpinBox* size_Z_box;

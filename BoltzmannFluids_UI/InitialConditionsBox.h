@@ -15,7 +15,7 @@ public:
 
     explicit InitialConditionsBox(QWidget* parent = nullptr);
 
-private:
+//private:
 
     QGroupBox* createInitialConditionsGroup();
 
