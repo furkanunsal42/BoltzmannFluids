@@ -61,10 +61,4 @@ public slots:
     void edit_applying(glm::mat4 _composed_matrix);
 };
 
-template <typename T, glm::qualifier Q>
-GLM_FUNC_DECL glm::mat<4, 4, T, Q> recompose(
-    glm::vec<3, T, Q> const& scale, glm::qua<T, Q> const& orientation, glm::vec<3, T, Q> const& translation,
-    glm::vec<3, T, Q> const& skew, glm::vec<4, T, Q> const& perspective);
-
-
 #endif // ITEMPROPERTIESBOX_H
