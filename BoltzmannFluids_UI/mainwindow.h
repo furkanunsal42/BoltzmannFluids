@@ -2,6 +2,8 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include "Viewport3D.h"
+#include "simulationcontroller.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -22,7 +24,8 @@ public:
     ~MainWindow();
 
     void update_timeline(int current_frame);
-    Timeline* timeline;
+    Timeline* timeline = nullptr;
+    Viewport3D* viewport = nullptr;
 
 private:
 

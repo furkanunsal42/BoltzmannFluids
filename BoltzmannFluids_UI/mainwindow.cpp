@@ -7,6 +7,7 @@
 #include "Timeline.h"
 #include "ItemPropertiesBox.h"
 #include "MenuBar.h"
+#include "Viewport3D.h"
 
 #include <QTextEdit>
 #include <QOpenGLWidget>
@@ -24,6 +25,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     // Setup
     ui->setupUi(this);
+
     QString qss_text;
     this->resize(main_window_width, main_window_height);
 
@@ -190,15 +192,24 @@ MainWindow::MainWindow(QWidget *parent)
         );
 
     // Layout to hold the splitter
-    auto middle_frame_layout = new QVBoxLayout(main_splitter);
-    middle_frame_layout->setContentsMargins(0, 0, 0, 0);
-    middle_frame_layout->setSpacing(0);
-    middle_frame_layout->addWidget(middle_splitter);
+    auto middle_vertical_layout = new QVBoxLayout(main_splitter);
+    middle_vertical_layout->setContentsMargins(0, 0, 0, 0);
+    middle_vertical_layout->setSpacing(0);
+    middle_vertical_layout->addWidget(middle_splitter);
+
 
     // Add widgets directly to splitter
     auto render_box = new QOpenGLWidget();
     render_box->setMinimumSize(100, 100);
     middle_splitter->addWidget(render_box);
+
+    /// Rendering Box
+    viewport = new Viewport3D(middle_splitter);
+    viewport->setMinimumSize(100, 100);
+
+
+    middle_vertical_layout->addWidget(viewport); // Renderbox ->growable
+
 
     timeline = new Timeline();
     timeline->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
