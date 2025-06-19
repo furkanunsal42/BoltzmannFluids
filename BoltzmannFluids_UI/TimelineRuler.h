@@ -3,8 +3,6 @@
 
 #include <QWidget>
 
-#include "UI_Config.h"
-
 class Timeline;
 
 class TimelineRuler : public QWidget {

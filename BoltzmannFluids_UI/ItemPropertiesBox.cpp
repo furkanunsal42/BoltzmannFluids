@@ -1,11 +1,12 @@
 #include "ItemPropertiesBox.h"
-#include "UI_Config.h"
+#include "SmartDoubleSpinBox.h"
+#include "AddItemsBox.h"
 
 #include <QGroupBox>
 #include <QVBoxLayout>
-#include <qlineedit.h>
+#include <QLabel>
 
-void enum_to_qstring(Type& type, QLabel* _string) ;
+void enum_to_qstring(Type& type, QLabel* _string);
 
 ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
     :QWidget(parent)
@@ -16,8 +17,6 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
     main_layout->setSpacing(10);
     setLayout(main_layout);
 
-    QString item_properties_qss;
-
     /// Initialize AddableItem "item"
     item = new AddableItem(QString("Object"), Type::CUBE, QIcon());
 
@@ -27,10 +26,10 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
         name_vertical->setSpacing(0);
         main_layout->addLayout(name_vertical);
 
-        name_label = new QLabel("BoltzmannFluids");
-        name_vertical->addWidget(name_label);
+      //  name_label = new QLabel("BoltzmannFluids");
+      //  name_vertical->addWidget(name_label);         // TODO: use when add scene collection
 
-        type_label = new QLabel("Object");
+        type_label = new QLabel("Object Type");
         name_vertical->addWidget(type_label);
     }
 
@@ -45,34 +44,25 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
         velocity_translation_vertical->addWidget(velocity_translation_label);
 
         auto velocity_translation_horizontal = new QHBoxLayout();
-        velocity_translation_horizontal->addStretch();
+//        velocity_translation_horizontal->addStretch();
 
         /// X
+        velocity_translation_horizontal->addSpacing(5);
         auto velocity_translation_X_txt = new QLabel("X:");
         velocity_translation_horizontal->addWidget(velocity_translation_X_txt);
-        velocity_translation_X_box = new QDoubleSpinBox();
-        velocity_translation_X_box->setMinimumWidth(50);
-        velocity_translation_X_box->setDecimals(DECIMAL_COUNT);
-        velocity_translation_X_box->setRange(POSITION_MIN, POSITION_MAX);
-        velocity_translation_X_box->setSingleStep(0.01);
+        velocity_translation_X_box = new SmartDoubleSpinBox();
         velocity_translation_horizontal->addWidget(velocity_translation_X_box);
         /// Y
+        velocity_translation_horizontal->addSpacing(5);
         auto velocity_translation_Y_txt = new QLabel("Y:");
         velocity_translation_horizontal->addWidget(velocity_translation_Y_txt);
-        velocity_translation_Y_box = new QDoubleSpinBox();
-        velocity_translation_Y_box->setMinimumWidth(50);
-        velocity_translation_Y_box->setDecimals(DECIMAL_COUNT);
-        velocity_translation_Y_box->setRange(POSITION_MIN, POSITION_MAX);
-        velocity_translation_Y_box->setSingleStep(0.01);
+        velocity_translation_Y_box = new SmartDoubleSpinBox();
         velocity_translation_horizontal->addWidget(velocity_translation_Y_box);
         /// Z
+        velocity_translation_horizontal->addSpacing(5);
         auto velocity_translation_Z_txt = new QLabel("Z:");
         velocity_translation_horizontal->addWidget(velocity_translation_Z_txt);
-        velocity_translation_Z_box = new QDoubleSpinBox();
-        velocity_translation_Z_box->setMinimumWidth(50);
-        velocity_translation_Z_box->setDecimals(DECIMAL_COUNT);
-        velocity_translation_Z_box->setRange(POSITION_MIN, POSITION_MAX);
-        velocity_translation_Z_box->setSingleStep(0.01);
+        velocity_translation_Z_box = new SmartDoubleSpinBox();
         velocity_translation_horizontal->addWidget(velocity_translation_Z_box);
 
         velocity_translation_vertical->addLayout(velocity_translation_horizontal);
@@ -89,34 +79,25 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
         velocity_angular_vertical->addWidget(velocity_angular_label);
 
         auto velocity_angular_horizontal = new QHBoxLayout();
-        velocity_angular_horizontal->addStretch();
 
         /// X
+        velocity_angular_horizontal->addSpacing(5);
         auto velocity_angular_X_txt = new QLabel("X:");
         velocity_angular_horizontal->addWidget(velocity_angular_X_txt);
-        velocity_angular_X_box = new QDoubleSpinBox();
-        velocity_angular_X_box->setMinimumWidth(50);
-        velocity_angular_X_box->setDecimals(DECIMAL_COUNT);
-        velocity_angular_X_box->setRange(POSITION_MIN, POSITION_MAX);
+        velocity_angular_X_box = new SmartDoubleSpinBox();
         velocity_angular_X_box->setSingleStep(0.01);
         velocity_angular_horizontal->addWidget(velocity_angular_X_box);
         /// Y
+        velocity_angular_horizontal->addSpacing(5);
         auto velocity_angular_Y_txt = new QLabel("Y:");
         velocity_angular_horizontal->addWidget(velocity_angular_Y_txt);
-        velocity_angular_Y_box = new QDoubleSpinBox();
-        velocity_angular_Y_box->setMinimumWidth(50);
-        velocity_angular_Y_box->setDecimals(DECIMAL_COUNT);
-        velocity_angular_Y_box->setRange(POSITION_MIN, POSITION_MAX);
-        velocity_angular_Y_box->setSingleStep(0.01);
+        velocity_angular_Y_box = new SmartDoubleSpinBox();
         velocity_angular_horizontal->addWidget(velocity_angular_Y_box);
         /// Z
+        velocity_angular_horizontal->addSpacing(5);
         auto velocity_angular_Z_txt = new QLabel("Z:");
         velocity_angular_horizontal->addWidget(velocity_angular_Z_txt);
-        velocity_angular_Z_box = new QDoubleSpinBox();
-        velocity_angular_Z_box->setMinimumWidth(50);
-        velocity_angular_Z_box->setDecimals(DECIMAL_COUNT);
-        velocity_angular_Z_box->setRange(POSITION_MIN, POSITION_MAX);
-        velocity_angular_Z_box->setSingleStep(0.01);
+        velocity_angular_Z_box = new SmartDoubleSpinBox();
         velocity_angular_horizontal->addWidget(velocity_angular_Z_box);
 
         velocity_angular_vertical->addLayout(velocity_angular_horizontal);
@@ -134,34 +115,24 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
         center_of_mass__vertical->addWidget(center_of_mass_label);
 
         auto center_of_mass_horizontal = new QHBoxLayout();
-        center_of_mass_horizontal->addStretch();
 
         /// X
+        center_of_mass_horizontal->addSpacing(5);
         auto center_of_mass_X_txt = new QLabel("X:");
         center_of_mass_horizontal->addWidget(center_of_mass_X_txt);
-        center_of_mass_X_box = new QDoubleSpinBox();
-        center_of_mass_X_box->setMinimumWidth(50);
-        center_of_mass_X_box->setDecimals(DECIMAL_COUNT);
-        center_of_mass_X_box->setRange(POSITION_MIN, POSITION_MAX);
-        center_of_mass_X_box->setSingleStep(0.01);
+        center_of_mass_X_box = new SmartDoubleSpinBox();
         center_of_mass_horizontal->addWidget(center_of_mass_X_box);
         /// Y
+        center_of_mass_horizontal->addSpacing(5);
         auto center_of_mass_Y_txt = new QLabel("Y:");
         center_of_mass_horizontal->addWidget(center_of_mass_Y_txt);
-        center_of_mass_Y_box = new QDoubleSpinBox();
-        center_of_mass_Y_box->setMinimumWidth(50);
-        center_of_mass_Y_box->setDecimals(DECIMAL_COUNT);
-        center_of_mass_Y_box->setRange(POSITION_MIN, POSITION_MAX);
-        center_of_mass_Y_box->setSingleStep(0.01);
+        center_of_mass_Y_box = new SmartDoubleSpinBox();
         center_of_mass_horizontal->addWidget(center_of_mass_Y_box);
         /// Z
+        center_of_mass_horizontal->addSpacing(5);
         auto center_of_mass_Z_txt = new QLabel("Z:");
         center_of_mass_horizontal->addWidget(center_of_mass_Z_txt);
-        center_of_mass_Z_box = new QDoubleSpinBox();
-        center_of_mass_Z_box->setMinimumWidth(50);
-        center_of_mass_Z_box->setDecimals(DECIMAL_COUNT);
-        center_of_mass_Z_box->setRange(POSITION_MIN, POSITION_MAX);
-        center_of_mass_Z_box->setSingleStep(0.01);
+        center_of_mass_Z_box = new SmartDoubleSpinBox();
         center_of_mass_horizontal->addWidget(center_of_mass_Z_box);
 
         center_of_mass__vertical->addLayout(center_of_mass_horizontal);
@@ -179,34 +150,24 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
         position_vertical->addWidget(position_label);
 
         auto position_horizontal = new QHBoxLayout();
-        position_horizontal->addStretch();
 
         /// X
+        position_horizontal->addSpacing(5);
         auto position_X_txt = new QLabel("X:");
         position_horizontal->addWidget(position_X_txt);
-        position_X_box = new QDoubleSpinBox();
-        position_X_box->setMinimumWidth(50);
-        position_X_box->setDecimals(DECIMAL_COUNT);
-        position_X_box->setRange(POSITION_MIN, POSITION_MAX);
-        position_X_box->setSingleStep(0.01);
+        position_X_box = new SmartDoubleSpinBox();
         position_horizontal->addWidget(position_X_box);
         /// Y
+        position_horizontal->addSpacing(5);
         auto position_Y_txt = new QLabel("Y:");
         position_horizontal->addWidget(position_Y_txt);
-        position_Y_box = new QDoubleSpinBox();
-        position_Y_box->setMinimumWidth(50);
-        position_Y_box->setDecimals(DECIMAL_COUNT);
-        position_Y_box->setRange(POSITION_MIN, POSITION_MAX);
-        position_Y_box->setSingleStep(0.01);
+        position_Y_box = new SmartDoubleSpinBox();
         position_horizontal->addWidget(position_Y_box);
         /// Z
+        position_horizontal->addSpacing(5);
         auto position_Z_txt = new QLabel("Z:");
         position_horizontal->addWidget(position_Z_txt);
-        position_Z_box = new QDoubleSpinBox();
-        position_Z_box->setMinimumWidth(50);
-        position_Z_box->setDecimals(DECIMAL_COUNT);
-        position_Z_box->setRange(POSITION_MIN, POSITION_MAX);
-        position_Z_box->setSingleStep(0.01);
+        position_Z_box = new SmartDoubleSpinBox();
         position_horizontal->addWidget(position_Z_box);
 
         position_vertical->addLayout(position_horizontal);
@@ -223,34 +184,24 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
         rotation_vertical->addWidget(rotation_label);
 
         auto rotation_horizontal = new QHBoxLayout();
-        rotation_horizontal->addStretch();
 
         /// X
+        rotation_horizontal->addSpacing(5);
         auto rotation_X_txt = new QLabel("X:");
         rotation_horizontal->addWidget(rotation_X_txt);
-        rotation_X_box = new QDoubleSpinBox();
-        rotation_X_box->setMinimumWidth(50);
-        rotation_X_box->setDecimals(DECIMAL_COUNT);
-        rotation_X_box->setRange(POSITION_MIN, POSITION_MAX);
-        rotation_X_box->setSingleStep(0.01);
+        rotation_X_box = new SmartDoubleSpinBox();
         rotation_horizontal->addWidget(rotation_X_box);
         /// Y
+        rotation_horizontal->addSpacing(5);
         auto rotation_Y_txt = new QLabel("Y:");
         rotation_horizontal->addWidget(rotation_Y_txt);
-        rotation_Y_box = new QDoubleSpinBox();
-        rotation_Y_box->setMinimumWidth(50);
-        rotation_Y_box->setDecimals(DECIMAL_COUNT);
-        rotation_Y_box->setRange(POSITION_MIN, POSITION_MAX);
-        rotation_Y_box->setSingleStep(0.01);
+        rotation_Y_box = new SmartDoubleSpinBox();
         rotation_horizontal->addWidget(rotation_Y_box);
         /// Z
+        rotation_horizontal->addSpacing(5);
         auto rotation_Z_txt = new QLabel("Z:");
         rotation_horizontal->addWidget(rotation_Z_txt);
-        rotation_Z_box = new QDoubleSpinBox();
-        rotation_Z_box->setMinimumWidth(50);
-        rotation_Z_box->setDecimals(DECIMAL_COUNT);
-        rotation_Z_box->setRange(POSITION_MIN, POSITION_MAX);
-        rotation_Z_box->setSingleStep(0.01);
+        rotation_Z_box = new SmartDoubleSpinBox();
         rotation_horizontal->addWidget(rotation_Z_box);
 
         rotation_vertical->addLayout(rotation_horizontal);
@@ -268,41 +219,31 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
         size_vertical->addWidget(size_label);
 
         auto size_horizontal = new QHBoxLayout();
-        size_horizontal->addStretch();
 
         /// X
+        size_horizontal->addSpacing(5);
         auto size_X_txt = new QLabel("X:");
         size_horizontal->addWidget(size_X_txt);
-        size_X_box = new QDoubleSpinBox();
-        size_X_box->setMinimumWidth(50);
-        size_X_box->setDecimals(DECIMAL_COUNT);
-        size_X_box->setRange(POSITION_MIN, POSITION_MAX);
-        size_X_box->setSingleStep(0.01);
+        size_X_box = new SmartDoubleSpinBox();
         size_horizontal->addWidget(size_X_box);
         /// Y
+        size_horizontal->addSpacing(5);
         auto size_Y_txt = new QLabel("Y:");
         size_horizontal->addWidget(size_Y_txt);
-        size_Y_box = new QDoubleSpinBox();
-        size_Y_box->setMinimumWidth(50);
-        size_Y_box->setDecimals(DECIMAL_COUNT);
-        size_Y_box->setRange(POSITION_MIN, POSITION_MAX);
-        size_Y_box->setSingleStep(0.01);
+        size_Y_box = new SmartDoubleSpinBox();
         size_horizontal->addWidget(size_Y_box);
         /// Z
+        size_horizontal->addSpacing(5);
         auto size_Z_txt = new QLabel("Z:");
         size_horizontal->addWidget(size_Z_txt);
-        size_Z_box = new QDoubleSpinBox();
-        size_Z_box->setMinimumWidth(50);
-        size_Z_box->setDecimals(DECIMAL_COUNT);
-        size_Z_box->setRange(POSITION_MIN, POSITION_MAX);
-        size_Z_box->setSingleStep(0.01);
+        size_Z_box = new SmartDoubleSpinBox();
         size_horizontal->addWidget(size_Z_box);
 
         size_vertical->addLayout(size_horizontal);
     }
     {
         // Item temperature
-        auto item_temprature_vertical = new QVBoxLayout();
+        auto item_temprature_vertical = new QHBoxLayout();
         main_layout->addLayout(item_temprature_vertical);
         item_temprature_vertical->setContentsMargins(0, 0, 0, 0);
         item_temprature_vertical->setSpacing(0);
@@ -311,54 +252,49 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
         auto item_temprature_label = new QLabel("Item Temperature");
         item_temprature_vertical->addWidget(item_temprature_label);
 
-        auto item_temprature_layout = new QHBoxLayout();
-        item_temprature_vertical->addLayout(item_temprature_layout);
+        //auto item_temprature_layout = new QHBoxLayout();
+        //item_temprature_layout->addSpacing(18);
+        //item_temprature_vertical->addLayout(item_temprature_layout);
 
         // Value
-        auto item_temprature_value = new QDoubleSpinBox();
-        item_temprature_value->setMinimumWidth(50);
-        item_temprature_value->setDecimals(DECIMAL_COUNT);
-        item_temprature_value->setRange(INITIAL_TEMPRATURE_MIN, INITIAL_TEMPRATURE_MAX); // Example range for temperature
-        item_temprature_value->setSingleStep(0.1);
-        item_temprature_layout->addWidget(item_temprature_value);
-        item_temprature_layout->addStretch();
+        item_temprature_vertical->addSpacing(10);
+        auto item_temprature_value = new SmartDoubleSpinBox();
+        item_temprature_value->setValue(1.00);
+        item_temprature_vertical->addWidget(item_temprature_value);
+        item_temprature_vertical->addSpacing(0);
     }
 
     {
         // Effective density
-        auto effective_densityvertical = new QVBoxLayout();
-        main_layout->addLayout(effective_densityvertical);
-        effective_densityvertical->setContentsMargins(0, 0, 0, 0);
-        effective_densityvertical->setSpacing(0);
+        auto effective_density_vertical = new QHBoxLayout();
+        main_layout->addLayout(effective_density_vertical);
+        effective_density_vertical->setContentsMargins(0, 0, 0, 0);
+        effective_density_vertical->setSpacing(0);
 
         // Label
         auto effective_density_label = new QLabel("Effective Density");
-        effective_densityvertical->addWidget(effective_density_label);
+        effective_density_vertical->addWidget(effective_density_label);
 
-        auto effective_density_layout = new QHBoxLayout();
-        effective_densityvertical->addLayout(effective_density_layout);
+        //auto effective_density_layout = new QHBoxLayout();
+        //effective_density_layout->addSpacing(22);
+        //effective_densityvertical->addLayout(effective_density_layout);
 
         // Value
-        auto effective_density_value = new QDoubleSpinBox();
-        effective_density_value->setMinimumWidth(50);
-        effective_density_value->setDecimals(DECIMAL_COUNT);
-        effective_density_value->setRange(INITIAL_TEMPRATURE_MIN, INITIAL_TEMPRATURE_MAX); // Example range for temperature
-        effective_density_value->setSingleStep(0.1);
-        effective_density_layout->addWidget(effective_density_value);
-        effective_density_layout->addStretch();
+        effective_density_vertical->addSpacing(17);
+        auto effective_density_value = new SmartDoubleSpinBox();
+        effective_density_value->setValue(1.00);
+        effective_density_vertical->addWidget(effective_density_value);
+        effective_density_vertical->addSpacing(0);
 
     }
 
     main_layout->update();
-
     update_styles();
-    //setStyleSheet(item_properties_qss);
+
 }
 
 void ItemPropertiesBox::set_selected_item(AddableItem& new_item)
 {
-    qDebug() << "[ItemPropertiesBox] set_selected_item called for" << new_item.name;
-
     item = &new_item;
     is_item_selected = true;
     update_property_fields();
@@ -367,8 +303,6 @@ void ItemPropertiesBox::set_selected_item(AddableItem& new_item)
 
 void ItemPropertiesBox::reset_selected_item()
 {
-    qDebug() << "[ItemPropertiesBox] reset_selected_item called";
-
     is_item_selected = false;
     update_property_fields();
     update_styles();
@@ -378,7 +312,9 @@ void ItemPropertiesBox::update_styles()
 {
     if (is_item_selected) {
         setStyleSheet(
-            "ItemPropertiesBox QWidget {"
+            "ItemPropertiesBox QLabel {"
+                "font-weight: bold;"
+                "background-color: rgb(65, 66, 67);"
                 "color: rgb(225, 226, 227);"
             "}"
             "ItemPropertiesBox QDoubleSpinBox {"
@@ -387,7 +323,7 @@ void ItemPropertiesBox::update_styles()
                 "background-color: rgb(85, 86, 87);"
             "}"
             "ItemPropertiesBox QDoubleSpinBox:hover {"
-                "background-color: rgb(110, 111, 112);"
+                "background-color: rgb(105, 106, 107);"
             "}"
             );
         velocity_translation_X_box->setEnabled(true);
@@ -412,13 +348,18 @@ void ItemPropertiesBox::update_styles()
     }
     else {
         setStyleSheet(
+            "ItemPropertiesBox QLabel {"
+                "font-weight: bold;"
+                "background-color: rgb(65, 66, 67);"
+                "color: rgb(165, 166, 167);"
+            "}"
             "ItemPropertiesBox QDoubleSpinBox {"
                 "color: rgb(165, 166, 167);"
                 "border: 1px solid rgb(60, 61, 62);"
                 "background-color: rgb(65, 66, 67);"
             "}"
             "ItemPropertiesBox QDoubleSpinBox:hover {"
-                "background-color: rgb(110, 111, 112);"
+                "background-color: rgb(105, 106, 107);"
             "}"
             );
         velocity_translation_X_box->setEnabled(false);
@@ -447,13 +388,10 @@ void ItemPropertiesBox::update_styles()
 
 void ItemPropertiesBox::update_property_fields()
 {
-    if (!item) {
-        qDebug() << "(ItemPropertiesBox::update_property_fields) \"item\" is nullptr";
+    if (!item)
         return;
-    }
 
-
-    name_label->setText(item->name);
+    //name_label->setText(item->name);
     enum_to_qstring(item->type, type_label);
 
     position_X_box->setValue(item->position.x());

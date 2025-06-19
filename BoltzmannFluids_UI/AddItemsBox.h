@@ -1,10 +1,10 @@
 #ifndef ADDITEMSBOX_H
 #define ADDITEMSBOX_H
 
-#include <QWidget>
-#include <QListWidget>
-#include <QPushButton>
 #include <qvectornd.h>
+#include <QListWidget>
+
+class QPushButton;
 
 enum class Type {
     CUBE,

@@ -16,9 +16,8 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
     Application& BoltzmannFluids = Application::get();
     BoltzmannFluids.main_window.show();
-
-    //demo3d::multiphase_droplet_collision(*BoltzmannFluids.simulation.lbm_solver);
-
+    BoltzmannFluids.main_window.showMaximized();
+   
     auto timer = new QTimer();
     int frame = 0;
 

@@ -2,10 +2,11 @@
 #define COLLABSIBLEBOX_H
 
 #include <QWidget>
-#include <QToolButton>
-#include <QFrame>
-#include <QVBoxLayout>
-#include <QScrollArea>
+
+class QToolButton;
+class QFrame;
+class QVBoxLayout;
+class QScrollArea;
 
 class CollapsibleBox : public QWidget
 {

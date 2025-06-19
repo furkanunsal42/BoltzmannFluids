@@ -2,11 +2,11 @@
 #define ITEMPROPERTIESBOX_H
 
 #include <QWidget>
-#include <QSpinBox>
-#include <QLabel>
-#include "AddItemsBox.h"
 
+class QLabel;
+class AddableItem;
 class QGroupBox;
+class SmartDoubleSpinBox;
 
 class ItemPropertiesBox : public QWidget
 {
@@ -16,34 +16,33 @@ public:
 
     explicit ItemPropertiesBox(QWidget* parent = nullptr);
 
-
 private:
     AddableItem* item;
     QLabel* name_label;
     QLabel* type_label;
 
-    QDoubleSpinBox* velocity_translation_X_box;
-    QDoubleSpinBox* velocity_translation_Y_box;
-    QDoubleSpinBox* velocity_translation_Z_box;
-    QDoubleSpinBox* velocity_angular_X_box;
-    QDoubleSpinBox* velocity_angular_Y_box;
-    QDoubleSpinBox* velocity_angular_Z_box;
-    QDoubleSpinBox* center_of_mass_X_box;
-    QDoubleSpinBox* center_of_mass_Y_box;
-    QDoubleSpinBox* center_of_mass_Z_box;
+    SmartDoubleSpinBox* velocity_translation_X_box;
+    SmartDoubleSpinBox* velocity_translation_Y_box;
+    SmartDoubleSpinBox* velocity_translation_Z_box;
+    SmartDoubleSpinBox* velocity_angular_X_box;
+    SmartDoubleSpinBox* velocity_angular_Y_box;
+    SmartDoubleSpinBox* velocity_angular_Z_box;
+    SmartDoubleSpinBox* center_of_mass_X_box;
+    SmartDoubleSpinBox* center_of_mass_Y_box;
+    SmartDoubleSpinBox* center_of_mass_Z_box;
 
-    QDoubleSpinBox* position_X_box;
-    QDoubleSpinBox* position_Y_box;
-    QDoubleSpinBox* position_Z_box;
-    QDoubleSpinBox* rotation_X_box;
-    QDoubleSpinBox* rotation_Y_box;
-    QDoubleSpinBox* rotation_Z_box;
-    QDoubleSpinBox* size_X_box;
-    QDoubleSpinBox* size_Y_box;
-    QDoubleSpinBox* size_Z_box;
+    SmartDoubleSpinBox* position_X_box;
+    SmartDoubleSpinBox* position_Y_box;
+    SmartDoubleSpinBox* position_Z_box;
+    SmartDoubleSpinBox* rotation_X_box;
+    SmartDoubleSpinBox* rotation_Y_box;
+    SmartDoubleSpinBox* rotation_Z_box;
+    SmartDoubleSpinBox* size_X_box;
+    SmartDoubleSpinBox* size_Y_box;
+    SmartDoubleSpinBox* size_Z_box;
 
-    QDoubleSpinBox* temperature;
-    QDoubleSpinBox* effective_density;
+    SmartDoubleSpinBox* temperature;
+    SmartDoubleSpinBox* effective_density;
 
     QGroupBox* createInitialConditionsGroup();
 
@@ -57,7 +56,6 @@ public slots:
     void reset_selected_item();
 
 };
-
 
 
 #endif // ITEMPROPERTIESBOX_H
