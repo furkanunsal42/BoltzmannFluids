@@ -150,16 +150,16 @@ void SimulationController::initialize_lbm_from_panel(LBM &lbm)
 
             properties.force = gravity;
             properties.density = 1;
-
+            properties.density = 1;
 
             properties.density = 0.056;
 
-            if (glm::distance(glm::vec3(coordinate), glm::vec3(simulation_resolution.x * 1.2 / 4.0, simulation_resolution.y / 2, simulation_resolution.z / 2 + 10)) < 24) {
+            if (glm::distance(glm::vec3(coordinate), glm::vec3(resolution.x * 1.2 / 4.0, resolution.y / 2, resolution.z / 2 + 10)) < 24) {
                 properties.density = 2.659;
                 properties.velocity = glm::vec3(24, 0, 0) / 16.0f;
             }
 
-            if (glm::distance(glm::vec3(coordinate), glm::vec3(simulation_resolution.x * 2.8 / 4.0, simulation_resolution.y / 2, simulation_resolution.z / 2 - 10)) < 24) {
+            if (glm::distance(glm::vec3(coordinate), glm::vec3(resolution.x * 2.8 / 4.0, resolution.y / 2, resolution.z / 2 - 10)) < 24) {
                 properties.density = 2.659;
                 properties.velocity = glm::vec3(-24, 0, 0) / 16.0f;
             }
