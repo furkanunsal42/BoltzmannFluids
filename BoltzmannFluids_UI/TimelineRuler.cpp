@@ -23,7 +23,7 @@ void TimelineRuler::paintEvent(QPaintEvent*) {
     int h = height()-1;
     int w = width()-10;
 
-    pen.drawLine(0, h - 1, w, h - 1);
+    pen.drawLine(1, h - 1, w+9, h - 1);
 
     int max_step_count = 10;
     float step_width = w / (max_step_count);
