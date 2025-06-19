@@ -201,14 +201,14 @@ MainWindow::MainWindow(QWidget *parent)
     // Add widgets directly to splitter
     auto render_box = new QOpenGLWidget();
     render_box->setMinimumSize(100, 100);
-    middle_splitter->addWidget(render_box);
+    //middle_splitter->addWidget(render_box);
 
     /// Rendering Box
     viewport = new Viewport3D(middle_splitter);
     viewport->setMinimumSize(100, 100);
 
 
-    middle_vertical_layout->addWidget(viewport); // Renderbox ->growable
+    middle_splitter->addWidget(viewport); // Renderbox ->growable
 
 
     timeline = new Timeline();
