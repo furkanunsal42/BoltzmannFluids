@@ -54,28 +54,14 @@ AddItemsBox::AddItemsBox(QWidget *parent)
     outer_layout->setContentsMargins(0, 0, 0, 0);
     outer_layout->setSpacing(0);
 
-    auto frame = new QFrame(this);
-    outer_layout->addWidget(frame);
-    frame->setFrameShape(QFrame::StyledPanel);
-    setStyleSheet(
+    auto main_frame = new QFrame(this);
+    outer_layout->addWidget(main_frame);
+    main_frame->setFrameShape(QFrame::StyledPanel);
+    QString qss_style_sheet =(
         "QFrame {"
             "background-color: rgb(65, 66, 67); "
             "border: 1px solid rgb(65, 66, 67);"
             "border-radius: 5px;"
-        "}"
-        "QPushButton {"
-            "color: rgb(225, 226, 227);"
-            "background-color: rgb(90, 91, 92);"
-            "border: 1px solid rgb(70, 71, 72);"
-            "border-radius: 5px;"
-            "padding: 6px 12px;"
-            "font-weight: bold;"
-        "}"
-        "QPushButton:hover {"
-            "background-color: rgb(105, 106 ,107);"
-        "}"
-        "QPushButton:pressed {"
-            "background-color: rgb(70, 71, 72);"
         "}"
         "QListView {"
             "color: rgb(225, 226, 227);"
@@ -97,21 +83,55 @@ AddItemsBox::AddItemsBox(QWidget *parent)
         "}"
         );
 
-    auto inner_layout = new QVBoxLayout(frame);
-    frame->setLayout(inner_layout);
-    //inner_layout->setContentsMargins(0, 0, 0, 0);
+    auto inner_layout = new QVBoxLayout(main_frame);
+    main_frame->setLayout(inner_layout);
+    inner_layout->setContentsMargins(0, 0, 0, 0);
     //inner_layout->setSpacing(0);
 
-    {   // "Add - Delete" buttons
-        auto button_layout = new QHBoxLayout;
-        inner_layout->addLayout(button_layout);
+    {   // "Add - Delete" buttons section
+        auto buttons_frame = new QFrame(main_frame);
+        inner_layout->addWidget(buttons_frame);
 
-        _add_button = new QPushButton("Add", this);
+        // Style the frame and all QPushButtons inside it
+        buttons_frame->setStyleSheet(
+            "QFrame {"
+                "background-color: rgb(70, 71, 72);"
+            "}"
+            "QPushButton {"
+                "color: rgb(225, 226, 227);"
+                "background-color: rgb(85, 86, 87);"
+                "border: 1px solid rgb(70, 71, 72);"
+                "border-radius: 5px;"
+                "padding: 6px;"
+                "font-weight: bold;"
+            "}"
+            "QPushButton:hover {"
+                "background-color: rgb(105, 106, 107);"
+            "}"
+            "QPushButton:pressed {"
+                "background-color: rgb(70, 71, 72);"
+            "}"
+            );
+
+        // Layout
+        auto button_layout = new QHBoxLayout(buttons_frame);
+        button_layout->setContentsMargins(0, 0, 0, 0);
+        buttons_frame->setLayout(button_layout);
+
+        // Add stretch, buttons, stretch
+        button_layout->addStretch();
+
+        _add_button = new QPushButton("Add", buttons_frame);
+        _add_button->setMinimumSize(QSize(62, 24));
         button_layout->addWidget(_add_button);
 
-        _delete_button = new QPushButton("Delete", this);
+        _delete_button = new QPushButton("Delete", buttons_frame);
+        _delete_button->setMinimumSize(QSize(62, 24));
         button_layout->addWidget(_delete_button);
+
+        button_layout->addStretch();
     }
+
 
     _model = new AddableItemModel(this);
     _items_list = new QListView(this);
@@ -160,5 +180,5 @@ AddItemsBox::AddItemsBox(QWidget *parent)
         }
     });
 
-
+    setStyleSheet(qss_style_sheet);
 }
