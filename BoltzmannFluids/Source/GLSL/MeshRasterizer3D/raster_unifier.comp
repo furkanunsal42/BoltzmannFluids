@@ -1,0 +1,36 @@
+#<compute shader>
+
+#version 460
+
+#define id gl_GlobalInvocationID
+
+#define volume_texture_format r8
+#define volume_texture_type image3D
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+layout(r8, binding = 0) uniform image2D slice_texture;
+layout(r8, binding = 1) uniform image2D temp_texture;
+layout(volume_texture_format, binding = 2) uniform volume_texture_type volume;
+
+uniform ivec3 volume_resolution;
+uniform int current_slice;
+	
+void main(){
+	
+	if (any(greaterThanEqual(id.xy, volume_resolution.xy)) || any(lessThan(id.xy, ivec2(0))) ||
+		current_slice < 0 || current_slice >= volume_resolution.z)
+		return;
+
+	float previous_color = imageLoad(temp_texture, ivec2(id.xy)).x;
+	float slice_color = imageLoad(slice_texture, ivec2(id.xy)).x;
+
+	bool should_toggle = slice_color > 0.5;
+	float toggled_value = previous_color > 0 ? 0 : 1;
+
+	float color_to_write = should_toggle ? toggled_value : previous_color;
+
+	imageStore(volume, ivec3(id.xy, current_slice), vec4(color_to_write));
+	imageStore(temp_texture, ivec2(id.xy), vec4(color_to_write));
+
+}

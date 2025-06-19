@@ -142,7 +142,7 @@ target_link_directories(BoltzmannFluids PUBLIC
 target_link_libraries(BoltzmannFluids PUBLIC GraphicsCortex)
 
 #BoltzmannFLuids_Standalone
-#[[
+
 file(GLOB_RECURSE BoltzmannFluids_Standalone_Sources       
     BoltzmannFluids_Standalone/Source/*.cpp 
     BoltzmannFluids_Standalone/Source/*.h 
@@ -160,7 +160,7 @@ target_include_directories(BoltzmannFluids_Standalone PUBLIC
     )
 
 target_link_libraries(BoltzmannFluids_Standalone PUBLIC BoltzmannFluids)
-]]
+
 # BoltzmannFluids_UI
 
 set(CMAKE_AUTOUIC ON)
