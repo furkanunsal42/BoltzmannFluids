@@ -32,7 +32,10 @@ void SimulationController::start_simulation()
 {
     if (lbm_solver == nullptr){
         lbm_solver = std::make_shared<LBM>();
+
         demo3d::multiphase_droplet_collision(*lbm_solver);
+        //demo2d::rayleigh_benard_convection(*lbm_solver);
+
 
         Application& BoltzmannFluids = Application::get();
     }
