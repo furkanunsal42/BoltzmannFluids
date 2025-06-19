@@ -529,8 +529,6 @@ void ItemPropertiesBox::create_connections()
         glm::vec3 translation_new(position_X_box->value(), position_Y_box->value(), position_Z_box->value());
         glm::vec3 scale_new(glm::vec3(size_X_box->value(), size_Y_box->value(), size_Z_box->value()));
 
-        std::cout <<"translation new: " <<translation_new.x << std::endl;
-
         // glm::mat4 transform = recompose(scale, rotation, translation, skew, perspective);
 
         glm::mat4 transform = glm::scale((glm::translate(glm::identity<glm::mat4>(), translation_new)), scale_new) * glm::mat4_cast(rotation_new);
