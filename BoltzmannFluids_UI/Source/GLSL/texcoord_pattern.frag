@@ -22,7 +22,7 @@ void main(){
 	vec4 color = (idx.x + idx.y) % 2 == 0 ? color_even : color_odd;
 	color.xyz = color.xyz * (color.a) + blend_color.xyz * (1-color.a);
 	color.a = (1-blend_color.a) * color.a;
+	color.a = 1;
 	frag_color = color;
-
  }
 
