@@ -1,6 +1,7 @@
 #ifndef ITEMPROPERTIESBOX_H
 #define ITEMPROPERTIESBOX_H
 
+#include <glm.hpp>
 #include <QWidget>
 
 class QLabel;
@@ -16,12 +17,15 @@ public:
 
     explicit ItemPropertiesBox(QWidget* parent = nullptr);
 
+    void create_connections();
+
+
+    SmartDoubleSpinBox* velocity_translation_X_box;
 private:
-    AddableItem* item;
+
     QLabel* name_label;
     QLabel* type_label;
 
-    SmartDoubleSpinBox* velocity_translation_X_box;
     SmartDoubleSpinBox* velocity_translation_Y_box;
     SmartDoubleSpinBox* velocity_translation_Z_box;
     SmartDoubleSpinBox* velocity_angular_X_box;
@@ -46,16 +50,21 @@ private:
 
     QGroupBox* createInitialConditionsGroup();
 
-    bool is_item_selected = false;
-
     void update_styles();
-    void update_property_fields();
+    void update_property_fields(glm::mat4 matrix);
 
 public slots:
-    void set_selected_item(AddableItem& new_item);
+
+    void set_selected_item(int32_t selected_object_id);
     void reset_selected_item();
 
+    void edit_applying(glm::mat4 _composed_matrix);
 };
+
+template <typename T, glm::qualifier Q>
+GLM_FUNC_DECL glm::mat<4, 4, T, Q> recompose(
+    glm::vec<3, T, Q> const& scale, glm::qua<T, Q> const& orientation, glm::vec<3, T, Q> const& translation,
+    glm::vec<3, T, Q> const& skew, glm::vec<4, T, Q> const& perspective);
 
 
 #endif // ITEMPROPERTIESBOX_H

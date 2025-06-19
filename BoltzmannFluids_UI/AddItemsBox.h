@@ -54,12 +54,12 @@ class AddItemsBox : public QWidget {
 public:
     explicit AddItemsBox(QWidget* parent = nullptr);
 
-signals:
-    void add_item_request(const AddableItem& item);
-    void delete_item_request(const AddableItem& item);
+    signals:
+        void add_item_request(const AddableItem& item);
+        void delete_item_request(const AddableItem& item);
 
-    void item_selected(AddableItem& item);
-    void item_deselected();
+        void item_selected(AddableItem& item);
+        void item_deselected();
 
 private:
     QListView* _items_list;
