@@ -484,8 +484,7 @@ void ItemPropertiesBox::create_connections()
 
        // glm::mat4 transform = recompose(scale, rotation, translation, skew, perspective);
 
-
-        glm::mat4 transform = glm::translate((glm::mat4_cast(rotation) * glm::scale(glm::identity<glm::mat4>(), scale)), translation_new);
+        glm::mat4 transform = glm::scale((glm::translate(glm::identity<glm::mat4>(), translation_new) * glm::mat4_cast(rotation_new)), scale_new);
         std::cout << "translation: "<< translation.x << std::endl;
 
 
