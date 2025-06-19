@@ -358,7 +358,6 @@ void ItemPropertiesBox::set_selected_item(int32_t selected_object_id)
 void ItemPropertiesBox::reset_selected_item()
 {
     update_styles();
-    std::cout << "reset" << std::endl;
 }
 
 void ItemPropertiesBox::edit_applying(glm::mat4 matrix)
