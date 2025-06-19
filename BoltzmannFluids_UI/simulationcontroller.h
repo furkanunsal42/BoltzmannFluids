@@ -13,9 +13,21 @@ public:
     constexpr static int32_t not_an_object = 0;
     constexpr static int32_t not_a_mesh = 0;
 
+    // solvers
     std::shared_ptr<LBM> lbm_solver = nullptr;
     std::shared_ptr<Window> gl_context = nullptr;
 
+    // simulation modes
+    enum SimulationMode {
+        PreSimulation,
+        RealtimeSimulation,
+        SavingSimulation,
+        PlaybackSimulation,
+    };
+
+    SimulationMode simulation_mode = PreSimulation;
+
+    // objects
     enum BasicObject {
         Cube        = 1,
         Sphere      = 2,

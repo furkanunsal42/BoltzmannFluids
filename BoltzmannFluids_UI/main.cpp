@@ -40,9 +40,6 @@ int main(int argc, char *argv[])
             if (BoltzmannFluids.main_window.viewport != nullptr){
                 BoltzmannFluids.main_window.viewport->update();
             }
-
-
-
         });
     });
 
