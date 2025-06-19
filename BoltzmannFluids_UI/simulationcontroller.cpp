@@ -42,9 +42,13 @@ void SimulationController::iterate_time(float target_tick_per_seconds)
 {
     if (lbm_solver != nullptr){
         lbm_solver->iterate_time(target_tick_per_seconds);
+        if (lbm_solver->get_total_ticks_elapsed() % 100 == 0)
+            std::cout << "[LBM Info] total ticks elapsed : " << lbm_solver->get_total_ticks_elapsed() << std::endl;
 
-        if (!is_first_iteration_happened){
-            Application& BoltzmannFluids = Application::get();
+        Application& BoltzmannFluids = Application::get();
+        BoltzmannFluids.main_window.update_timeline(lbm_solver->get_total_ticks_elapsed());
+
+        if (!is_first_iteration_happened){            
             if (BoltzmannFluids.main_window.viewport->is_edit_happening()){
                 BoltzmannFluids.main_window.viewport->edit_cancel();
             }

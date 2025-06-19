@@ -17,19 +17,6 @@ int main(int argc, char *argv[])
     Application& BoltzmannFluids = Application::get();
     BoltzmannFluids.main_window.show();
     BoltzmannFluids.main_window.showMaximized();
-   
-    auto timer = new QTimer();
-    int frame = 0;
-
-    QTimer::singleShot(0, &BoltzmannFluids.main_window, [&]() {
-        timer->setInterval(1000 / 60*2);
-        timer->start();
-
-        QObject::connect(timer, &QTimer::timeout, [&] {
-            frame+= 1;
-            BoltzmannFluids.main_window.update_timeline(frame);
-        });
-    });
 
     auto viewport_timer = new QTimer();
     QTimer::singleShot(0, &BoltzmannFluids.main_window, [&]() {
