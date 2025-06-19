@@ -31,12 +31,6 @@ SimulationController::~SimulationController()
 void SimulationController::start_simulation()
 {
     if (lbm_solver == nullptr){
-        add_object(
-            "object",
-            SimulationController::Cube,
-            glm::rotate(glm::identity<glm::mat4>(), 0.0f, glm::vec3(1, 0, 0))
-            );
-
         lbm_solver = std::make_shared<LBM>();
         demo3d::multiphase_droplet_collision(*lbm_solver);
 

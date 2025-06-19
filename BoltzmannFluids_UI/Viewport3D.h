@@ -42,6 +42,16 @@ public:
     std::shared_ptr<Program> renderer_flatcolor = nullptr;
     std::shared_ptr<Mesh> mesh_line = nullptr;
 
+    enum DisplayMode {
+        Density     = 1,
+        Boundries   = 2,
+        Velocity    = 3,
+        Forces      = 4,
+        Temperature = 5,
+    };
+
+    DisplayMode display_mode = Density;
+
     // object editing
     enum EditMode {
         TranslateX,

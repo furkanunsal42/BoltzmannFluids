@@ -3,6 +3,8 @@
 #include <QVBoxLayout>
 #include <QPushButton>
 
+#include "application.h"
+
 AddableItem::AddableItem(QString name, Type type, QIcon icon, QVector3D position,  QVector3D rotation, QVector3D size)
     : name(std::move(name)), type(type), icon(std::move(icon)), position(position), rotation(rotation), size(size)
 {
@@ -152,14 +154,34 @@ AddItemsBox::AddItemsBox(QWidget *parent)
 
     connect(_add_button, &QPushButton::clicked, this, [this]() {
         QModelIndex index = _items_list->currentIndex();
-        if (index.isValid())
+        if (index.isValid()){
             emit add_item_request(_model->item_at(index.row()));
+            Application& BoltzmannFluids = Application::get();
+            auto simulation = BoltzmannFluids.simulation;
+            if(simulation != nullptr && index.row() < 3 && index.row() >= 0){
+                std::cout << (SimulationController::BasicObject)index.row() << std::endl;
+                simulation->add_object(
+                    "Object",
+                    (SimulationController::BasicObject)(index.row() + 1)
+                    );
+            }
+        }
+
+
     });
 
     connect(_delete_button, &QPushButton::clicked, this, [this]() {
         QModelIndex index = _items_list->currentIndex();
         if (index.isValid())
             emit delete_item_request(_model->item_at(index.row()));
+
+        Application& BoltzmannFluids = Application::get();
+        auto simulation = BoltzmannFluids.simulation;
+        auto viewport = BoltzmannFluids.main_window.viewport;
+        if(simulation != nullptr && viewport->selected_object != SimulationController::not_an_object){
+            simulation->objects.erase(viewport->selected_object);
+        }
+
     });
 
     connect(_items_list->selectionModel(), &QItemSelectionModel::selectionChanged,

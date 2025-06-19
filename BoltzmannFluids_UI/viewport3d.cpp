@@ -211,8 +211,11 @@ void Viewport3D::paintGL()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    render_objects(camera, false);
-    render_objects(camera, true);
+    if (can_edit){
+        render_objects(camera, false);
+        render_objects(camera, true);
+    }
+
     render_simulation(camera);
 
 }
@@ -255,15 +258,13 @@ void Viewport3D::render_objects(Camera& camera, bool render_to_object_texture){
             renderer.update_uniform("blend_color", blend_color);
         }
 
-        std::cout << "rendeirng object id" << object.first << std::endl;
-
         if (meshes.find(object.second.mesh_id) == meshes.end()){
 
             std::cout << "[BoltzmannFluidsUI Error] Viewport3D::render_objects() object mesh was null" << std::endl;
             ASSERT(false);
         }
 
-        glm::mat4 editing_matrix = edit_compute_matrix();
+        glm::mat4 editing_matrix = object.second.id == selected_object && is_edit_happening() ? edit_compute_matrix() : glm::identity<glm::mat4>();
         glm::mat4 composed_matrix = get_EditMode_type(active_edit_mode) == Translate ?
                                         editing_matrix * object.second.transform :
                                         object.second.transform * editing_matrix;
@@ -292,8 +293,39 @@ void Viewport3D::render_objects(Camera& camera, bool render_to_object_texture){
 void Viewport3D::render_simulation(Camera& camera)
 {
     auto& BoltzmannFluids = Application::get();
-    if (BoltzmannFluids.simulation->lbm_solver != nullptr)
-        BoltzmannFluids.simulation->lbm_solver->render3d_density(camera);
+    if (BoltzmannFluids.simulation->lbm_solver == nullptr)
+        return;
+
+    LBM& lbm_solver = *BoltzmannFluids.simulation->lbm_solver;
+
+    camera.position = get_camera_position();
+    camera.update_matrixes();
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    switch (display_mode) {
+    case Density:
+        if (lbm_solver.get_dimentionality() == 3)	lbm_solver.render3d_density(camera);
+        else                                        lbm_solver.render2d_density();
+        break;
+    case Boundries:
+        if (lbm_solver.get_dimentionality() == 3)	lbm_solver.render3d_boundries(camera);
+        else                                        lbm_solver.render2d_boundries();
+        break;
+    case Velocity:
+        if (lbm_solver.get_dimentionality() == 3)	lbm_solver.render3d_velocity(camera);
+        else                                        lbm_solver.render2d_velocity();
+        break;
+    case Forces:
+        if (lbm_solver.get_dimentionality() == 3)	lbm_solver.render3d_forces(camera);
+        else                                        lbm_solver.render2d_forces();
+        break;
+    case Temperature:
+        if (lbm_solver.get_dimentionality() == 3)	lbm_solver.render3d_temperature(camera);
+        else                                        lbm_solver.render2d_temperature();
+        break;
+    }
 }
 
 void Viewport3D::render_axes(Camera &camera)
@@ -417,7 +449,6 @@ void Viewport3D::keyPressEvent(QKeyEvent *event)
 {
     switch(event->key()){
     case Qt::Key_G:
-        std::cout << "G" << std::endl;
         if (is_editing && can_edit)
             edit_cancel();
         if (!is_editing && can_edit)
@@ -466,6 +497,29 @@ void Viewport3D::keyPressEvent(QKeyEvent *event)
         break;
     case Qt::Key_Escape:
         edit_cancel();
+        break;
+
+    case Qt::Key_1:
+    display_mode = Density;
+        break;
+    case Qt::Key_2:
+    display_mode = Boundries;
+        break;
+    case Qt::Key_3:
+    display_mode = Velocity;
+        break;
+    case Qt::Key_4:
+    display_mode = Forces;
+        break;
+    case Qt::Key_5:
+    display_mode = Temperature;
+        break;
+    case Qt::Key_Delete:
+        Application& BoltzmannFluids = Application::get();
+        auto simulation = BoltzmannFluids.simulation;
+        if(simulation != nullptr && selected_object != SimulationController::not_an_object){
+            simulation->objects.erase(selected_object);
+        }
         break;
     }
 }
