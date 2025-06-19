@@ -159,7 +159,6 @@ AddItemsBox::AddItemsBox(QWidget *parent)
             Application& BoltzmannFluids = Application::get();
             auto simulation = BoltzmannFluids.simulation;
             if(simulation != nullptr && index.row() < 3 && index.row() >= 0){
-                std::cout << (SimulationController::BasicObject)index.row() << std::endl;
                 simulation->add_object(
                     "Object",
                     (SimulationController::BasicObject)(index.row() + 1)
