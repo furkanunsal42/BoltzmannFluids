@@ -22,9 +22,9 @@ file(GLOB_RECURSE GraphicsCortex_Sources
     GraphicsCortex/Dependencies/imgui/*.cpp 
     )
     
-file(GLOB_RECURSE GraphicsCortex_Data          GraphicsCortex/Source/GLSL/*)
+file(COPY "GraphicsCortex/Source/GLSL/" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/GraphicsCortex/Source/GLSL")
 
-add_library(GraphicsCortex STATIC ${GraphicsCortex_Sources} ${GraphicsCortex_Data})
+add_library(GraphicsCortex STATIC ${GraphicsCortex_Sources})
 target_compile_options(GraphicsCortex PUBLIC /sdl /openmp)
 
 target_include_directories(GraphicsCortex PUBLIC 
@@ -58,7 +58,6 @@ target_include_directories(GraphicsCortex PUBLIC
     ${CORTEX_DEPENDENCIES_DIR}freetype/include
     )
 
-file(COPY ${GraphicsCortex_Data} DESTINATION GraphicsCortex_Resources)
 
 target_link_directories(GraphicsCortex PUBLIC
     ${CORTEX_DEPENDENCIES_DIR}libtiff/lib
@@ -121,23 +120,20 @@ add_compile_definitions(
 
 # BoltzmannFluids
 
-
 file(GLOB_RECURSE BoltzmannFluids_Sources       
     BoltzmannFluids/Source/*.cpp 
     BoltzmannFluids/Source/*.h 
     )
-    
-file(GLOB_RECURSE BoltzmannFluids_Data  
-    BoltzmannFluids/Source/GLSL/*
-    )
 
-add_library(BoltzmannFluids STATIC ${BoltzmannFluids_Sources} ${BoltzmannFluids_Data})
+file(COPY "BoltzmannFluids/Source/GLSL/" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/BoltzmannFluids/Source/GLSL")
+
+#add_library(BoltzmannFluids STATIC ${BoltzmannFluids_Sources} ${BoltzmannFluids_Data})
+add_library(BoltzmannFluids STATIC ${BoltzmannFluids_Sources})
 
 target_include_directories(BoltzmannFluids PUBLIC     
     BoltzmannFluids/Source
     )
 
-file(COPY ${BoltzmannFluids_Data} DESTINATION BoltzmannFluids_Resources)
 
 target_link_directories(BoltzmannFluids PUBLIC
 
@@ -145,6 +141,26 @@ target_link_directories(BoltzmannFluids PUBLIC
 
 target_link_libraries(BoltzmannFluids PUBLIC GraphicsCortex)
 
+#BoltzmannFLuids_Standalone
+#[[
+file(GLOB_RECURSE BoltzmannFluids_Standalone_Sources       
+    BoltzmannFluids_Standalone/Source/*.cpp 
+    BoltzmannFluids_Standalone/Source/*.h 
+    BoltzmannFluids_Standalone/Mains/*.cpp
+    BoltzmannFluids_Standalone/Mains/*.h
+    )
+
+    file(COPY "BoltzmannFluids_Standalone/Source/GLSL/" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/BoltzmannFluids_Standalone/Source/GLSL")
+
+add_executable(BoltzmannFluids_Standalone ${BoltzmannFluids_Standalone_Sources})
+
+target_include_directories(BoltzmannFluids_Standalone PUBLIC     
+    BoltzmannFluids_Standalone/Source
+    BoltzmannFluids_Standalone/Mains
+    )
+
+target_link_libraries(BoltzmannFluids_Standalone PUBLIC BoltzmannFluids)
+]]
 # BoltzmannFluids_UI
 
 set(CMAKE_AUTOUIC ON)
@@ -156,6 +172,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets OpenGLWidgets REQUIRED)
+
+file(COPY "BoltzmannFluids_UI/Models/" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/BoltzmannFluids_UI/Models/")
+file(COPY "BoltzmannFluids_UI/Source/GLSL/" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/BoltzmannFluids_UI/Source/GLSL/")
 
 file(GLOB_RECURSE PROJECT_SOURCES
   BoltzmannFluids_UI/*.cpp

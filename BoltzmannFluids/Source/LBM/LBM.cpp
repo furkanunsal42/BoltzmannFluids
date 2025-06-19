@@ -70,7 +70,7 @@ void LBM::_compile_shaders()
 	plane_mesh = std::make_shared<Mesh>();
 	plane_mesh->load_model(plane_model);
 
-	glm::vec3 scale(1, 1, 1);
+    glm::vec3 scale(1, 1, 1);
 
 	SingleModel cube_model;
 	cube_model.verticies = {
@@ -1170,7 +1170,7 @@ void LBM::render3d_density(Camera& camera, int32_t sample_count)
 	camera.update_matrixes();
 	camera.update_default_uniforms(program);
 
-	glm::mat4 model = glm::identity<glm::mat4>();
+    glm::mat4 model = glm::identity<glm::mat4>();
 	program.update_uniform("model", model);
 	program.update_uniform("inverse_model", glm::inverse(model));
 	program.update_uniform("inverse_view", glm::inverse(camera.view_matrix));

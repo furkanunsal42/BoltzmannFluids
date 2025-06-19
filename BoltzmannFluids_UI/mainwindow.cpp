@@ -17,6 +17,7 @@
 #include "Timeline.h"
 #include "ItemPropertiesBox.h"
 #include "MenuBar.h"
+#include "Viewport3D.h"
 
 
 MainWindow::MainWindow(QWidget *parent)
@@ -24,6 +25,7 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
     QString qss_text;
 
     this->resize(main_window_width, main_window_height);
@@ -114,12 +116,12 @@ MainWindow::MainWindow(QWidget *parent)
     middle_vertical_layout->setSpacing(0);
 
     /// Rendering Box
-    auto render_box = new QOpenGLWidget(middle_splitter_one);
-    render_box->setMinimumSize(100, 100);
+    viewport = new Viewport3D(middle_splitter_one);
+    viewport->setMinimumSize(100, 100);
 
     //wrapper = new QT_LBMWrapper
 
-    middle_vertical_layout->addWidget(render_box , 1); // Renderbox ->growable
+    middle_vertical_layout->addWidget(viewport, 1); // Renderbox ->growable
 
 
     /// Timeline

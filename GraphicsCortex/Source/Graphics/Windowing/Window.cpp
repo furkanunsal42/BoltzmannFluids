@@ -74,6 +74,7 @@ Window::Window(glm::ivec2 window_resolution, const std::string& window_name, Gra
 Window::Window(void* context)
 {
 	this->handle = context;
+    OpenGLBackend::_init_glew();
 }
 
 std::shared_ptr<Window> Window::create_from_current()
