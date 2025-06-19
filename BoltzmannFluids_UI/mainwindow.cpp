@@ -221,7 +221,6 @@ MainWindow::MainWindow(QWidget *parent)
     application_output->setText("Welcome to the BoltzmannFluids");
     application_output->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
     application_output->setMinimumHeight(100);
-    application_output->verticalScrollBar()->
     middle_splitter->addWidget(application_output);
 
     /**/

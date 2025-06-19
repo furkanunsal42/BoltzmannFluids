@@ -7,13 +7,13 @@
 
 class TextEditStreamBuf : public std::streambuf {
 public:
-    TextEditStreamBuf(QTextEdit* widget) : text_edit(widget) {}
+    explicit TextEditStreamBuf(QTextEdit* edit_widget)
+        : text_edit(edit_widget) {}
 
 protected:
     int_type overflow(int_type v) override {
         if (v == '\n') {
-            text_edit->append(QString::fromStdString(buffer));
-            buffer.clear();
+            flushBuffer();
         } else {
             buffer += static_cast<char>(v);
         }
@@ -30,6 +30,14 @@ protected:
 private:
     QTextEdit* text_edit;
     std::string buffer;
+
+    void flushBuffer() {
+        if (!buffer.empty()) {
+            text_edit->append(QString::fromStdString(buffer));
+            text_edit->moveCursor(QTextCursor::End);
+            buffer.clear();
+        }
+    }
 };
 
 
