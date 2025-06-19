@@ -1,0 +1,26 @@
+#<compute shader>
+
+#version 460
+
+#define id gl_GlobalInvocationID
+
+#define volume_texture_format r8
+#define volume_texture_type image3D
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+layout(r8, binding = 0) uniform image2D slice_texture;
+layout(volume_texture_format, binding = 2) uniform volume_texture_type volume;
+
+uniform ivec3 volume_resolution;
+uniform int current_slice;
+	
+void main(){
+	
+	if (any(greaterThanEqual(id.xy, volume_resolution.xy)) || any(lessThan(id.xy, ivec2(0))) ||
+		current_slice < 0 || current_slice >= volume_resolution.z)
+		return;
+
+	float slice_color = imageLoad(slice_texture, ivec2(id.xy)).x;
+	imageStore(volume, ivec3(id.xy, current_slice), vec4(slice_color));
+}
