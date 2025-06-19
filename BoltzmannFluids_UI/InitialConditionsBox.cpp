@@ -428,6 +428,211 @@ QGroupBox* InitialConditionsBox::createInitialConditionsGroup()
     //floating_point_accuracy_vertical->addStretch();
     boundary_Z_vertical->addSpacing(0);
 
+    // Boundary Extra Informations
+    // Boundary-X temperature
+    auto boundary_X_temprature_vertical = new QHBoxLayout();
+    layout->addLayout(boundary_X_temprature_vertical);
+    boundary_X_temprature_vertical->setContentsMargins(0, 0, 0, 0);
+    boundary_X_temprature_vertical->setSpacing(0);
+    /// Label
+    auto boundary_X_temprature_label = new QLabel("Boundary-X Temperature");
+    boundary_X_temprature_vertical->addWidget(boundary_X_temprature_label);
+
+    /// Value
+    boundary_X_temprature_vertical->addSpacing(85);
+    boundary_X_temprature = new SmartDoubleSpinBox();
+    boundary_X_temprature->setValue(0.00);
+    boundary_X_temprature_vertical->addWidget(boundary_X_temprature);
+    boundary_X_temprature_vertical->addSpacing(0);
+    //    initial_temprature_vertical->addStretch();
+
+    // Boundary-X Effective Density
+    auto boundary_X_effective_density_vertical = new QHBoxLayout();
+    layout->addLayout(boundary_X_effective_density_vertical);
+    boundary_X_effective_density_vertical->setContentsMargins(0, 0, 0, 0);
+    boundary_X_effective_density_vertical->setSpacing(0);
+    /// Label
+    auto boundary_X_effective_density_label = new QLabel("Boundary-X Effective Density");
+    boundary_X_effective_density_vertical->addWidget(boundary_X_effective_density_label);
+
+    /// Value
+    boundary_X_effective_density_vertical->addSpacing(85);
+    boundary_X_effective_density = new SmartDoubleSpinBox();
+    boundary_X_effective_density->setValue(0.00);
+    boundary_X_effective_density_vertical->addWidget(boundary_X_effective_density);
+    boundary_X_effective_density_vertical->addSpacing(0);
+    //    initial_temprature_vertical->addStretch();
+
+    // Boundary-X Translational Velocities
+    auto boundary_X_translational_velocity_vertical = new QVBoxLayout();
+    boundary_X_translational_velocity_vertical->setContentsMargins(0, 0, 0, 0);
+    boundary_X_translational_velocity_vertical->setSpacing(0);
+    layout->addLayout(boundary_X_translational_velocity_vertical);
+
+    /// Label
+    auto boundary_X_translational_velocity_label = new QLabel("Boundary-X Translational Velocity");
+    boundary_X_translational_velocity_vertical->addWidget(boundary_X_translational_velocity_label);
+
+    auto boundary_X_translational_velocity_horizontal = new QHBoxLayout();
+    boundary_X_translational_velocity_vertical->addLayout(boundary_X_translational_velocity_horizontal);
+
+    /// X
+    boundary_X_translational_velocity_horizontal->addSpacing(10);
+    auto boundary_X_translational_velocity_X_txt = new QLabel("X:");
+    boundary_X_translational_velocity_horizontal->addWidget(boundary_X_translational_velocity_X_txt);
+    boundary_X_velocity_translation_X_box = new SmartDoubleSpinBox();
+    boundary_X_translational_velocity_horizontal->addWidget(boundary_X_velocity_translation_X_box);
+    /// Y
+    boundary_X_translational_velocity_horizontal->addSpacing(5);
+    auto boundary_X_translational_velocity_Y_txt = new QLabel("Y:");
+    boundary_X_translational_velocity_horizontal->addWidget(boundary_X_translational_velocity_Y_txt);
+    boundary_X_velocity_translation_Y_box = new SmartDoubleSpinBox();
+    boundary_X_translational_velocity_horizontal->addWidget(boundary_X_velocity_translation_Y_box);
+    /// Z
+    boundary_X_translational_velocity_horizontal->addSpacing(5);
+    auto boundary_X_translational_velocity_Z_txt = new QLabel("Z:");
+    boundary_X_translational_velocity_horizontal->addWidget(boundary_X_translational_velocity_Z_txt);
+    boundary_X_velocity_translation_Y_box = new SmartDoubleSpinBox();
+    boundary_X_translational_velocity_horizontal->addWidget(boundary_X_velocity_translation_Y_box);
+
+
+    // Boundary-Y temperature
+    auto boundary_Y_temprature_vertical = new QHBoxLayout();
+    layout->addLayout(boundary_Y_temprature_vertical);
+    boundary_Y_temprature_vertical->setContentsMargins(0, 0, 0, 0);
+    boundary_Y_temprature_vertical->setSpacing(0);
+    /// Label
+    auto boundary_Y_temprature_label = new QLabel("Boundary-Y Temperature");
+    boundary_Y_temprature_vertical->addWidget(boundary_Y_temprature_label);
+
+    /// Value
+    boundary_Y_temprature_vertical->addSpacing(85);
+    boundary_Y_temprature = new SmartDoubleSpinBox();
+    boundary_Y_temprature->setValue(0.00);
+    boundary_Y_temprature_vertical->addWidget(boundary_Y_temprature);
+    boundary_Y_temprature_vertical->addSpacing(0);
+    //    initial_temprature_vertical->addStretch();
+
+    // Boundary-Y Effective Density
+    auto boundary_Y_effective_density_vertical = new QHBoxLayout();
+    layout->addLayout(boundary_Y_effective_density_vertical);
+    boundary_Y_effective_density_vertical->setContentsMargins(0, 0, 0, 0);
+    boundary_Y_effective_density_vertical->setSpacing(0);
+    /// Label
+    auto boundary_Y_effective_density_label = new QLabel("Boundary-Y Effective Density");
+    boundary_Y_effective_density_vertical->addWidget(boundary_Y_effective_density_label);
+
+    /// Value
+    boundary_Y_effective_density_vertical->addSpacing(85);
+    boundary_Y_effective_density = new SmartDoubleSpinBox();
+    boundary_Y_effective_density->setValue(0.00);
+    boundary_Y_effective_density_vertical->addWidget(boundary_Y_effective_density);
+    boundary_Y_effective_density_vertical->addSpacing(0);
+    //    initial_temprature_vertical->addStretch();
+
+
+    // Boundary-Y Translational Velocities
+    auto boundary_Y_translational_velocity_vertical = new QVBoxLayout();
+    boundary_Y_translational_velocity_vertical->setContentsMargins(0, 0, 0, 0);
+    boundary_Y_translational_velocity_vertical->setSpacing(0);
+    layout->addLayout(boundary_Y_translational_velocity_vertical);
+
+    /// Label
+    auto boundary_Y_translational_velocity_label = new QLabel("Boundary-Y Translational Velocity");
+    boundary_Y_translational_velocity_vertical->addWidget(boundary_Y_translational_velocity_label);
+
+    auto boundary_Y_translational_velocity_horizontal = new QHBoxLayout();
+    boundary_Y_translational_velocity_vertical->addLayout(boundary_Y_translational_velocity_horizontal);
+
+    /// X
+    boundary_Y_translational_velocity_horizontal->addSpacing(10);
+    auto boundary_Y_translational_velocity_X_txt = new QLabel("X:");
+    boundary_Y_translational_velocity_horizontal->addWidget(boundary_Y_translational_velocity_X_txt);
+    boundary_Y_velocity_translation_X_box = new SmartDoubleSpinBox();
+    boundary_Y_translational_velocity_horizontal->addWidget(boundary_Y_velocity_translation_X_box);
+    /// Y
+    boundary_Y_translational_velocity_horizontal->addSpacing(5);
+    auto boundary_Y_translational_velocity_Y_txt = new QLabel("Y:");
+    boundary_Y_translational_velocity_horizontal->addWidget(boundary_Y_translational_velocity_Y_txt);
+    boundary_Y_velocity_translation_Y_box = new SmartDoubleSpinBox();
+    boundary_Y_translational_velocity_horizontal->addWidget(boundary_Y_velocity_translation_Y_box);
+    /// Z
+    boundary_Y_translational_velocity_horizontal->addSpacing(5);
+    auto boundary_Y_translational_velocity_Z_txt = new QLabel("Z:");
+    boundary_Y_translational_velocity_horizontal->addWidget(boundary_Y_translational_velocity_Z_txt);
+    boundary_Y_velocity_translation_Y_box = new SmartDoubleSpinBox();
+    boundary_Y_translational_velocity_horizontal->addWidget(boundary_Y_velocity_translation_Y_box);
+
+
+
+    // Boundary-Z temperature
+    auto boundary_Z_temprature_vertical = new QHBoxLayout();
+    layout->addLayout(boundary_Z_temprature_vertical);
+    boundary_Z_temprature_vertical->setContentsMargins(0, 0, 0, 0);
+    boundary_Z_temprature_vertical->setSpacing(0);
+    /// Label
+    auto boundary_Z_temprature_label = new QLabel("Boundary-Z Temperature");
+    boundary_Z_temprature_vertical->addWidget(boundary_Z_temprature_label);
+
+    /// Value
+    boundary_Z_temprature_vertical->addSpacing(85);
+    boundary_Z_temprature = new SmartDoubleSpinBox();
+    boundary_Z_temprature->setValue(0.00);
+    boundary_Z_temprature_vertical->addWidget(boundary_Z_temprature);
+    boundary_Z_temprature_vertical->addSpacing(0);
+    //    initial_temprature_vertical->addStretch();
+
+    // Boundary-Z Effective Density
+    auto boundary_Z_effective_density_vertical = new QHBoxLayout();
+    layout->addLayout(boundary_Z_effective_density_vertical);
+    boundary_Z_effective_density_vertical->setContentsMargins(0, 0, 0, 0);
+    boundary_Z_effective_density_vertical->setSpacing(0);
+    /// Label
+    auto boundary_Z_effective_density_label = new QLabel("Boundary-Z Effective Density");
+    boundary_Z_effective_density_vertical->addWidget(boundary_Z_effective_density_label);
+
+    /// Value
+    boundary_Z_effective_density_vertical->addSpacing(85);
+    boundary_Z_effective_density = new SmartDoubleSpinBox();
+    boundary_Z_effective_density->setValue(0.00);
+    boundary_Z_effective_density_vertical->addWidget(boundary_Z_effective_density);
+    boundary_Z_effective_density_vertical->addSpacing(0);
+    //    initial_temprature_vertical->addStretch();
+
+
+    // Boundary-Z Translational Velocities
+    auto boundary_Z_translational_velocity_vertical = new QVBoxLayout();
+    boundary_Z_translational_velocity_vertical->setContentsMargins(0, 0, 0, 0);
+    boundary_Z_translational_velocity_vertical->setSpacing(0);
+    layout->addLayout(boundary_Z_translational_velocity_vertical);
+
+    /// Label
+    auto boundary_Z_translational_velocity_label = new QLabel("Boundary-Z Translational Velocity");
+    boundary_Z_translational_velocity_vertical->addWidget(boundary_Z_translational_velocity_label);
+
+    auto boundary_Z_translational_velocity_horizontal = new QHBoxLayout();
+    boundary_Z_translational_velocity_vertical->addLayout(boundary_Z_translational_velocity_horizontal);
+
+    /// X
+    boundary_Z_translational_velocity_horizontal->addSpacing(10);
+    auto boundary_Z_translational_velocity_X_txt = new QLabel("X:");
+    boundary_Z_translational_velocity_horizontal->addWidget(boundary_Z_translational_velocity_X_txt);
+    boundary_Z_velocity_translation_X_box = new SmartDoubleSpinBox();
+    boundary_Z_translational_velocity_horizontal->addWidget(boundary_Z_velocity_translation_X_box);
+    /// Y
+    boundary_Z_translational_velocity_horizontal->addSpacing(5);
+    auto boundary_Z_translational_velocity_Y_txt = new QLabel("Y:");
+    boundary_Z_translational_velocity_horizontal->addWidget(boundary_Z_translational_velocity_Y_txt);
+    boundary_Z_velocity_translation_Z_box = new SmartDoubleSpinBox();
+    boundary_Z_translational_velocity_horizontal->addWidget(boundary_Z_velocity_translation_Z_box);
+    /// Z
+    boundary_Z_translational_velocity_horizontal->addSpacing(5);
+    auto boundary_Z_translational_velocity_Z_txt = new QLabel("Z:");
+    boundary_Z_translational_velocity_horizontal->addWidget(boundary_Z_translational_velocity_Z_txt);
+    boundary_Z_velocity_translation_Z_box = new SmartDoubleSpinBox();
+    boundary_Z_translational_velocity_horizontal->addWidget(boundary_Z_velocity_translation_Z_box);
+
+
     }
 
 
