@@ -47,12 +47,18 @@ Viewport3D::EditModeProperty Viewport3D::get_EditMode_type(EditMode edit_mode){
 
 void Viewport3D::edit_cancel()
 {
+    auto& BoltzmannFluids = Application::get();
+    auto& object = BoltzmannFluids.simulation->objects[selected_object];
+    emit edit_applied_signal(object.transform);
+
     is_editing = false;
     active_edit_mode = TranslateX;
     editing_amount = glm::vec2(0);
     selected_object = SimulationController::not_an_object;
     cursor_position_when_edit_begin = glm::ivec2(-128);
-}
+
+    emit item_deselected_signal();
+ }
 
 bool Viewport3D::is_edit_happening()
 {
@@ -84,6 +90,8 @@ void Viewport3D::edit_apply()
                                     object.transform * editing_matrix;
 
     object.transform = composed_matrix;
+
+    emit edit_applied_signal(object.transform);
 
     edit_cancel();
 }
@@ -254,6 +262,7 @@ void Viewport3D::render_objects(Camera& camera, bool render_to_object_texture){
         }
 
         if (meshes.find(object.second.mesh_id) == meshes.end()){
+
             std::cout << "[BoltzmannFluidsUI Error] Viewport3D::render_objects() object mesh was null" << std::endl;
             ASSERT(false);
         }
@@ -328,6 +337,12 @@ void Viewport3D::mousePressEvent(QMouseEvent *event)
             auto image = *object_id_texture->get_image(Texture2D::ColorFormat::RED, Texture2D::Type::FLOAT, 0, texture_position.x, texture_position.y, 1, 1);
             float data = *(float*)image.get_image_data();
             selected_object = data;
+
+            if (selected_object == 0)
+                emit item_deselected_signal();
+            else
+                emit item_selected_signal(selected_object);
+
         }
         if (is_edit_happening() && can_edit)
             edit_apply();
@@ -372,14 +387,22 @@ void Viewport3D::mouseMoveEvent(QMouseEvent *event)
     glm::ivec2 widget_size = glm::ivec2(width(), height());
     if (is_edit_happening()){
         if (cursor_position_when_edit_begin.x <= 0 || cursor_position_when_edit_begin.y <= 0){
-            std::cout << "here" << std::endl;
             cursor_position_when_edit_begin = current_position;
         }
 
         editing_amount += edit_sensitivity * glm::vec2(current_position - cursor_position_when_edit_begin) / glm::vec2(widget_size) * glm::vec2(1, -1);
 
         cursor_position_when_edit_begin = current_position;
-        std::cout << editing_amount.x << " " << editing_amount.y << std::endl;
+
+        auto& BoltzmannFluids = Application::get();
+        auto& object = BoltzmannFluids.simulation->objects[selected_object];
+
+        glm::mat4 editing_matrix = edit_compute_matrix();
+        glm::mat4 composed_matrix = get_EditMode_type(active_edit_mode) == Translate ?
+                                        editing_matrix * object.transform :
+                                        object.transform * editing_matrix;
+
+        emit edit_applied_signal(composed_matrix);
     }
 }
 

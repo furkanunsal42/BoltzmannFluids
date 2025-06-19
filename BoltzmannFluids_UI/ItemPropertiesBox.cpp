@@ -1,6 +1,15 @@
 #include "ItemPropertiesBox.h"
+#include <glm.hpp>
+#include <gtc/quaternion.hpp>
+#include <gtc/matrix_transform.hpp>
+#include <gtx/transform.hpp>
+
+#include <gtx/matrix_decompose.hpp>
+
+
 #include "SmartDoubleSpinBox.h"
 #include "AddItemsBox.h"
+#include "application.h"
 
 #include <QGroupBox>
 #include <QVBoxLayout>
@@ -17,8 +26,6 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
     main_layout->setSpacing(10);
     setLayout(main_layout);
 
-    /// Initialize AddableItem "item"
-    item = new AddableItem(QString("Object"), Type::CUBE, QIcon());
 
     {   /// Name & Type
         auto name_vertical = new QVBoxLayout();
@@ -26,11 +33,11 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
         name_vertical->setSpacing(0);
         main_layout->addLayout(name_vertical);
 
-      //  name_label = new QLabel("BoltzmannFluids");
-      //  name_vertical->addWidget(name_label);         // TODO: use when add scene collection
+        name_label = new QLabel("BoltzmannFluids");
+        name_vertical->addWidget(name_label);         // TODO: use when add scene collection
 
-        type_label = new QLabel("Object Type");
-        name_vertical->addWidget(type_label);
+      //  type_label = new QLabel("Object Type");
+      //  name_vertical->addWidget(type_label);
     }
 
     {   /// Veocity Translation
@@ -289,28 +296,30 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
     }
 
     main_layout->update();
-    update_styles();
-
 }
 
-void ItemPropertiesBox::set_selected_item(AddableItem& new_item)
+void ItemPropertiesBox::set_selected_item(int32_t selected_object_id)
 {
-    item = &new_item;
-    is_item_selected = true;
-    update_property_fields();
     update_styles();
 }
 
 void ItemPropertiesBox::reset_selected_item()
 {
-    is_item_selected = false;
-    update_property_fields();
     update_styles();
+}
+
+void ItemPropertiesBox::edit_applying(glm::mat4 matrix)
+{
+    update_property_fields(matrix);
 }
 
 void ItemPropertiesBox::update_styles()
 {
-    if (is_item_selected) {
+    auto& BoltzmannFluids = Application::get();
+    auto simulation = BoltzmannFluids.simulation;
+    auto& viewport = BoltzmannFluids.main_window.viewport;
+
+    if (viewport->selected_object != SimulationController::not_an_object) {
         setStyleSheet(
             "ItemPropertiesBox QLabel {"
                 "font-weight: bold;"
@@ -386,25 +395,43 @@ void ItemPropertiesBox::update_styles()
     }
 }
 
-void ItemPropertiesBox::update_property_fields()
+void ItemPropertiesBox::update_property_fields(glm::mat4 matrix)
 {
-    if (!item)
+    auto& BoltzmannFluids = Application::get();
+    auto simulation = BoltzmannFluids.simulation;
+    auto& viewport = BoltzmannFluids.main_window.viewport;
+
+    if (simulation == nullptr)
         return;
 
-    //name_label->setText(item->name);
-    enum_to_qstring(item->type, type_label);
+    if(simulation->objects.find(viewport->selected_object) == simulation->objects.end())
+        return;
 
-    position_X_box->setValue(item->position.x());
-    position_Y_box->setValue(item->position.y());
-    position_Z_box->setValue(item->position.z());
+    int32_t selected_object = viewport->selected_object;
 
-    rotation_X_box->setValue(item->rotation.x());
-    rotation_Y_box->setValue(item->rotation.y());
-    rotation_Z_box->setValue(item->rotation.z());
+    name_label->setText(QString(QString::fromStdString(simulation->objects[selected_object].name)));
+    //enum_to_qstring(item->type, type_label);
 
-    size_X_box->setValue(item->size.x());
-    size_Y_box->setValue(item->size.y());
-    size_Z_box->setValue(item->size.z());
+    glm::mat4 transform = matrix;
+    glm::vec3 scale;
+    glm::quat rotation;
+    glm::vec3 translation;
+    glm::vec3 skew;
+    glm::vec4 perspective;
+    glm::decompose(transform, scale, rotation, translation, skew, perspective);
+    glm::vec3 rotation_euler = glm::eulerAngles(rotation);
+
+    position_X_box->setValue(translation.x);
+    position_Y_box->setValue(translation.y);
+    position_Z_box->setValue(translation.z);
+
+    rotation_X_box->setValue(rotation_euler.x);
+    rotation_Y_box->setValue(rotation_euler.y);
+    rotation_Z_box->setValue(rotation_euler.z);
+
+    size_X_box->setValue(scale.x);
+    size_Y_box->setValue(scale.y);
+    size_Z_box->setValue(scale.z);
 }
 
 
@@ -420,4 +447,100 @@ void enum_to_qstring(Type& type, QLabel* _string) {
         _string->setText("Cylinder");
         break;
     }
+}
+
+
+void ItemPropertiesBox::create_connections()
+{
+    auto update_transform = [&]() {
+
+        auto& BoltzmannFluids = Application::get();
+        auto simulation = BoltzmannFluids.simulation;
+        auto& viewport = BoltzmannFluids.main_window.viewport;
+
+        if (viewport->selected_object == 0 || viewport->selected_object > simulation->objects.size()) {
+            qDebug() << "selected_object: " << viewport->selected_object;
+            return;
+        }
+
+        if (viewport->is_edit_happening())
+            return;
+
+
+        glm::vec3 scale;
+        glm::quat rotation;
+        glm::vec3 translation;
+        glm::vec3 skew;
+        glm::vec4 perspective;
+        glm::decompose(simulation->objects[viewport->selected_object].transform, scale, rotation, translation, skew, perspective);
+
+        std::cout <<"translation" <<translation.x << std::endl;
+
+        glm::quat rotation_new(glm::vec3(rotation_X_box->value(), rotation_Y_box->value(), rotation_Z_box->value()));
+        glm::vec3 translation_new(position_X_box->value(), position_Y_box->value(), position_Z_box->value());
+        glm::vec3 scale_new(glm::vec3(size_X_box->value(), size_Y_box->value(), size_Z_box->value()));
+
+        std::cout <<"translation new: " <<translation_new.x << std::endl;
+
+       // glm::mat4 transform = recompose(scale, rotation, translation, skew, perspective);
+
+
+        glm::mat4 transform = glm::translate((glm::mat4_cast(rotation) * glm::scale(glm::identity<glm::mat4>(), scale)), translation_new);
+        std::cout << "translation: "<< translation.x << std::endl;
+
+
+        simulation->objects[viewport->selected_object].transform = transform;
+    };
+
+    std::vector<QDoubleSpinBox*> boxes = {
+        position_X_box, position_Y_box, position_Z_box,
+        rotation_X_box, rotation_Y_box, rotation_Z_box,
+        size_X_box, size_Y_box, size_Z_box
+    };
+
+    for (auto* box : boxes) {
+        QObject::connect(box, &SmartDoubleSpinBox::valueChanged,
+                         this, [=](double) { update_transform(); });
+    }
+
+}
+
+
+
+template <typename T, glm::qualifier Q>
+GLM_FUNC_DECL glm::mat<4, 4, T, Q> recompose(
+    glm::vec<3, T, Q> const& scale, glm::qua<T, Q> const& orientation, glm::vec<3, T, Q> const& translation,
+    glm::vec<3, T, Q> const& skew, glm::vec<4, T, Q> const& perspective)
+{
+    glm::mat4 m = glm::mat4(1.f);
+
+    m[0][3] = perspective.x;
+    m[1][3] = perspective.y;
+    m[2][3] = perspective.z;
+    m[3][3] = perspective.w;
+
+    m *= glm::translate(translation);
+    m *= glm::mat4_cast(orientation);
+
+    if (skew.x) {
+        glm::mat4 tmp { 1.f };
+        tmp[2][1] = skew.x;
+        m *= tmp;
+    }
+
+    if (skew.y) {
+        glm::mat4 tmp { 1.f };
+        tmp[2][0] = skew.y;
+        m *= tmp;
+    }
+
+    if (skew.z) {
+        glm::mat4 tmp { 1.f };
+        tmp[1][0] = skew.z;
+        m *= tmp;
+    }
+
+    m *= glm::scale(m, scale);
+
+    return m;
 }

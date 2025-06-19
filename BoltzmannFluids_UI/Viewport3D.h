@@ -6,14 +6,26 @@
 #include "Mesh.h"
 
 #include <QOpenGLWidget>
+#include "simulationcontroller.h"
 #include <QMouseEvent>
 
 class Window;
 
 class Viewport3D : public QOpenGLWidget
 {
+    Q_OBJECT
 public:
     Viewport3D(QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
+
+    bool can_edit = true;
+    bool is_edit_happening();
+    int32_t selected_object = SimulationController::not_an_object;
+
+signals:
+    void item_selected_signal(int32_t selected_object_id);
+    void item_deselected_signal();
+
+    void edit_applied_signal(glm::mat4 composed_matrix);
 
 protected:
     virtual void initializeGL();
@@ -59,14 +71,12 @@ protected:
     static EditModeProperty get_EditMode_axis(EditMode edit_mode);
     static EditModeProperty get_EditMode_type(EditMode edit_mode);
 
-    bool can_edit = true;
     bool is_editing = false;
     EditMode active_edit_mode = TranslateX;
     glm::vec2 editing_amount = glm::vec2(0);
     float edit_sensitivity = 3.5f;
     glm::ivec2 cursor_position_when_edit_begin = glm::ivec2(-128);
     void edit_cancel();
-    bool is_edit_happening();
     void edit_begin(EditMode edit_mode);
     void edit_apply();
     glm::mat4 edit_compute_matrix();
@@ -75,7 +85,7 @@ protected:
     std::shared_ptr<Framebuffer> framebuffer = nullptr;
     std::shared_ptr<Texture2D> object_id_texture = nullptr;
     Texture2D::ColorTextureFormat object_id_texture_format = Texture2D::ColorTextureFormat::R16F;
-    int32_t selected_object = 0;
+
 
     // camera controller
     virtual void mousePressEvent(QMouseEvent *event);

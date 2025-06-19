@@ -8,6 +8,8 @@
 #include "ItemPropertiesBox.h"
 #include "MenuBar.h"
 #include "Viewport3D.h"
+#include "application.h"
+#include "SmartDoubleSpinBox.h"
 
 #include <QTextEdit>
 #include <QOpenGLWidget>
@@ -17,6 +19,7 @@
 #include <QSplitter>
 #include <QScrollArea>
 #include <QGraphicsDropShadowEffect>
+#include <qtimer.h>
 
 
 MainWindow::MainWindow(QWidget *parent)
@@ -135,10 +138,6 @@ MainWindow::MainWindow(QWidget *parent)
         "padding: 1px;"
         );
 
-    /// Connect item_properties_box to add_items_box
-    QObject::connect(add_items_box, &AddItemsBox::item_deselected, item_properties_box, &ItemPropertiesBox::reset_selected_item);
-    QObject::connect(add_items_box, &AddItemsBox::item_selected, item_properties_box, &ItemPropertiesBox::set_selected_item);
-
 
     left_scroll_area->setStyleSheet(
         "QWidget { "
@@ -199,8 +198,8 @@ MainWindow::MainWindow(QWidget *parent)
 
 
     // Add widgets directly to splitter
-    auto render_box = new QOpenGLWidget();
-    render_box->setMinimumSize(100, 100);
+    //auto render_box = new QOpenGLWidget();
+    //render_box->setMinimumSize(100, 100);
     //middle_splitter->addWidget(render_box);
 
     /// Rendering Box
@@ -233,6 +232,31 @@ MainWindow::MainWindow(QWidget *parent)
     middle_splitter->setCollapsible(1, false);
     middle_splitter->setCollapsible(2, false);
 
+
+
+
+    /// Connect Viewport3D to item_properties_box
+    //QObject::connect(add_items_box, &AddItemsBox::item_deselected, item_properties_box, &ItemPropertiesBox::reset_selected_item);
+    //QObject::connect(add_items_box, &AddItemsBox::item_selected, item_properties_box, &ItemPropertiesBox::set_selected_item);
+    QObject::connect(viewport, &Viewport3D::item_selected_signal, item_properties_box, &ItemPropertiesBox::set_selected_item);
+    QObject::connect(viewport, &Viewport3D::item_deselected_signal, item_properties_box, &ItemPropertiesBox::reset_selected_item);
+    QObject::connect(viewport, &Viewport3D::edit_applied_signal, item_properties_box, &ItemPropertiesBox::edit_applying);
+
+    QTimer::singleShot(0, this, [=]() {
+        auto& BoltzmannFluids = Application::get();
+        auto simulation = BoltzmannFluids.simulation;
+        auto& viewport = BoltzmannFluids.main_window.viewport;
+
+        item_properties_box->create_connections();
+//        QObject::connect(item_properties_box->velocity_translation_X_box, &SmartDoubleSpinBox::valueChanged,
+//                         [=](double value) {
+//                             if (!viewport || !simulation) return;
+//                             int selected = viewport->selected_object;
+//                             if (selected >= 0 && selected < simulation->objects.size()) {
+//                                 simulation->objects[selected].velocity_translational.x = value;
+//                             }
+//                         });
+    });
 
     // --- Right Panel ---
 

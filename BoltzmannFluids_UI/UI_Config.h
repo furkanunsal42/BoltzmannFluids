@@ -25,7 +25,7 @@ constexpr unsigned int timeline_height              = 80;
 constexpr unsigned int application_output_height    = 150;
 
 // Smart Double Spin Box
-constexpr int DECIMAL_COUNT = 10;
+constexpr int DECIMAL_COUNT = 8;
 constexpr int MIN_DIGITS = 2;
 constexpr float SMARTDOUBLE_MIN = std::numeric_limits<float>::lowest();
 constexpr float SMARTDOUBLE_MAX = std::numeric_limits<float>::max();
