@@ -58,7 +58,7 @@ void main(){
 	float current_depth = 0;
 
 	while(current_depth < ray_info.y) {
-		vec3 value = abs(texture(volume, current_position / scale + 0.5).rgb) * 128;
+		vec3 value = abs(texture(volume, current_position / scale + 0.5).rgb) * 128 * 2;
 		total_value += value * step_length;
 		current_depth += step_length;
 		current_position += object_space_direction * step_length;
@@ -66,5 +66,5 @@ void main(){
 	
 	total_value = 1-exp(-total_value);
 
-	frag_color = vec4(vec3(total_value), 1);
+	frag_color = vec4(vec3(total_value), total_value);
 }
