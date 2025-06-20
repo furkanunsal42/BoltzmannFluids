@@ -542,7 +542,6 @@ void ItemPropertiesBox::create_connections()
         auto& viewport = BoltzmannFluids.main_window.viewport;
 
         if (viewport->selected_object == 0 || viewport->selected_object > simulation->objects.size()) {
-            qDebug() << "selected_object: " << viewport->selected_object;
             return;
         }
 
