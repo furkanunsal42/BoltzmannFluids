@@ -217,7 +217,6 @@ void Viewport3D::paintGL()
     }
 
     render_simulation(camera);
-
 }
 
 void Viewport3D::render_objects(Camera& camera, bool render_to_object_texture){
@@ -303,6 +302,27 @@ void Viewport3D::render_simulation(Camera& camera)
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    if (lbm_solver.get_dimentionality() == 2){
+
+        glm::ivec2 original_offset = primitive_renderer::get_viewport_position();
+        glm::ivec2 window_resolution = primitive_renderer::get_viewport_size();
+        glm::ivec2 simulation_resolution = glm::ivec2(lbm_solver.get_resolution());
+
+        float aspect_ratio_window = (float)window_resolution.x / window_resolution.y;
+        float aspect_ratio_sim = (float)simulation_resolution.x / simulation_resolution.y;
+
+        if (aspect_ratio_sim > aspect_ratio_window){
+            glm::ivec2 offset = glm::ivec2(0, window_resolution.y - window_resolution.x / aspect_ratio_sim) / 2;
+            glm::ivec2 fitting_size = glm::ivec2(window_resolution.x, window_resolution.x / aspect_ratio_sim);
+            primitive_renderer::set_viewport(original_offset + offset, fitting_size);
+        }
+        else {
+            glm::ivec2 offset = glm::ivec2(window_resolution.x - window_resolution.y * aspect_ratio_sim, 0) / 2;
+            glm::ivec2 fitting_size = glm::ivec2(window_resolution.y * aspect_ratio_sim, window_resolution.y);
+            primitive_renderer::set_viewport(original_offset + offset, fitting_size);
+        }
+    }
 
     switch (display_mode) {
     case Density:
