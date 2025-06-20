@@ -38,7 +38,7 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
         name_label = new QLabel("BoltzmannFluids");
         name_vertical->addWidget(name_label);         // TODO: use when add scene collection
 
-        //  type_label = new QLabel("Object Type");
+        //  type_label = new QLabel( Type");
         //  name_vertical->addWidget(type_label);
     }
 
@@ -50,11 +50,12 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
         main_layout->addLayout(is_boundary_horizontal);
 
         auto is_boundary_label = new QLabel("Is Boundary");
-        is_boundary_horizontal->addWidget(name_label);
+        is_boundary_horizontal->addWidget(is_boundary_label);
 
         is_boundary= new QCheckBox(is_boundary_label);
         is_boundary->setChecked(false);
         is_boundary_horizontal->addWidget(is_boundary);
+        is_boundary_horizontal->addStretch();
     }
 
     {   /// Force
@@ -302,25 +303,25 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
     }
     {
         // Item temperature
-        auto item_temprature_vertical = new QHBoxLayout();
-        main_layout->addLayout(item_temprature_vertical);
-        item_temprature_vertical->setContentsMargins(0, 0, 0, 0);
-        item_temprature_vertical->setSpacing(0);
+        auto item_temprature_horizontal = new QHBoxLayout();
+        main_layout->addLayout(item_temprature_horizontal);
+        item_temprature_horizontal->setContentsMargins(0, 0, 0, 0);
+        item_temprature_horizontal->setSpacing(0);
 
         // Label
         auto item_temprature_label = new QLabel("Item Temperature");
-        item_temprature_vertical->addWidget(item_temprature_label);
+        item_temprature_horizontal->addWidget(item_temprature_label);
 
         //auto item_temprature_layout = new QHBoxLayout();
         //item_temprature_layout->addSpacing(18);
         //item_temprature_vertical->addLayout(item_temprature_layout);
 
         // Value
-        item_temprature_vertical->addSpacing(10);
-        auto item_temprature_value = new SmartDoubleSpinBox();
+        item_temprature_horizontal->addSpacing(10);
+        item_temprature_value = new SmartDoubleSpinBox();
         item_temprature_value->setValue(1.00);
-        item_temprature_vertical->addWidget(item_temprature_value);
-        item_temprature_vertical->addSpacing(0);
+        item_temprature_horizontal->addWidget(item_temprature_value);
+        item_temprature_horizontal->addSpacing(0);
     }
 
     {
@@ -340,13 +341,44 @@ ItemPropertiesBox::ItemPropertiesBox(QWidget *parent)
 
         // Value
         effective_density_vertical->addSpacing(17);
-        auto effective_density_value = new SmartDoubleSpinBox();
+        effective_density_value = new SmartDoubleSpinBox();
         effective_density_value->setValue(1.00);
         effective_density_vertical->addWidget(effective_density_value);
         effective_density_vertical->addSpacing(0);
 
     }
 
+
+    setStyleSheet(
+        "ItemPropertiesBox QLabel {"
+            "font-weight: bold;"
+            "background-color: rgb(65, 66, 67);"
+            "color: rgb(225, 226, 227);"
+        "}"
+        "ItemPropertiesBox QLabel::disabled {"
+            "font-weight: bold;"
+            "background-color: rgb(65, 66, 67);"
+            "color: rgb(165, 166, 167);"
+        "}"
+        "ItemPropertiesBox QDoubleSpinBox {"
+            "color: rgb(225, 226, 227);"
+            "border: 1px solid rgb(80, 81, 82);"
+            "background-color: rgb(85, 86, 87);"
+        "}"
+        "ItemPropertiesBox QDoubleSpinBox:hover {"
+            "background-color: rgb(105, 106, 107);"
+        "}"
+
+        "ItemPropertiesBox QDoubleSpinBox::disabled {"
+            "color: rgb(165, 166, 167);"
+            "border: 1px solid rgb(60, 61, 62);"
+            "background-color: rgb(65, 66, 67);"
+        "}"
+        "ItemPropertiesBox QDoubleSpinBox:hover::disabled {"
+            "background-color: rgb(105, 106, 107);"
+        "}"
+        );
+    set_all_widgets(false);
     main_layout->update();
 }
 
@@ -365,6 +397,39 @@ void ItemPropertiesBox::edit_applying(glm::mat4 matrix)
     update_property_fields(matrix);
 }
 
+void ItemPropertiesBox::set_all_widgets(bool value)
+{
+    is_boundary->setEnabled(value);
+
+    force_X->setEnabled(value);
+    force_Y->setEnabled(value);
+    force_Z->setEnabled(value);
+
+    velocity_translation_X_box->setEnabled(value);
+    velocity_translation_Y_box->setEnabled(value);
+    velocity_translation_Z_box->setEnabled(value);
+    velocity_angular_X_box->setEnabled(value);
+    velocity_angular_Y_box->setEnabled(value);
+    velocity_angular_Z_box->setEnabled(value);
+    center_of_mass_X_box->setEnabled(value);
+    center_of_mass_Y_box->setEnabled(value);
+    center_of_mass_Z_box->setEnabled(value);
+
+    position_X_box->setEnabled(value);
+    position_Y_box->setEnabled(value);
+    position_Z_box->setEnabled(value);
+    rotation_X_box->setEnabled(value);
+    rotation_Y_box->setEnabled(value);
+    rotation_Z_box->setEnabled(value);
+    size_X_box->setEnabled(value);
+    size_Y_box->setEnabled(value);
+    size_Z_box->setEnabled(value);
+
+    item_temprature_value->setEnabled(value);
+    effective_density_value->setEnabled(value);
+
+}
+
 void ItemPropertiesBox::update_styles()
 {
     auto& BoltzmannFluids = Application::get();
@@ -372,84 +437,42 @@ void ItemPropertiesBox::update_styles()
     auto& viewport = BoltzmannFluids.main_window.viewport;
 
     if (viewport->selected_object != SimulationController::not_an_object) {
-        setStyleSheet(
-            "ItemPropertiesBox QLabel {"
-            "font-weight: bold;"
-            "background-color: rgb(65, 66, 67);"
-            "color: rgb(225, 226, 227);"
-            "}"
-            "ItemPropertiesBox QDoubleSpinBox {"
-            "color: rgb(225, 226, 227);"
-            "border: 1px solid rgb(80, 81, 82);"
-            "background-color: rgb(85, 86, 87);"
-            "}"
-            "ItemPropertiesBox QDoubleSpinBox:hover {"
-            "background-color: rgb(105, 106, 107);"
-            "}"
-            );
-        velocity_translation_X_box->setEnabled(true);
-        velocity_translation_Y_box->setEnabled(true);
-        velocity_translation_Z_box->setEnabled(true);
-        velocity_angular_X_box->setEnabled(true);
-        velocity_angular_Y_box->setEnabled(true);
-        velocity_angular_Z_box->setEnabled(true);
-        center_of_mass_X_box->setEnabled(true);
-        center_of_mass_Y_box->setEnabled(true);
-        center_of_mass_Z_box->setEnabled(true);
-
-        position_X_box->setEnabled(true);
-        position_Y_box->setEnabled(true);
-        position_Z_box->setEnabled(true);
-        rotation_X_box->setEnabled(true);
-        rotation_Y_box->setEnabled(true);
-        rotation_Z_box->setEnabled(true);
-        size_X_box->setEnabled(true);
-        size_Y_box->setEnabled(true);
-        size_Z_box->setEnabled(true);
-
+        set_all_widgets(true);
         update_property_fields(simulation->objects[viewport->selected_object].transform);
     }
     else {
-        setStyleSheet(
-            "ItemPropertiesBox QLabel {"
-            "font-weight: bold;"
-            "background-color: rgb(65, 66, 67);"
-            "color: rgb(165, 166, 167);"
-            "}"
-            "ItemPropertiesBox QDoubleSpinBox {"
-            "color: rgb(165, 166, 167);"
-            "border: 1px solid rgb(60, 61, 62);"
-            "background-color: rgb(65, 66, 67);"
-            "}"
-            "ItemPropertiesBox QDoubleSpinBox:hover {"
-            "background-color: rgb(105, 106, 107);"
-            "}"
-            );
-        velocity_translation_X_box->setEnabled(false);
-        velocity_translation_Y_box->setEnabled(false);
-        velocity_translation_Z_box->setEnabled(false);
-        velocity_angular_X_box->setEnabled(false);
-        velocity_angular_Y_box->setEnabled(false);
-        velocity_angular_Z_box->setEnabled(false);
-        center_of_mass_X_box->setEnabled(false);
-        center_of_mass_Y_box->setEnabled(false);
-        center_of_mass_Z_box->setEnabled(false);
-
-
-        position_X_box->setEnabled(false);
-        position_Y_box->setEnabled(false);
-        position_Z_box->setEnabled(false);
-        rotation_X_box->setEnabled(false);
-        rotation_Y_box->setEnabled(false);
-        rotation_Z_box->setEnabled(false);
-        size_X_box->setEnabled(false);
-        size_Y_box->setEnabled(false);
-        size_Z_box->setEnabled(false);
-
+        set_all_widgets(false);
         update_property_fields(glm::identity<glm::mat4>());
     }
 
 }
+
+void ItemPropertiesBox::set_default_values()
+{
+    name_label->setText(QString(QString::fromStdString("BoltzmannFluids")));
+
+    is_boundary->setChecked(false);
+
+    force_X->setValue(0.0f);
+    force_Y->setValue(0.0f);
+    force_Z->setValue(0.0f);
+
+    velocity_translation_X_box->setValue(0.0f);
+    velocity_translation_Y_box->setValue(0.0f);
+    velocity_translation_Z_box->setValue(0.0f);
+
+    velocity_angular_X_box->setValue(0.0f);
+    velocity_angular_Y_box->setValue(0.0f);
+    velocity_angular_Z_box->setValue(0.0f);
+
+    center_of_mass_X_box->setValue(0.0f);
+    center_of_mass_Y_box->setValue(0.0f);
+    center_of_mass_Z_box->setValue(0.0f);
+
+    item_temprature_value->setValue(0.0f);
+    effective_density_value->setValue(0.0f);
+
+};
 
 void ItemPropertiesBox::update_property_fields(glm::mat4 matrix)
 {
@@ -461,7 +484,8 @@ void ItemPropertiesBox::update_property_fields(glm::mat4 matrix)
         return;
 
     if(simulation->objects.find(viewport->selected_object) == simulation->objects.end()){
-        name_label->setText(QString(QString::fromStdString("")));
+        set_default_values();
+
     }else{
         int32_t selected_object = viewport->selected_object;
         name_label->setText(QString(QString::fromStdString(simulation->objects[selected_object].name)));

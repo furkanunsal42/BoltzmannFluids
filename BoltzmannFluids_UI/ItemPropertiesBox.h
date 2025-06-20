@@ -32,7 +32,6 @@ public:
     SmartDoubleSpinBox* force_Y;
     SmartDoubleSpinBox* force_Z;
 
-
     SmartDoubleSpinBox* velocity_translation_X_box;
     SmartDoubleSpinBox* velocity_translation_Y_box;
     SmartDoubleSpinBox* velocity_translation_Z_box;
@@ -57,8 +56,8 @@ public:
     SmartDoubleSpinBox* size_Y_box;
     SmartDoubleSpinBox* size_Z_box;
 
-    SmartDoubleSpinBox* temperature;
-    SmartDoubleSpinBox* effective_density;
+    SmartDoubleSpinBox* item_temprature_value;
+    SmartDoubleSpinBox* effective_density_value;
 
     QGroupBox* createInitialConditionsGroup();
 
@@ -71,6 +70,11 @@ public slots:
     void reset_selected_item();
 
     void edit_applying(glm::mat4 _composed_matrix);
+
+private:
+    void set_all_widgets(bool value);
+    void set_default_values();
+
 };
 
 #endif // ITEMPROPERTIESBOX_H

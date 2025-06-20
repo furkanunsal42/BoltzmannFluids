@@ -242,7 +242,6 @@ MainWindow::MainWindow(QWidget *parent)
 
 
 
-
     /// Connect Viewport3D to item_properties_box
     QObject::connect(viewport, &Viewport3D::item_selected_signal, item_properties_box, &ItemPropertiesBox::set_selected_item);
     QObject::connect(viewport, &Viewport3D::item_deselected_signal, item_properties_box, &ItemPropertiesBox::reset_selected_item);
