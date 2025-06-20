@@ -149,6 +149,8 @@ uniform ivec3 lattice_resolution;
 uniform float lattice_speed_of_sound;
 uniform float relaxation_time;
 uniform int object_count;
+uniform float velocity_limit;
+uniform float velocity_limit_extreme;
 
 #if thermal_flow == 1
 uniform float thermal_lattice_speed_of_sound;
@@ -644,9 +646,9 @@ void main(){
 	#endif
 
 	vec3 velocity = compute_velocity(pixel_coord, density) + force/(2*density);
-	bool velocity_out_of_limit = length(velocity.xyz) > 0.28;
-	bool velocity_out_of_limit_extreme = length(velocity.xyz) > 0.3;
-	velocity.xyz = !velocity_out_of_limit ? velocity.xyz : normalize(velocity.xyz)* 0.28;
+	bool velocity_out_of_limit = length(velocity.xyz) > velocity_limit;
+	bool velocity_out_of_limit_extreme = length(velocity.xyz) > velocity_limit_extreme;
+	velocity.xyz = !velocity_out_of_limit ? velocity.xyz : normalize(velocity.xyz) * velocity_limit;
 
 	for (int population_id = 0; population_id < velocity_count; population_id++){
 		

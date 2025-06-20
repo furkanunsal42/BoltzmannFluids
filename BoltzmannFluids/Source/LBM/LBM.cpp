@@ -1526,6 +1526,9 @@ void LBM::_collide(bool save_macrsoscopic_results)
 	kernel.update_uniform("lattice_speed_of_sound", (float)(1.0 / glm::sqrt(3.0)));
 	kernel.update_uniform("relaxation_time", relaxation_time);
 	kernel.update_uniform("lattice_resolution", resolution);
+    kernel.update_uniform("velocity_limit", velocity_limit);
+    kernel.update_uniform("velocity_limit_extreme", velocity_limit_extreme);
+
 
 	if (bits_per_boundry != 0) {
 		kernel.update_uniform_as_storage_buffer("boundries_buffer", *boundries, 0);

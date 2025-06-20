@@ -135,6 +135,13 @@ public:
 	//void add_random_population(int32_t population_index, float amplitude);
 	//void add_random_population(float amplitude);
 
+
+    bool is_lattice_texture3d = false;
+    Texture3D::ColorTextureFormat lattice_tex_internal_format = Texture3D::ColorTextureFormat::R16F;
+
+    float velocity_limit = 2.5;
+    float velocity_limit_extreme = 3.0;
+
 private:
 	
 	std::vector<std::pair<std::string, std::string>> _generate_shader_macros();
@@ -249,9 +256,7 @@ private:
 
 	// device buffers
 	bool is_collide_esoteric = false;
-	bool is_lattice_texture3d = true;
-	Texture3D::ColorTextureFormat lattice_tex_internal_format = Texture3D::ColorTextureFormat::R16F;
-	
+
 	std::shared_ptr<Texture3D> lattice0_tex = nullptr;
 	std::shared_ptr<Texture3D> lattice1_tex = nullptr;
 	std::shared_ptr<Buffer> lattice0 = nullptr;

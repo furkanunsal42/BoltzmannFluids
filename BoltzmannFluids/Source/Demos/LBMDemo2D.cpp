@@ -1,10 +1,12 @@
 #include "LBMDemo2D.h"
 
 void demo2d::poiseuille_flow(LBM& solver) {
-	glm::ivec3 simulation_resolution(1024, 128, 1);
+    glm::ivec3 simulation_resolution(512, 64, 1);
 	solver.clear_boundry_properties();
 	solver.set_boundry_properties(1, glm::vec3(1, 0, 0) / 16.0f);
 	solver.set_boundry_properties(2, glm::vec3(0, 0, 0) / 16.0f);
+
+    solver.is_lattice_texture3d = false;
 
 	solver.initialize_fields(
 		[&](glm::ivec3 coordinate, LBM::FluidProperties& properties) {
@@ -61,23 +63,26 @@ void demo2d::von_karman_street_set_velocity(LBM& solver) {
 }
 
 void demo2d::von_karman_street_periodic(LBM& solver) {
-	glm::ivec3 simulation_resolution(512, 512, 1);
+    glm::ivec3 simulation_resolution(1024, 1024, 1);
 	solver.clear_boundry_properties();
 	solver.set_boundry_properties(1, glm::vec3(0, 0, 0) / 16.0f);
+
+    solver.is_lattice_texture3d = false;
 
 	solver.initialize_fields(
 		[&](glm::ivec3 coordinate, LBM::FluidProperties& properties) {
 
-			properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
+            properties.velocity = glm::vec3(1, 0, 0) / 16.0f;
 
+            //properties.force = glm::vec3(0, -1, 0) / 128000.0f;
 			properties.boundry_id = false;
-			if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1 / 4.0, simulation_resolution.y / 2)) < 32) {
+            if (glm::distance(glm::vec2(coordinate), glm::vec2(simulation_resolution.x * 1 / 4.0, simulation_resolution.y / 2)) < 32) {
 				properties.boundry_id = 1;
 			}
 		},
 		simulation_resolution,
-		0.51f,
-		true,
+        0.51f,
+        true,
 		true,
 		true,
 		VelocitySet::D2Q9,
@@ -102,8 +107,8 @@ void demo2d::von_karman_street_inlet_boundry(LBM& solver) {
 
 			if (coordinate.x == 0)
 				properties.boundry_id = 2;
-			if (coordinate.x == solver.get_resolution().x - 1)
-				properties.boundry_id = 2;
+            if (coordinate.x == solver.get_resolution().x - 1)
+                properties.boundry_id = 2;
 		},
 		simulation_resolution,
 		0.60f,
@@ -188,6 +193,8 @@ void demo2d::rayleigh_benard_convection(LBM& solver) {
 	solver.set_boundry_properties(1, 1.75);
 	solver.set_boundry_properties(2, 0.25);
 	solver.set_boundry_properties(3, 1.0f);
+
+    solver.is_lattice_texture3d = false;
 
 	solver.initialize_fields(
 		[&](glm::ivec3 coordinate, LBM::FluidProperties& properties) {
