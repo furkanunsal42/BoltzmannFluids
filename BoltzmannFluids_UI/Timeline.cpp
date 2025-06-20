@@ -100,7 +100,7 @@ Timeline::Timeline(QWidget *parent, int max_frame)
     frame_display_label->setContentsMargins(0, 1, 0, 0);
     frame_display_layout->addWidget(frame_display_label);
 
-    frame_display_text = new QLineEdit("10", frame_display_box);                 // TODO: change to QSpinBox maybe
+    frame_display_text = new QLineEdit("0", frame_display_box);                 // TODO: change to QSpinBox maybe
     frame_display_text->setMaximumSize(42, 22);
     frame_display_layout->addWidget(frame_display_text);
 
