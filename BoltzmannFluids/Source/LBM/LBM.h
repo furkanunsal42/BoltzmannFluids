@@ -139,8 +139,8 @@ public:
     bool is_lattice_texture3d = false;
     Texture3D::ColorTextureFormat lattice_tex_internal_format = Texture3D::ColorTextureFormat::R16F;
 
-    float velocity_limit = 2.5;
-    float velocity_limit_extreme = 3.0;
+    float velocity_limit = 0.25;
+    float velocity_limit_extreme = 0.30;
 
 private:
 	
