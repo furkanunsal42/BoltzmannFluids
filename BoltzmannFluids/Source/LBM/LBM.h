@@ -138,6 +138,7 @@ public:
 
     bool is_lattice_texture3d = false;
     Texture3D::ColorTextureFormat lattice_tex_internal_format = Texture3D::ColorTextureFormat::R16F;
+	bool is_collide_esoteric = false;
 
     float velocity_limit = 0.25;
     float velocity_limit_extreme = 0.30;
@@ -255,8 +256,6 @@ private:
 	void _set_is_flow_multiphase(bool value);
 
 	// device buffers
-	bool is_collide_esoteric = false;
-
 	std::shared_ptr<Texture3D> lattice0_tex = nullptr;
 	std::shared_ptr<Texture3D> lattice1_tex = nullptr;
 	std::shared_ptr<Buffer> lattice0 = nullptr;

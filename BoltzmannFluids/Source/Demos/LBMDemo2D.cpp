@@ -67,7 +67,8 @@ void demo2d::von_karman_street_periodic(LBM& solver) {
 	solver.clear_boundry_properties();
 	solver.set_boundry_properties(1, glm::vec3(0, 0, 0) / 16.0f);
 
-    solver.is_lattice_texture3d = false;
+    solver.is_lattice_texture3d = true;
+	solver.is_collide_esoteric = true;
 
 	solver.initialize_fields(
 		[&](glm::ivec3 coordinate, LBM::FluidProperties& properties) {

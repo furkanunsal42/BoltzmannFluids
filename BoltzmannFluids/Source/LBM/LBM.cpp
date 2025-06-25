@@ -426,8 +426,13 @@ void LBM::initialize_fields(
 	set_relaxation_time(relaxation_time);
 	_set_velocity_set(velocity_set);
 	_set_floating_point_accuracy(fp_accuracy);
-	if (fp_accuracy == FloatingPointAccuracy::fp16)
+	if (fp_accuracy == FloatingPointAccuracy::fp16) {
+		lattice_tex_internal_format = Texture3D::ColorTextureFormat::R16F;
 		is_lattice_texture3d = true;
+	}
+	else {
+		lattice_tex_internal_format = Texture3D::ColorTextureFormat::R32F;
+	}
 
 	_set_periodic_boundry_x(periodic_x);
 	_set_periodic_boundry_y(periodic_y);
