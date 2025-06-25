@@ -1,7 +1,6 @@
 *.vcxproj
 *.user
 *.filters
-*.dll
 *.qtvscr
 *.obj
 /Source/GUI/build
