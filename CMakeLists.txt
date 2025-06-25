@@ -150,7 +150,14 @@ file(GLOB_RECURSE BoltzmannFluids_Standalone_Sources
     BoltzmannFluids_Standalone/Mains/*.h
     )
 
-    file(COPY "BoltzmannFluids_Standalone/Source/GLSL/" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/BoltzmannFluids_Standalone/Source/GLSL")
+
+file(GLOB_RECURSE BoltzmannFluids_Standalone_DLLS       
+    GraphicsCortex/Dependencies/physx/lib_checked/*.dll
+    GraphicsCortex/Dependencies/libtiff/lib/*.dll 
+    )
+
+file(COPY "BoltzmannFluids_Standalone/Source/GLSL/" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/BoltzmannFluids_Standalone/Source/GLSL")
+file(COPY ${BoltzmannFluids_Standalone_DLLS} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 add_executable(BoltzmannFluids_Standalone ${BoltzmannFluids_Standalone_Sources})
 
@@ -170,11 +177,19 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(CMAKE_PREFIX_PATH C:/Qt/6.8.0/msvc2022_64;)
+
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets OpenGLWidgets REQUIRED)
 
+file(GLOB_RECURSE BoltzmannFluids_UI_DLLS       
+    GraphicsCortex/Dependencies/physx/lib_checked/*.dll
+    GraphicsCortex/Dependencies/libtiff/lib/*.dll 
+    )
+
 file(COPY "BoltzmannFluids_UI/Models/" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/BoltzmannFluids_UI/Models/")
 file(COPY "BoltzmannFluids_UI/Source/GLSL/" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/BoltzmannFluids_UI/Source/GLSL/")
+file(COPY ${BoltzmannFluids_UI_DLLS} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 file(GLOB_RECURSE PROJECT_SOURCES
   BoltzmannFluids_UI/*.cpp
