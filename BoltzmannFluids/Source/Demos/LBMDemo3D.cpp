@@ -97,8 +97,8 @@ void demo3d::multiphase_droplet_collision(LBM& solver)
     solver.clear_boundry_properties();
 
     solver.is_lattice_texture3d = true;
-    solver.velocity_limit = 0.28;
-    solver.velocity_limit_extreme = 0.30;
+    solver.velocity_limit = 0.30;
+    solver.velocity_limit_extreme = 0.32;
 
     solver.initialize_fields(
         [&](glm::ivec3 coordinate, LBM::FluidProperties& properties) {
@@ -122,7 +122,7 @@ void demo3d::multiphase_droplet_collision(LBM& solver)
         true,
         true,
         VelocitySet::D3Q19,
-        FloatingPointAccuracy::fp32,
+        FloatingPointAccuracy::fp16,
         true
     );
 }

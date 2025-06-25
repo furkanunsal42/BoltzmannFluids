@@ -14,6 +14,10 @@
 
 /*
 int main() {
+	lbm_shader_directory = "BoltzmannFluids/Source/GLSL/LBM/";
+	renderer2d_shader_directory = "BoltzmannFluids/Source/GLSL/Renderer2D/";
+	renderer3d_shader_directory = "BoltzmannFluids/Source/GLSL/Renderer3D/";
+	marching_cubes_shader_directory = "BoltzmannFluids/Source/GLSL/MarchingCubes/";
 
 	auto& BoltzmannFluids = Application::get();
 	SimulationController& simulation_controller = BoltzmannFluids.simulation;
@@ -140,7 +144,8 @@ int main() {
 		update_function(deltatime);
 	}
 }
-*/
+/**/
+
 
 int main() {
 
@@ -266,6 +271,7 @@ int main() {
 		update_function(deltatime);
 	}
 }
+/**/
 
 /*
 int main() {
@@ -309,4 +315,4 @@ int main() {
 		window.swap_buffers();
 	}
 }
-*/
+/**/

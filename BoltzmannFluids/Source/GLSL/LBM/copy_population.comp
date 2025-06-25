@@ -32,11 +32,6 @@
 	#error "velocity set is not supported"
 #endif
 
-#if floating_point_accuracy == fp32
-#else
-	#error "other floating point systems than fp32 aren't supported"
-#endif
-
 #define D2Q5 4
 #define D3Q7 5
 
