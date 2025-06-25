@@ -4,3 +4,14 @@
 /BoltzmannFluids.dir
 /CMakeFiles
 /x64
+zlib1.dll
+tiff.dll
+PhysXGpu_64.dll
+PhysXFoundation_64.dll
+PhysXDevice64.dll
+PhysXCooking_64.dll
+PhysXCommon_64.dll
+PhysX_64.dll
+liblzma.dll
+jpeg62.dll
+glut32.dll
