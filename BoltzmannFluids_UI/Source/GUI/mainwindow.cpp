@@ -7,8 +7,8 @@
 #include "Timeline.h"
 #include "ItemPropertiesBox.h"
 #include "MenuBar.h"
-#include "Viewport3D.h"
-#include "application.h"
+#include "3D/Viewport3D.h"
+#include "GUIApplication/Application.h"
 #include "SmartDoubleSpinBox.h"
 #include "TextEditStreamBuffer.h"
 

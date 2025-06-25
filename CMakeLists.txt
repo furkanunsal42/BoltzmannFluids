@@ -236,6 +236,10 @@ set_target_properties(BoltzmannFluids_UI PROPERTIES
     WIN32_EXECUTABLE TRUE
 )
 
+target_include_directories(BoltzmannFluids_UI PUBLIC     
+    BoltzmannFluids_UI/Source
+    )
+
 include(GNUInstallDirs)
 install(TARGETS BoltzmannFluids_UI
     BUNDLE DESTINATION .

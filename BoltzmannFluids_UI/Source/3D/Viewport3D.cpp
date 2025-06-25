@@ -4,8 +4,8 @@
 #include "Demos/LBMDemo3D.h"
 
 #include "Viewport3D.h"
-#include "application.h"
-#include "programsourcepaths.h"
+#include "GUIApplication/Application.h"
+#include "GUIApplication/ProgramSourcePaths.h"
 
 Viewport3D::EditModeProperty Viewport3D::get_EditMode_axis(EditMode edit_mode){
     switch(edit_mode){

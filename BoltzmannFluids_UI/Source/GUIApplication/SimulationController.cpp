@@ -2,14 +2,14 @@
 #include "Demos/LBMDemo3D.h"
 #include "Demos/LBMDemo2D.h"
 
-#include "simulationcontroller.h"
-#include "programsourcepaths.h"
-#include "application.h"
-#include "InitialConditionsBox.h"
+#include "SimulationController.h"
+#include "ProgramSourcePaths.h"
+#include "Application.h"
+#include "GUI/InitialConditionsBox.h"
+#include "GUI/SmartDoubleSpinBox.h"
 
 #include <QComboBox>
 #include <QTimer>
-#include "SmartDoubleSpinBox.h"
 #include <QCheckBox>
 
 SimulationController::SimulationController()

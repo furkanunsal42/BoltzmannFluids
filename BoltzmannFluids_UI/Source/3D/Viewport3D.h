@@ -6,7 +6,7 @@
 #include "Mesh.h"
 
 #include <QOpenGLWidget>
-#include "simulationcontroller.h"
+#include "GUIApplication/SimulationController.h"
 #include <QMouseEvent>
 
 class Window;

@@ -2,8 +2,8 @@
 #define APPLICATION_H
 
 #include "Window.h"
-#include "simulationcontroller.h"
-#include "MainWindow.h"
+#include "SimulationController.h"
+#include "GUI/MainWindow.h"
 
 class Application
 {

@@ -2,7 +2,7 @@
 
 #include "Demos/LBMDemo3D.h"
 
-#include "application.h"
+#include "GUIApplication/Application.h"
 #include <QApplication>
 #include <QTimer>
 

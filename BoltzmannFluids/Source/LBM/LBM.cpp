@@ -426,6 +426,9 @@ void LBM::initialize_fields(
 	set_relaxation_time(relaxation_time);
 	_set_velocity_set(velocity_set);
 	_set_floating_point_accuracy(fp_accuracy);
+	if (fp_accuracy == FloatingPointAccuracy::fp16)
+		is_lattice_texture3d = true;
+
 	_set_periodic_boundry_x(periodic_x);
 	_set_periodic_boundry_y(periodic_y);
 	_set_periodic_boundry_z(periodic_z);

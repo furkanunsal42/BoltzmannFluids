@@ -1,6 +1,6 @@
 #include "Timeline.h"
 #include "TimelineRuler.h"
-#include "application.h"
+#include "GUIApplication/Application.h"
 
 #include <QPushButton>
 #include <QVBoxLayout>

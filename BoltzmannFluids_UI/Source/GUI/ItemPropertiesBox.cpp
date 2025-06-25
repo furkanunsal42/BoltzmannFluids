@@ -9,7 +9,7 @@
 
 #include "SmartDoubleSpinBox.h"
 #include "AddItemsBox.h"
-#include "application.h"
+#include "GUIApplication/Application.h"
 
 #include <QGroupBox>
 #include <QVBoxLayout>

@@ -2,8 +2,8 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "Viewport3D.h"
-#include "simulationcontroller.h"
+#include "3D/Viewport3D.h"
+#include "GUIApplication/SimulationController.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {

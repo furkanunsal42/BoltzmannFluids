@@ -3,8 +3,8 @@
 #include <QVBoxLayout>
 #include <QPushButton>
 
-#include "application.h"
-
+#include "GUIApplication/Application.h"
+ 
 AddableItem::AddableItem(QString name, Type type, QIcon icon, QVector3D position,  QVector3D rotation, QVector3D size)
     : name(std::move(name)), type(type), icon(std::move(icon)), position(position), rotation(rotation), size(size)
 {
