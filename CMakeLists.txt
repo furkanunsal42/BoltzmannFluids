@@ -233,3 +233,8 @@ if(QT_VERSION_MAJOR EQUAL 6)
 endif()
 
 target_link_libraries(BoltzmannFluids_UI PUBLIC BoltzmannFluids)
+
+add_custom_command(TARGET BoltzmannFluids_UI POST_BUILD
+    COMMAND Qt6::windeployqt
+    ARGS $<TARGET_FILE:BoltzmannFluids_UI>
+)
