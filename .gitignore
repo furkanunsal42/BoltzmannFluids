@@ -44,3 +44,4 @@ BoltzmannFluids/Source/GLSL/Renderer3D/.vs/ProjectSettings.json
 
 *.sln
 /RelWithDebInfo
+/BoltzmannFluids_Standalone.dir

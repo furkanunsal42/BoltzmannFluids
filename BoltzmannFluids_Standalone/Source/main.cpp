@@ -142,8 +142,12 @@ int main() {
 }
 */
 
-/*
 int main() {
+
+	lbm_shader_directory = "BoltzmannFluids/Source/GLSL/LBM/";
+	renderer2d_shader_directory = "BoltzmannFluids/Source/GLSL/Renderer2D/";
+	renderer3d_shader_directory = "BoltzmannFluids/Source/GLSL/Renderer3D/";
+	marching_cubes_shader_directory = "BoltzmannFluids/Source/GLSL/MarchingCubes/";
 
 	std::function<void(LBM&)> init_scenario = demo3d::multiphase_droplet_collision;
 
@@ -262,8 +266,8 @@ int main() {
 		update_function(deltatime);
 	}
 }
-*/
 
+/*
 int main() {
 
 	std::function<void(LBM&)> init_scenario = demo3d::multiphase_droplet_collision;
@@ -305,3 +309,4 @@ int main() {
 		window.swap_buffers();
 	}
 }
+*/
