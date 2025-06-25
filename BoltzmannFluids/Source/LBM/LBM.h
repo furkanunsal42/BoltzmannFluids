@@ -143,7 +143,7 @@ public:
     float velocity_limit = 0.25;
     float velocity_limit_extreme = 0.30;
 
-private:
+//private:
 	
 	std::vector<std::pair<std::string, std::string>> _generate_shader_macros();
 	void _compile_shaders();

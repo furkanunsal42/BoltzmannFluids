@@ -482,7 +482,8 @@ void LBM::initialize_fields(
 	density_field->release();
 	velocity_field->release();
 
-	iterate_time();
+	//iterate_time();
+	first_iteration = true;
 
 	std::cout << "[LBM Info] initialize_fields() fields initialization scheme completed with relaxation_iteration_count(" << relaxation_iteration_count << ")" << std::endl;
 }
@@ -1574,14 +1575,15 @@ void LBM::_collide(bool save_macrsoscopic_results)
 			kernel.update_uniform_as_image("force_temperature_texture", *force_temperature_texture, 0);
 	}
 
+	if (is_collide_esoteric) {
+		kernel.update_uniform("is_time_step_odd", (get_total_ticks_elapsed() % 2 == 1) ? 1 : 0);
+		kernel.update_uniform("total_ticks_elapsed", get_total_ticks_elapsed());
+	}
+
 	if (is_lattice_texture3d)
 		kernel.dispatch_thread(resolution.x, resolution.y, resolution.z);
 	else 
 		kernel.dispatch_thread(_get_voxel_count(), 1, 1);
-
-	if (is_collide_esoteric) {
-		kernel.update_uniform("is_time_step_odd", (get_total_ticks_elapsed() % 2 == 1) ? 1 : 0);
-	}
 
 	if (!is_collide_esoteric)
 		_swap_lattice_buffers();

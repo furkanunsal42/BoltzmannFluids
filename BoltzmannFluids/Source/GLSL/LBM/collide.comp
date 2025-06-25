@@ -159,6 +159,7 @@ uniform float intermolecular_interaction_strength;
 
 #if esoteric_pull == 1
 uniform int is_time_step_odd;
+uniform int total_ticks_elapsed;
 #endif
 
 //////////////////////////////////////////
@@ -285,31 +286,35 @@ void set_lattice_target(ivec3 pixel_coord, int population_id, float value){
 	//	return;
 
 	#if lattice_is_texutre3d == 0
-		#if esoteric_pull == 0
-		lattice_target[coord_to_address(writing_pixel_coord, writing_population_id)] = value;
-		#else 
 		lattice_source[coord_to_address(writing_pixel_coord, writing_population_id)] = value;
-		#endif
 	#else
-		#if esoteric_pull == 0
-		imageStore(lattice_target, coord_to_tex3d(writing_pixel_coord, writing_population_id), vec4(value));
-		#else 
 		imageStore(lattice_source, coord_to_tex3d(writing_pixel_coord, writing_population_id), vec4(value));
-		#endif
 	#endif
 }
 
-float compute_density(ivec3 pixel_coord){
+float[velocity_count] get_populations(ivec3 pixel_coord){
+	float[velocity_count] populations;
+	for (int i = 0; i < velocity_count; i++)
+		populations[i] = get_lattice_source(pixel_coord, i);
+	return populations;
+}
+
+void set_populations(ivec3 pixel_coord, float[velocity_count] populations){
+	for (int i = 0; i < velocity_count; i++)
+		set_lattice_target(pixel_coord, i, populations[i]);
+}
+
+float compute_density(float[velocity_count] populations){
 	float density = 0;
 	for (int i = 0; i < velocity_count; i++)
-		density += get_lattice_source(pixel_coord, i);
+		density += populations[i];
 	return density;
 }
 
-vec3 compute_velocity(ivec3 pixel_coord, float density){
+vec3 compute_velocity(float[velocity_count] populations, float density){
 	vec3 velocity = vec3(0);
 	for (int i = 0; i < velocity_count; i++){
-		velocity += get_lattice_source(pixel_coord, i) * get_lattice_vector(i);
+		velocity += populations[i] * get_lattice_vector(i);
 	}
 	return velocity / density;
 }
@@ -447,64 +452,64 @@ ivec3 positive_modulo(ivec3 i, ivec3 n){
 	return ivec3(mod((mod(i, n) + n), n));
 }
 
-vec3 compute_molecular_interaction_force(ivec3 pixel_coord, float temperature){
-	#if multiphase_flow == 1
-
-	float self_density = compute_density(pixel_coord);
-	float self_psi = get_density_pseudopotential(self_density);
-	float G = intermolecular_interaction_strength - get_density_pseudopotential(temperature) * 0.4;
-
-	vec3 interaction_force = vec3(0);
-	for (int population_id = 1; population_id < velocity_count; population_id++){
-		
-		vec3 c = get_lattice_vector(population_id);
-		float w = get_lattice_weight(population_id);
-
-		ivec3 neighbour_coord = pixel_coord + ivec3(c);
-		bool open_boundry = false;
-
-		#if periodic_x == 1
-		neighbour_coord.x = positive_modulo(neighbour_coord.x, lattice_resolution.x);
-		#else
-		open_boundry = open_boundry || (neighbour_coord.x < 0 || neighbour_coord.x >= lattice_resolution.x);
-		#endif
-		
-		#if periodic_y == 1
-		neighbour_coord.y = positive_modulo(neighbour_coord.y, lattice_resolution.y);
-		#else
-		open_boundry = open_boundry || (neighbour_coord.y < 0 || neighbour_coord.y >= lattice_resolution.y);
-		#endif
-		
-		#if periodic_z == 1
-		neighbour_coord.z = positive_modulo(neighbour_coord.z, lattice_resolution.z);
-		#else
-		open_boundry = open_boundry || (neighbour_coord.z < 0 || neighbour_coord.z >= lattice_resolution.z);
-		#endif
-
-		float neighbour_density;
-		if (!open_boundry){
-			neighbour_density = compute_density(neighbour_coord);
-			int neighbour_boundry = int(get_boundry(neighbour_coord));
-			object_info_s neighbour_object = get_object_info(neighbour_boundry);
-			neighbour_density = (neighbour_boundry != 0) ? neighbour_object.effective_density : neighbour_density;
-		}
-		else
-			neighbour_density = self_density;
-
-		float neighbour_psudopotantial = get_density_pseudopotential(neighbour_density);
-		
-		float psi = neighbour_psudopotantial;
-
-		interaction_force += w * psi * c;
-	}
-	
-	interaction_force *= -self_psi * G;
-
-	return interaction_force;
-	#else
-	return vec3(0);
-	#endif
-}
+//vec3 compute_molecular_interaction_force(ivec3 pixel_coord, float temperature){
+//	#if multiphase_flow == 1
+//
+//	float self_density = compute_density(pixel_coord);
+//	float self_psi = get_density_pseudopotential(self_density);
+//	float G = intermolecular_interaction_strength - get_density_pseudopotential(temperature) * 0.4;
+//
+//	vec3 interaction_force = vec3(0);
+//	for (int population_id = 1; population_id < velocity_count; population_id++){
+//		
+//		vec3 c = get_lattice_vector(population_id);
+//		float w = get_lattice_weight(population_id);
+//
+//		ivec3 neighbour_coord = pixel_coord + ivec3(c);
+//		bool open_boundry = false;
+//
+//		#if periodic_x == 1
+//		neighbour_coord.x = positive_modulo(neighbour_coord.x, lattice_resolution.x);
+//		#else
+//		open_boundry = open_boundry || (neighbour_coord.x < 0 || neighbour_coord.x >= lattice_resolution.x);
+//		#endif
+//		
+//		#if periodic_y == 1
+//		neighbour_coord.y = positive_modulo(neighbour_coord.y, lattice_resolution.y);
+//		#else
+//		open_boundry = open_boundry || (neighbour_coord.y < 0 || neighbour_coord.y >= lattice_resolution.y);
+//		#endif
+//		
+//		#if periodic_z == 1
+//		neighbour_coord.z = positive_modulo(neighbour_coord.z, lattice_resolution.z);
+//		#else
+//		open_boundry = open_boundry || (neighbour_coord.z < 0 || neighbour_coord.z >= lattice_resolution.z);
+//		#endif
+//
+//		float neighbour_density;
+//		if (!open_boundry){
+//			neighbour_density = compute_density(neighbour_coord);
+//			int neighbour_boundry = int(get_boundry(neighbour_coord));
+//			object_info_s neighbour_object = get_object_info(neighbour_boundry);
+//			neighbour_density = (neighbour_boundry != 0) ? neighbour_object.effective_density : neighbour_density;
+//		}
+//		else
+//			neighbour_density = self_density;
+//
+//		float neighbour_psudopotantial = get_density_pseudopotential(neighbour_density);
+//		
+//		float psi = neighbour_psudopotantial;
+//
+//		interaction_force += w * psi * c;
+//	}
+//	
+//	interaction_force *= -self_psi * G;
+//
+//	return interaction_force;
+//	#else
+//	return vec3(0);
+//	#endif
+//}
 
 //////////////////////////////////////////
 // collision physics
@@ -622,7 +627,9 @@ void main(){
 		return;
 	#endif
 
-	float density = compute_density(pixel_coord);
+	float[velocity_count] populations = get_populations(pixel_coord);
+
+	float density = compute_density(populations);
 	density = max(density, 0.01);
 
 	vec3 force = get_force(pixel_coord);
@@ -637,17 +644,17 @@ void main(){
 	#endif
 
 	#if multiphase_flow == 1
-	force += compute_molecular_interaction_force(pixel_coord, temperature);
+	//force += compute_molecular_interaction_force(pixel_coord, temperature);
 	#endif
 
-	vec3 velocity = compute_velocity(pixel_coord, density) + force/(2*density);
+	vec3 velocity = compute_velocity(populations, density) + force/(2*density);
 	bool velocity_out_of_limit = length(velocity.xyz) > velocity_limit;
 	bool velocity_out_of_limit_extreme = length(velocity.xyz) > velocity_limit_extreme;
 	velocity.xyz = !velocity_out_of_limit ? velocity.xyz : normalize(velocity.xyz) * velocity_limit;
 
 	for (int population_id = 0; population_id < velocity_count; population_id++){
 		
-		float old_population = get_lattice_source(pixel_coord, population_id);
+		float old_population = populations[population_id];
 
 		float equilibrium_velocity = compute_equilibrium(density, velocity, population_id);
 		
@@ -659,26 +666,31 @@ void main(){
 		float stability_enforced_value = 
 			equilibrium_velocity; 
 
-		set_lattice_target(pixel_coord, population_id, 
-			!velocity_out_of_limit_extreme ? update_value : stability_enforced_value /*stability_enforced_value*/
-		);
+		//set_lattice_target(pixel_coord, population_id, 
+		//	!velocity_out_of_limit_extreme ? update_value : stability_enforced_value /*stability_enforced_value*/
+		//);
 
 		//set_lattice_target(pixel_coord, population_id, 
 		//	update_value
 		//);
 
-
-		//set_lattice_target(pixel_coord, population_id, 
-		//	old_population
-		//);
-
+		populations[population_id] = old_population;
 	}
 
-	//// for debug
-	//if (pixel_coord.x == 500){
-	//	set_lattice_target(pixel_coord, 7, 32);
-	//}
+	// for debug
+	if (pixel_coord.x == 40 && pixel_coord.y == 40 && total_ticks_elapsed == 0){
+		populations[0] = 0;
+		populations[1] = 1;
+		populations[2] = 2;
+		populations[3] = 3;
+		populations[4] = 4;
+		populations[5] = 5;
+		populations[6] = 6;
+		populations[7] = 7;
+		populations[8] = 8;
+	}
 
+	set_populations(pixel_coord, populations);
 
 	#if thermal_flow == 1
 	for (int population_id = 0; population_id < thermal_velocity_count; population_id++){
