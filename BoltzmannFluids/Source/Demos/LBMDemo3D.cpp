@@ -99,8 +99,8 @@ void demo3d::multiphase_droplet_collision(LBM& solver)
     solver.is_lattice_texture3d = true;
 	solver.is_collide_esoteric = true;
 
-    solver.velocity_limit = 0.25;
-    solver.velocity_limit_extreme = 0.28;
+    solver.velocity_limit = 0.32;
+    solver.velocity_limit_extreme = 0.35;
 
     solver.initialize_fields(
         [&](glm::ivec3 coordinate, LBM::FluidProperties& properties) {
@@ -134,6 +134,9 @@ void demo3d::multiphase_raindrop(LBM& solver)
 	glm::ivec3 simulation_resolution(256, 256, 256);
 	solver.clear_boundry_properties();
 
+	solver.is_collide_esoteric = true;
+	solver.is_lattice_texture3d = true;
+
 	solver.initialize_fields(
 		[&](glm::ivec3 coordinate, LBM::FluidProperties& properties) {
 
@@ -155,9 +158,9 @@ void demo3d::multiphase_raindrop(LBM& solver)
 				properties.density = 2.659;
 			}
 
-			//if (coordinate.y == 0) {
-			//	properties.boundry_id = 1;
-			//}
+			if (coordinate.y == 0) {
+				properties.boundry_id = 1;
+			}
 
 		},
 		simulation_resolution,
