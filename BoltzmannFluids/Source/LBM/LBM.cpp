@@ -16,9 +16,16 @@ void LBM::_compile_shaders()
 
 	auto definitions_plus_not_save = definitions;
 	definitions_plus_not_save.push_back(std::pair("save_macroscopic_variables", "0"));
+	definitions_plus_not_save.push_back(std::pair("update_lattices", "1"));
 
 	auto definitions_plus_save = definitions;
 	definitions_plus_save.push_back(std::pair("save_macroscopic_variables", "1"));
+	definitions_plus_save.push_back(std::pair("update_lattices", "1"));
+
+	auto definitions_plus_save_but_not_update = definitions;
+	definitions_plus_save_but_not_update.push_back(std::pair("save_macroscopic_variables", "1"));
+	definitions_plus_save_but_not_update.push_back(std::pair("update_lattices", "0"));
+
 
 	std::cout << "[LBM Info] kernels are compiled with configuration : " << std::endl;
 	for (auto& definition : definitions)
@@ -28,6 +35,7 @@ void LBM::_compile_shaders()
 	lbm_stream_thermal							= std::make_shared<ComputeProgram>(Shader(lbm_shader_directory / "stream_thermal.comp"), definitions);
 	lbm_collide									= std::make_shared<ComputeProgram>(Shader(lbm_shader_directory / "collide.comp"), definitions_plus_not_save);
 	lbm_collide_save							= std::make_shared<ComputeProgram>(Shader(lbm_shader_directory / "collide.comp"), definitions_plus_save);
+	lbm_collide_save_but_not_update				= std::make_shared<ComputeProgram>(Shader(lbm_shader_directory / "collide.comp"), definitions_plus_save_but_not_update);
 	lbm_collide_with_precomputed_velocity		= std::make_shared<ComputeProgram>(Shader(lbm_shader_directory / "collide_with_precomputed_velocity.comp"), definitions);
 	lbm_set_equilibrium_populations				= std::make_shared<ComputeProgram>(Shader(lbm_shader_directory / "set_equilibrium_populations.comp"), definitions);
 	lbm_set_equilibrium_populations_thermal		= std::make_shared<ComputeProgram>(Shader(lbm_shader_directory / "set_equilibrium_populations_thermal.comp"), definitions);
@@ -223,13 +231,7 @@ void LBM::iterate_time(float target_tick_per_second)
 		bool should_update_visuals = first_iteration || std::chrono::duration_cast<std::chrono::milliseconds>(time_since_visual_update).count() > 1000.0 / 60;
 		if (should_update_visuals) last_visual_update = std::chrono::system_clock::now();
 
-		_collide(should_update_visuals);
-
-		if (!is_collide_esoteric)
-			_stream();
-		
-		if (is_flow_thermal)
-			_stream_thermal();
+		_iterate_time(should_update_visuals, true);
 
 		total_ticks_elapsed++;
 	}
@@ -390,6 +392,21 @@ void LBM::_set_is_flow_multiphase(bool value)
 	is_programs_compiled = false;
 }
 
+std::shared_ptr<Texture3D> LBM::_get_multiphase_density_tex_source()
+{
+	return is_multiphase_density_tex0_source ? multiphase_density_tex0 : multiphase_density_tex1;
+}
+
+std::shared_ptr<Texture3D> LBM::_get_multiphase_density_tex_target()
+{
+	return is_multiphase_density_tex0_source ? multiphase_density_tex1 : multiphase_density_tex0;
+}
+
+void LBM::_swap_multiphase_density_textures()
+{
+	is_multiphase_density_tex0_source = !is_multiphase_density_tex0_source;
+}
+
 bool LBM::get_is_flow_multiphase()
 {
 	return is_flow_multiphase;
@@ -482,7 +499,7 @@ void LBM::initialize_fields(
 	density_field->release();
 	velocity_field->release();
 
-	//iterate_time();
+	_iterate_time(true, false);
 	first_iteration = true;
 
 	std::cout << "[LBM Info] initialize_fields() fields initialization scheme completed with relaxation_iteration_count(" << relaxation_iteration_count << ")" << std::endl;
@@ -826,6 +843,26 @@ void LBM::_generate_lattice_buffer()
 
 		//lattice0->clear(0.0f);
 		//lattice1->clear(0.0f);
+	}
+
+	if (is_flow_multiphase) {
+		multiphase_density_tex0 = std::make_shared<Texture3D>(
+			resolution.x,
+			resolution.y,
+			resolution.z,
+			multiphase_density_tex_internal_format,
+			1,
+			0
+		);
+
+		multiphase_density_tex1 = std::make_shared<Texture3D>(
+			resolution.x,
+			resolution.y,
+			resolution.z,
+			multiphase_density_tex_internal_format,
+			1,
+			0
+		);
 	}
 
 	
@@ -1438,9 +1475,21 @@ std::vector<std::pair<std::string, std::string>> LBM::_generate_shader_macros()
 		{"lattice_is_texutre3d",	is_lattice_texture3d ? "1" : "0"},
 		{"lattice_texture3d_internal_format", Texture3D::ColorTextureFormat_to_OpenGL_compute_Image_format(lattice_tex_internal_format)},
 		{"esoteric_pull",			is_collide_esoteric ? "1" : "0"},
+		{"multiphase_density_texture3d_internal_format", Texture3D::ColorTextureFormat_to_OpenGL_compute_Image_format(multiphase_density_tex_internal_format)}
 	};
 
 	return definitions;
+}
+
+void LBM::_iterate_time(bool should_update_visuals, bool update_lattices)
+{
+	_collide(should_update_visuals, update_lattices);
+
+	if (!is_collide_esoteric)
+		_stream();
+
+	if (is_flow_thermal)
+		_stream_thermal();
 }
 
 void LBM::_stream()
@@ -1505,11 +1554,14 @@ void LBM::_stream()
 		_swap_lattice_buffers();
 }
 
-void LBM::_collide(bool save_macrsoscopic_results)
+void LBM::_collide(bool save_macrsoscopic_results, bool should_update_lattices)
 {
 	_compile_shaders();
 
-	ComputeProgram& kernel = save_macrsoscopic_results ? *lbm_collide_save : *lbm_collide;
+	ComputeProgram& kernel = 
+		!should_update_lattices ? *lbm_collide_save_but_not_update : 
+		save_macrsoscopic_results ? *lbm_collide_save : 
+		*lbm_collide;
 
 	if (is_lattice_texture3d) {
 		Texture3D& lattice_tex_source = *_get_lattice_tex_source();
@@ -1562,6 +1614,12 @@ void LBM::_collide(bool save_macrsoscopic_results)
 	}
 
 	if (is_flow_multiphase) {
+		Texture3D& multiphase_density_texture_source = *_get_multiphase_density_tex_source();
+		Texture3D& multiphase_density_texture_target = *_get_multiphase_density_tex_target();
+
+		kernel.update_uniform_as_image("multiphase_density_texture_source", multiphase_density_texture_source, 0);
+		kernel.update_uniform_as_image("multiphase_density_texture_target", multiphase_density_texture_target, 0);
+
 		kernel.update_uniform("intermolecular_interaction_strength", intermolecular_interaction_strength);
 	}
 
@@ -1585,8 +1643,11 @@ void LBM::_collide(bool save_macrsoscopic_results)
 	else 
 		kernel.dispatch_thread(_get_voxel_count(), 1, 1);
 
-	if (!is_collide_esoteric)
+	if (!is_collide_esoteric && should_update_lattices)
 		_swap_lattice_buffers();
+
+	if (is_flow_multiphase)
+		_swap_multiphase_density_textures();
 
 	_swap_thermal_lattice_buffers();
 }

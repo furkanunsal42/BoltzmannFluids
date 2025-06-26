@@ -56,6 +56,7 @@
 #define multiphase_flow 1
 
 #define save_macroscopic_variables 1
+#define update_lattices 1
 
 #if volume_dimentionality == 2
 	#define macroscopic_image_type image2D
@@ -66,16 +67,34 @@
 
 #define lattice_is_texutre3d 1
 #define lattice_texture3d_internal_format r16f
+#define multiphase_density_texture3d_internal_format r16f
 
 #define esoteric_pull 1
 
 #define id gl_GlobalInvocationID
 
+
 #if lattice_is_texutre3d  == 1
-layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
-#else 
-layout (local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
+#if volume_dimentionality == 3
+	#define workgroup_size_x 4
+	#define workgroup_size_y 4
+	#define workgroup_size_z 4
+#else
+	#define workgroup_size_x 8
+	#define workgroup_size_y 8
+	#define workgroup_size_z 1
 #endif
+#else 
+#define workgroup_size_x 64
+#define workgroup_size_y 1
+#define workgroup_size_z 1
+#endif
+
+layout (
+	local_size_x = workgroup_size_x,
+	local_size_y = workgroup_size_y,
+	local_size_z = workgroup_size_z
+	) in;
 
 layout(std140, binding = 0) uniform velocity_set_buffer {
 	vec4[velocity_count] lattice_velocity_set;
@@ -130,13 +149,18 @@ layout(std430, binding = 8) buffer thermal_lattice_buffer_target {
 };
 #endif
 
+#if multiphase_flow == 1
+	layout(multiphase_density_texture3d_internal_format, binding = 3) uniform image3D multiphase_density_texture_source;
+	layout(multiphase_density_texture3d_internal_format, binding = 4) uniform image3D multiphase_density_texture_target;
+#endif
+
 #if save_macroscopic_variables == 1
-	layout(rgba32f, binding = 3) uniform image3D velocity_density_texture;
+	layout(rgba32f, binding = 5) uniform image3D velocity_density_texture;
 	#if boundry_count > 1
-	layout(r8,		binding = 4) uniform image3D boundry_texture;
+	layout(r8,		binding = 6) uniform image3D boundry_texture;
 	#endif
 	#if forcing_scheme == 1 || thermal_flow == 1 || multiphase_flow == 1
-	layout(rgba32f, binding = 5) uniform image3D force_temperature_texture;
+	layout(rgba32f, binding = 7) uniform image3D force_temperature_texture;
 	#endif
 #endif
 
@@ -193,9 +217,6 @@ ivec3 coord_to_tex3d(ivec3 pixel_coord, uint population_id){
 }
 
 int get_inverse_lattice_population_id_index(int lattice_population_id){
-	//if (lattice_population_id == 0 || lattice_population_id >= velocity_count)
-	//	return 0;
-
 	bool is_odd = lattice_population_id % 2 == 1;
 	return max(is_odd ? lattice_population_id + 1 : lattice_population_id - 1, 0);
 }
@@ -206,6 +227,18 @@ vec3 get_lattice_vector(int population_id){
 
 float get_lattice_weight(int population_id){
 	return lattice_velocity_set[population_id].w;
+}
+
+int positive_modulo(int i, int n){
+	return int(mod((mod(i, n) + n), n));
+}
+
+ivec2 positive_modulo(ivec2 i, ivec2 n){
+	return ivec2(mod((mod(i, n) + n), n));
+}
+
+ivec3 positive_modulo(ivec3 i, ivec3 n){
+	return ivec3(mod((mod(i, n) + n), n));
 }
 
 float get_lattice_source(ivec3 pixel_coord, int population_id){
@@ -226,6 +259,8 @@ float get_lattice_source(ivec3 pixel_coord, int population_id){
 		reading_population_id = population_id;
 		reading_pixel_coord = pixel_coord - ivec3(get_lattice_vector(reading_population_id));
 
+
+
 	} else {
 		// odd time step
 		//reading_population_id = get_inverse_lattice_population_id_index(population_id);
@@ -240,8 +275,27 @@ float get_lattice_source(ivec3 pixel_coord, int population_id){
 	}
 	#endif // esoteric_pull
 
-	//if (any(equal(reading_pixel_coord, ivec3(0, 0, 0))) || any(equal(reading_pixel_coord, lattice_resolution-1)))
-	//	return 0.1;
+	bool open_boundry = false;
+	#if periodic_x == 1
+	reading_pixel_coord.x = positive_modulo(reading_pixel_coord.x, lattice_resolution.x);
+	#else
+	open_boundry = open_boundry || (reading_pixel_coord.x < 0 || reading_pixel_coord.x >= lattice_resolution.x);
+	#endif
+		
+	#if periodic_y == 1
+	reading_pixel_coord.y = positive_modulo(reading_pixel_coord.y, lattice_resolution.y);
+	#else
+	open_boundry = open_boundry || (reading_pixel_coord.y < 0 || reading_pixel_coord.y >= lattice_resolution.y);
+	#endif
+		
+	#if periodic_z == 1
+	reading_pixel_coord.z = positive_modulo(reading_pixel_coord.z, lattice_resolution.z);
+	#else
+	open_boundry = open_boundry || (reading_pixel_coord.z < 0 || reading_pixel_coord.z >= lattice_resolution.z);
+	#endif
+
+	if (open_boundry)
+		return 0.01;
 
 	#if lattice_is_texutre3d == 0
 	return lattice_source[coord_to_address(reading_pixel_coord, reading_population_id)];
@@ -281,6 +335,28 @@ void set_lattice_target(ivec3 pixel_coord, int population_id, float value){
 		writing_pixel_coord = pixel_coord;
 	}
 	#endif // esoteric_pull
+
+	bool open_boundry = false;
+	#if periodic_x == 1
+	writing_pixel_coord.x = positive_modulo(writing_pixel_coord.x, lattice_resolution.x);
+	#else
+	open_boundry = open_boundry || (writing_pixel_coord.x < 0 || writing_pixel_coord.x >= lattice_resolution.x);
+	#endif
+		
+	#if periodic_y == 1
+	writing_pixel_coord.y = positive_modulo(writing_pixel_coord.y, lattice_resolution.y);
+	#else
+	open_boundry = open_boundry || (writing_pixel_coord.y < 0 || writing_pixel_coord.y >= lattice_resolution.y);
+	#endif
+		
+	#if periodic_z == 1
+	writing_pixel_coord.z = positive_modulo(writing_pixel_coord.z, lattice_resolution.z);
+	#else
+	open_boundry = open_boundry || (writing_pixel_coord.z < 0 || writing_pixel_coord.z >= lattice_resolution.z);
+	#endif
+	
+	if (open_boundry)
+		return;
 
 	//if (any(equal(writing_pixel_coord, ivec3(0, 0, 0))) || any(equal(writing_pixel_coord, lattice_resolution-1)))
 	//	return;
@@ -386,7 +462,6 @@ vec3 get_force(ivec3 pixel_coord){
 	#endif
 }
 
-
 //////////////////////////////////////////
 // thermal flow subsystem
 
@@ -440,76 +515,73 @@ float get_density_pseudopotential(float density){
 	return rho0 * (1 - exp(-density/rho0));
 }
 
-int positive_modulo(int i, int n){
-	return int(mod((mod(i, n) + n), n));
+float get_multiphase_density(ivec3 pixel_coord){
+	#if multiphase_flow == 1
+	return imageLoad(multiphase_density_texture_source, pixel_coord).x;
+	#else
+	return 0.01;
+	#endif
 }
 
-ivec2 positive_modulo(ivec2 i, ivec2 n){
-	return ivec2(mod((mod(i, n) + n), n));
+void set_multiphase_density(ivec3 pixel_coord, float value){
+	#if multiphase_flow == 1
+	imageStore(multiphase_density_texture_target, pixel_coord, vec4(value));
+	#else
+	return;
+	#endif
 }
 
-ivec3 positive_modulo(ivec3 i, ivec3 n){
-	return ivec3(mod((mod(i, n) + n), n));
-}
+vec3 compute_molecular_interaction_force(ivec3 pixel_coord, float self_density, float temperature){
+	#if multiphase_flow == 1
 
-//vec3 compute_molecular_interaction_force(ivec3 pixel_coord, float temperature){
-//	#if multiphase_flow == 1
-//
-//	float self_density = compute_density(pixel_coord);
-//	float self_psi = get_density_pseudopotential(self_density);
-//	float G = intermolecular_interaction_strength - get_density_pseudopotential(temperature) * 0.4;
-//
-//	vec3 interaction_force = vec3(0);
-//	for (int population_id = 1; population_id < velocity_count; population_id++){
-//		
-//		vec3 c = get_lattice_vector(population_id);
-//		float w = get_lattice_weight(population_id);
-//
-//		ivec3 neighbour_coord = pixel_coord + ivec3(c);
-//		bool open_boundry = false;
-//
-//		#if periodic_x == 1
-//		neighbour_coord.x = positive_modulo(neighbour_coord.x, lattice_resolution.x);
-//		#else
-//		open_boundry = open_boundry || (neighbour_coord.x < 0 || neighbour_coord.x >= lattice_resolution.x);
-//		#endif
-//		
-//		#if periodic_y == 1
-//		neighbour_coord.y = positive_modulo(neighbour_coord.y, lattice_resolution.y);
-//		#else
-//		open_boundry = open_boundry || (neighbour_coord.y < 0 || neighbour_coord.y >= lattice_resolution.y);
-//		#endif
-//		
-//		#if periodic_z == 1
-//		neighbour_coord.z = positive_modulo(neighbour_coord.z, lattice_resolution.z);
-//		#else
-//		open_boundry = open_boundry || (neighbour_coord.z < 0 || neighbour_coord.z >= lattice_resolution.z);
-//		#endif
-//
-//		float neighbour_density;
-//		if (!open_boundry){
-//			neighbour_density = compute_density(neighbour_coord);
-//			int neighbour_boundry = int(get_boundry(neighbour_coord));
-//			object_info_s neighbour_object = get_object_info(neighbour_boundry);
-//			neighbour_density = (neighbour_boundry != 0) ? neighbour_object.effective_density : neighbour_density;
-//		}
-//		else
-//			neighbour_density = self_density;
-//
-//		float neighbour_psudopotantial = get_density_pseudopotential(neighbour_density);
-//		
-//		float psi = neighbour_psudopotantial;
-//
-//		interaction_force += w * psi * c;
-//	}
-//	
-//	interaction_force *= -self_psi * G;
-//
-//	return interaction_force;
-//	#else
-//	return vec3(0);
-//	#endif
-//}
+	float self_psi = get_density_pseudopotential(self_density);
+	float G = intermolecular_interaction_strength;
+
+	vec3 interaction_force = vec3(0);
+	for (int population_id = 1; population_id < velocity_count; population_id++){
+		
+		vec3 c = get_lattice_vector(population_id);
+		float w = get_lattice_weight(population_id);
+
+		ivec3 neighbour_coord = pixel_coord + ivec3(c);
+		bool open_boundry = false;
+
+		#if periodic_x == 1
+		neighbour_coord.x = positive_modulo(neighbour_coord.x, lattice_resolution.x);
+		#else
+		open_boundry = open_boundry || (neighbour_coord.x < 0 || neighbour_coord.x >= lattice_resolution.x);
+		#endif
+		
+		#if periodic_y == 1
+		neighbour_coord.y = positive_modulo(neighbour_coord.y, lattice_resolution.y);
+		#else
+		open_boundry = open_boundry || (neighbour_coord.y < 0 || neighbour_coord.y >= lattice_resolution.y);
+		#endif
+		
+		#if periodic_z == 1
+		neighbour_coord.z = positive_modulo(neighbour_coord.z, lattice_resolution.z);
+		#else
+		open_boundry = open_boundry || (neighbour_coord.z < 0 || neighbour_coord.z >= lattice_resolution.z);
+		#endif
+
+		float neighbour_density = get_multiphase_density(neighbour_coord);
+		if (open_boundry)
+			neighbour_density = self_density; // Referance Density!
+
+		float neighbour_psudopotantial = get_density_pseudopotential(neighbour_density);
+		
+		float psi = neighbour_psudopotantial;
+
+		interaction_force += w * psi * c;
+	}
+	
+	interaction_force *= -self_psi * G;
+
+	return interaction_force;
+	#else
+	return vec3(0);
+	#endif
+}
 
 //////////////////////////////////////////
 // collision physics
@@ -644,7 +716,7 @@ void main(){
 	#endif
 
 	#if multiphase_flow == 1
-	//force += compute_molecular_interaction_force(pixel_coord, temperature);
+	force += compute_molecular_interaction_force(pixel_coord, density, temperature);
 	#endif
 
 	vec3 velocity = compute_velocity(populations, density) + force/(2*density);
@@ -652,6 +724,7 @@ void main(){
 	bool velocity_out_of_limit_extreme = length(velocity.xyz) > velocity_limit_extreme;
 	velocity.xyz = !velocity_out_of_limit ? velocity.xyz : normalize(velocity.xyz) * velocity_limit;
 
+	#if update_lattices == 1
 	for (int population_id = 0; population_id < velocity_count; population_id++){
 		
 		float old_population = populations[population_id];
@@ -666,31 +739,34 @@ void main(){
 		float stability_enforced_value = 
 			equilibrium_velocity; 
 
-		//set_lattice_target(pixel_coord, population_id, 
-		//	!velocity_out_of_limit_extreme ? update_value : stability_enforced_value /*stability_enforced_value*/
-		//);
+		populations[population_id] = !velocity_out_of_limit_extreme ? update_value : stability_enforced_value; /*stability_enforced_value*/
 
-		//set_lattice_target(pixel_coord, population_id, 
-		//	update_value
-		//);
-
-		populations[population_id] = old_population;
+		//populations[population_id] = old_population;
 	}
 
 	// for debug
-	if (pixel_coord.x == 40 && pixel_coord.y == 40 && total_ticks_elapsed == 0){
-		populations[0] = 0;
-		populations[1] = 1;
-		populations[2] = 2;
-		populations[3] = 3;
-		populations[4] = 4;
-		populations[5] = 5;
-		populations[6] = 6;
-		populations[7] = 7;
-		populations[8] = 8;
-	}
+	//if (pixel_coord.x == 40 && pixel_coord.y == 40 && total_ticks_elapsed == 0){
+	//	populations[0] = 0;
+	//	populations[1] = 1;
+	//	populations[2] = 2;
+	//	populations[3] = 3;
+	//	populations[4] = 4;
+	//	populations[5] = 5;
+	//	populations[6] = 6;
+	//	populations[7] = 7;
+	//	populations[8] = 8;
+	//}
 
 	set_populations(pixel_coord, populations);
+	#endif
+
+	#if multiphase_flow == 1
+	float multiphase_effective_density = density;
+		#if boundry_count > 1
+		multiphase_effective_density = boundry_id == 0 ? density : get_object_info(int(boundry_id)).effective_density;
+		#endif
+	set_multiphase_density(pixel_coord, multiphase_effective_density);
+	#endif
 
 	#if thermal_flow == 1
 	for (int population_id = 0; population_id < thermal_velocity_count; population_id++){

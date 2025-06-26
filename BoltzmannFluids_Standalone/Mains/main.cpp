@@ -176,7 +176,7 @@ int main() {
 	renderer3d_shader_directory = "BoltzmannFluids/Source/GLSL/Renderer3D/";
 	marching_cubes_shader_directory = "BoltzmannFluids/Source/GLSL/MarchingCubes/";
 
-	std::function<void(LBM&)> init_scenario = esoteric_demo;
+	std::function<void(LBM&)> init_scenario = demo3d::multiphase_droplet_collision;
 
 	WindowDescription desc;
 	desc.w_scale_framebuffer_size = false;
@@ -240,51 +240,51 @@ int main() {
 	auto last_ticks_print = std::chrono::system_clock::now();
 	auto update_function = [&](double deltatime) {
 		
-		if (!pause) {
-			solver.iterate_time(0);
-			
-			auto image = solver.lattice0_tex->get_image(Texture3D::ColorFormat::RED, Texture3D::Type::FLOAT, 0);
-			float* raw_data = (float*)image->get_image_data();
-			
-			std::cout << solver.get_total_ticks_elapsed() << std::endl;;
-			for (int y = 32; y < 48; y++) {
-				for (int x = 32; x < 48; x++) {
-					int32_t population_id = 1;
-					glm::ivec3 pixel_coord(x, y, 0);
-
-					glm::ivec3 tex3_address = glm::ivec3(solver.resolution.x * population_id, 0, 0) + pixel_coord;
-					std::cout << std::fixed << std::setprecision(2) << raw_data[tex3_address.y * (solver.resolution.x * 9) + tex3_address.x] << " ";
-				}
-				std::cout << std::endl;
-			}
-			std::cout << std::endl;
-
-			for (int y = 32; y < 48; y++) {
-				for (int x = 32; x < 48; x++) {
-					int32_t population_id = 2;
-					glm::ivec3 pixel_coord(x, y, 0);
-					
-					glm::ivec3 tex3_address = glm::ivec3(solver.resolution.x * population_id, 0, 0) + pixel_coord;
-					std::cout << std::fixed << std::setprecision(2) << raw_data[tex3_address.y * (solver.resolution.x*9) + tex3_address.x] << " ";
-				}
-				std::cout << std::endl;
-			}
-			std::cout << std::endl;
-			std::cout << std::endl;
-			std::cout << std::endl;
-			pause = true;
-		}
+		//if (!pause) {
+		//	solver.iterate_time(0);
+		//	
+		//	auto image = solver.lattice0_tex->get_image(Texture3D::ColorFormat::RED, Texture3D::Type::FLOAT, 0);
+		//	float* raw_data = (float*)image->get_image_data();
+		//	
+		//	std::cout << solver.get_total_ticks_elapsed() << std::endl;;
+		//	for (int y = 32; y < 48; y++) {
+		//		for (int x = 32; x < 48; x++) {
+		//			int32_t population_id = 1;
+		//			glm::ivec3 pixel_coord(x, y, 0);
+		//
+		//			glm::ivec3 tex3_address = glm::ivec3(solver.resolution.x * population_id, 0, 0) + pixel_coord;
+		//			std::cout << std::fixed << std::setprecision(2) << raw_data[tex3_address.y * (solver.resolution.x * 9) + tex3_address.x] << " ";
+		//		}
+		//		std::cout << std::endl;
+		//	}
+		//	std::cout << std::endl;
+		//
+		//	for (int y = 32; y < 48; y++) {
+		//		for (int x = 32; x < 48; x++) {
+		//			int32_t population_id = 2;
+		//			glm::ivec3 pixel_coord(x, y, 0);
+		//			
+		//			glm::ivec3 tex3_address = glm::ivec3(solver.resolution.x * population_id, 0, 0) + pixel_coord;
+		//			std::cout << std::fixed << std::setprecision(2) << raw_data[tex3_address.y * (solver.resolution.x*9) + tex3_address.x] << " ";
+		//		}
+		//		std::cout << std::endl;
+		//	}
+		//	std::cout << std::endl;
+		//	std::cout << std::endl;
+		//	std::cout << std::endl;
+		//	pause = true;
+		//}
 
 
 		
-		//if (!pause) {
-		//	solver.iterate_time(50);
-		//
-		//	if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - last_ticks_print).count() >= 1000) {
-		//		last_ticks_print = std::chrono::system_clock::now();
-		//		std::cout << "[LBM Info] total ticks elapsed : " << solver.get_total_ticks_elapsed() << std::endl;
-		//	}
-		//}
+		if (!pause) {
+			solver.iterate_time(0);
+		
+			if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - last_ticks_print).count() >= 1000) {
+				last_ticks_print = std::chrono::system_clock::now();
+				std::cout << "[LBM Info] total ticks elapsed : " << solver.get_total_ticks_elapsed() << std::endl;
+			}
+		}
 
 		primitive_renderer::clear(0, 0, 0, 0);
 		camera_controller.handle_movements(window, deltatime);

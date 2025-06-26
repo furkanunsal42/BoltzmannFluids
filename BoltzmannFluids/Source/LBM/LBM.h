@@ -137,7 +137,8 @@ public:
 
 
     bool is_lattice_texture3d = false;
-    Texture3D::ColorTextureFormat lattice_tex_internal_format = Texture3D::ColorTextureFormat::R16F;
+	Texture3D::ColorTextureFormat lattice_tex_internal_format = Texture3D::ColorTextureFormat::R16F;
+	Texture3D::ColorTextureFormat multiphase_density_tex_internal_format = Texture3D::ColorTextureFormat::R32F;
 	bool is_collide_esoteric = false;
 
     float velocity_limit = 0.25;
@@ -153,8 +154,9 @@ public:
 	size_t _coord_to_id(uint32_t x, uint32_t y, uint32_t z);
 	size_t _get_voxel_count();
 
+	void _iterate_time(bool should_update_visuals, bool update_lattices);
 	void _stream();
-	void _collide(bool save_macrsoscopic_results);
+	void _collide(bool save_macrsoscopic_results, bool should_update_lattices);
 	void _generate_lattice_buffer();
 
 	// initialization functions
@@ -254,8 +256,14 @@ public:
 	bool is_flow_multiphase = true;
 	float intermolecular_interaction_strength = -6.0f;
 	void _set_is_flow_multiphase(bool value);
+	bool is_multiphase_density_tex0_source = true;
+	std::shared_ptr<Texture3D> _get_multiphase_density_tex_source();
+	std::shared_ptr<Texture3D> _get_multiphase_density_tex_target();
+	void _swap_multiphase_density_textures();
 
 	// device buffers
+	std::shared_ptr<Texture3D> multiphase_density_tex0 = nullptr;
+	std::shared_ptr<Texture3D> multiphase_density_tex1 = nullptr;
 	std::shared_ptr<Texture3D> lattice0_tex = nullptr;
 	std::shared_ptr<Texture3D> lattice1_tex = nullptr;
 	std::shared_ptr<Buffer> lattice0 = nullptr;
@@ -298,6 +306,7 @@ public:
 	std::shared_ptr<ComputeProgram> lbm_stream_thermal = nullptr;
 	std::shared_ptr<ComputeProgram> lbm_collide = nullptr;
 	std::shared_ptr<ComputeProgram> lbm_collide_save = nullptr;
+	std::shared_ptr<ComputeProgram> lbm_collide_save_but_not_update = nullptr;
 	std::shared_ptr<ComputeProgram> lbm_collide_with_precomputed_velocity = nullptr;
 	std::shared_ptr<ComputeProgram> lbm_set_equilibrium_populations = nullptr;
 	std::shared_ptr<ComputeProgram> lbm_set_equilibrium_populations_thermal = nullptr;
